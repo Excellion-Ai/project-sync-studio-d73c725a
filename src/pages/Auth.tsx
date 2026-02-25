@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff } from "lucide-react";
@@ -16,6 +16,24 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate("/");
+      }
+    });
+
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -27,16 +45,21 @@ const Auth = () => {
           password,
           options: { emailRedirectTo: window.location.origin },
         });
+        // If user already exists, try signing in directly
+        if (error && error.message === "User already registered") {
+          const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInError) throw signInError;
+          toast({ title: "Welcome back!", description: "You already had an account, signed you in." });
+          return;
+        }
         if (error) throw error;
         // Auto sign in after signup
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) throw signInError;
         toast({ title: "Welcome!", description: "Your account has been created." });
-        navigate("/");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate("/");
       }
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
