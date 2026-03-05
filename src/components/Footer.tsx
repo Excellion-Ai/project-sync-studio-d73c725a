@@ -1,48 +1,92 @@
 import { Link } from "react-router-dom";
+import { ExternalLink } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-background border-t border-border py-12">
-      <div className="max-w-6xl mx-auto px-4">
+    <footer className="bg-muted/30 border-t border-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-full border-2 border-primary flex items-center justify-center">
-                <span className="text-primary font-bold text-xs">E</span>
+            <Link to="/" className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-full border-2 border-primary flex items-center justify-center">
+                <span className="text-primary font-bold text-sm">E</span>
               </div>
-              <span className="text-foreground font-semibold">Excellion</span>
-            </div>
-            <p className="text-muted-foreground text-sm">AI Course Builder for Fitness Influencers</p>
+              <span className="text-foreground font-semibold text-lg">Excellion</span>
+            </Link>
+            <p className="text-muted-foreground text-sm">
+              AI Course Builder for Fitness Influencers
+            </p>
           </div>
 
+          {/* Product Column */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4">Product</h4>
-            <ul className="space-y-2">
-              <li><Link to="/auth" className="text-muted-foreground text-sm hover:text-foreground transition-colors">Create Course</Link></li>
-              <li><Link to="/" className="text-muted-foreground text-sm hover:text-foreground transition-colors">Browse Courses</Link></li>
-              <li><a href="#pricing" className="text-muted-foreground text-sm hover:text-foreground transition-colors">Pricing</a></li>
+            <h4 className="text-foreground font-semibold text-sm mb-4">Product</h4>
+            <ul className="space-y-3">
+              <li>
+                <Link to="/secret-builder" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  Create Course
+                </Link>
+              </li>
+              <li>
+                <Link to="/courses" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  Browse Courses
+                </Link>
+              </li>
+              <li>
+                <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  Pricing
+                </Link>
+              </li>
             </ul>
           </div>
 
+          {/* Company Column */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4">Company</h4>
-            <ul className="space-y-2">
-              <li><Link to="/" className="text-muted-foreground text-sm hover:text-foreground transition-colors">About</Link></li>
-              <li><Link to="/" className="text-muted-foreground text-sm hover:text-foreground transition-colors">Contact</Link></li>
+            <h4 className="text-foreground font-semibold text-sm mb-4">Company</h4>
+            <ul className="space-y-3">
+              <li>
+                <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  Contact
+                </Link>
+              </li>
             </ul>
           </div>
 
+          {/* Legal Column */}
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4">Legal</h4>
-            <ul className="space-y-2">
-              <li><Link to="/" className="text-muted-foreground text-sm hover:text-foreground transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/" className="text-muted-foreground text-sm hover:text-foreground transition-colors">Terms of Service</Link></li>
+            <h4 className="text-foreground font-semibold text-sm mb-4">Legal</h4>
+            <ul className="space-y-3">
+              <li>
+                <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link to="/sitemap.xml" className="text-muted-foreground hover:text-foreground transition-colors text-sm inline-flex items-center gap-1">
+                  Sitemap
+                  <ExternalLink className="h-3 w-3" />
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-border mt-10 pt-6 text-center">
-          <p className="text-muted-foreground text-xs">© {new Date().getFullYear()} Excellion. All rights reserved.</p>
+        {/* Bottom Bar */}
+        <div className="mt-12 pt-8 border-t border-border">
+          <p className="text-muted-foreground text-sm text-center">
+            © 2025 Excellion. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
