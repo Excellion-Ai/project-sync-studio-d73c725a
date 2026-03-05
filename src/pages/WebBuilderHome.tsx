@@ -1,4 +1,4 @@
-import Navbar from "@/components/Navbar";
+import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import FeaturesSection from "@/components/FeaturesSection";
@@ -11,7 +11,7 @@ import Footer from "@/components/Footer";
 const WebBuilderHome = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navigation />
       <HeroSection />
       <HowItWorksSection />
       <FeaturesSection />
