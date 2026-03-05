@@ -1,4 +1,4 @@
-import Navbar from "./Navbar";
+import Navigation from "./Navigation";
 import Footer from "./Footer";
 
 interface PlaceholderPageProps {
