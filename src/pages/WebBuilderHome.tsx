@@ -11,7 +11,7 @@ import Footer from "@/components/Footer";
 const WebBuilderHome = () => {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navigation />
       <HeroSection />
       <HowItWorksSection />
       <FeaturesSection />

@@ -80,7 +80,7 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
+      <Navigation />
       <div className="flex-1 flex items-center justify-center px-4 pt-16">
         <div className="w-full max-w-md glass-card rounded-2xl p-8">
           <div className="text-center mb-8">
