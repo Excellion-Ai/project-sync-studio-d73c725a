@@ -6,7 +6,7 @@ import { Routes, Route } from "react-router-dom";
 import { Suspense } from "react";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 
-// Lazy load all routes
+// Lazy load all routes with retry logic for cache busting
 const WebBuilderHome = lazyWithRetry(() => import("./pages/WebBuilderHome"), "WebBuilderHome");
 const BuilderPricing = lazyWithRetry(() => import("./pages/BuilderPricing"), "BuilderPricing");
 const FAQ = lazyWithRetry(() => import("./pages/FAQ"), "FAQ");
@@ -35,6 +35,10 @@ const PurchaseSuccess = lazyWithRetry(() => import("./pages/PurchaseSuccess"), "
 const Privacy = lazyWithRetry(() => import("./pages/Privacy"), "Privacy");
 const Terms = lazyWithRetry(() => import("./pages/Terms"), "Terms");
 const About = lazyWithRetry(() => import("./pages/About"), "About");
+const QuickstartTemplates = lazyWithRetry(() => import("./pages/QuickstartTemplates"), "QuickstartTemplates");
+const QuickstartAddons = lazyWithRetry(() => import("./pages/QuickstartAddons"), "QuickstartAddons");
+const AdminCourses = lazyWithRetry(() => import("./pages/AdminCourses"), "AdminCourses");
+const QuickstartCoursePage = lazyWithRetry(() => import("./pages/QuickstartCoursePage"), "QuickstartCoursePage");
 
 // Settings pages
 const Settings = lazyWithRetry(() => import("./pages/Settings"), "Settings");
@@ -50,11 +54,21 @@ const ShortcutsSettings = lazyWithRetry(() => import("./pages/settings/Shortcuts
 const HelpSettings = lazyWithRetry(() => import("./pages/settings/HelpSettings"), "HelpSettings");
 const SupportSettings = lazyWithRetry(() => import("./pages/settings/SupportSettings"), "SupportSettings");
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
+// Minimal loading component
 const PageLoader = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
-    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+    <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
   </div>
 );
 
@@ -85,18 +99,23 @@ const App = () => (
           <Route path="/billing" element={<Billing />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
-          
-          {/* LMS Course Engine */}
+
+          {/* LMS Course Engine - Dynamic Routes */}
           <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/course/quickstart/templates" element={<QuickstartTemplates />} />
+          <Route path="/course/quickstart/addons" element={<QuickstartAddons />} />
+          <Route path="/course/quickstart" element={<QuickstartCoursePage />} />
           <Route path="/course/:subdomain" element={<CoursePage />} />
           <Route path="/learn/:slug" element={<LearnPage />} />
+          <Route path="/admin/courses" element={<AdminCourses />} />
+
           <Route path="/my-courses" element={<MyCourses />} />
           <Route path="/certificate/:id" element={<CertificatePage />} />
           <Route path="/purchase-success" element={<PurchaseSuccess />} />
           <Route path="/dashboard/student" element={<StudentDashboard />} />
           <Route path="/dashboard/analytics" element={<CreatorAnalytics />} />
           <Route path="/dashboard/analytics/:courseId" element={<CourseDetailAnalytics />} />
-          
+
           {/* Settings routes */}
           <Route path="/settings" element={<Settings />}>
             <Route index element={<ProfileSettings />} />
@@ -112,7 +131,8 @@ const App = () => (
             <Route path="help" element={<HelpSettings />} />
             <Route path="support" element={<SupportSettings />} />
           </Route>
-          
+
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

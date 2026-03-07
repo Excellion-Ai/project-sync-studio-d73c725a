@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
+import excellionLogo from "@/assets/excellion-logo.png";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Shield, LogOut, User } from "lucide-react";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -23,14 +24,16 @@ const Navigation = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
       }
     );
 
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -45,7 +48,7 @@ const Navigation = () => {
       await supabase.auth.signOut();
       toast.success("Signed out successfully");
       navigate("/");
-    } catch {
+    } catch (error) {
       toast.error("Failed to sign out");
     }
   };
@@ -55,15 +58,6 @@ const Navigation = () => {
       navigate("/secret-builder-hub");
     } else {
       navigate("/auth?redirect=/secret-builder-hub");
-    }
-  };
-
-  const scrollTo = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    } else {
-      window.location.href = `/#${id}`;
     }
   };
 
@@ -77,134 +71,167 @@ const Navigation = () => {
           </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => navigate("/billing")}>
-          Billing
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem asChild>
+          <Link to="/billing" className="cursor-pointer">
+            Billing
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
+        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
           <LogOut className="h-4 w-4 mr-2" />
           Sign Out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
-
+  
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full border-2 border-primary flex items-center justify-center">
-              <span className="text-primary font-bold text-sm">E</span>
-            </div>
-            <span className="text-foreground font-semibold text-lg">Excellion</span>
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
+      <div className="flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6">
+        <Link to="/" className="flex items-center gap-2 sm:gap-3 transition-transform duration-300 hover:scale-105" aria-label="Excellion Home">
+          <img 
+            src={excellionLogo} 
+            alt="Excellion company logo" 
+            className="h-7 w-7 sm:h-10 sm:w-10" 
+            width="40" 
+            height="40"
+            loading="eager"
+          />
+          <span className="text-base sm:text-xl font-bold text-foreground">Excellion</span>
+        </Link>
+          
+        <div className="hidden md:flex items-center gap-6 lg:gap-8">
+          <a href="/#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            How it Works
+          </a>
+          <Link to="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            Pricing
           </Link>
+          <Link to="/builder-faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            FAQ
+          </Link>
+        </div>
 
-          {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-8">
-            <button onClick={() => scrollTo("how-it-works")} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-              How it Works
-            </button>
-            <button onClick={() => scrollTo("pricing")} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-              Pricing
-            </button>
-            <button onClick={() => scrollTo("faq")} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-              FAQ
-            </button>
-          </div>
-
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="hidden md:flex items-center gap-3">
             {isAdmin && (
-              <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-1">
-                <Shield className="h-4 w-4" />
-                Admin
+              <Link to="/admin">
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <Shield className="h-4 w-4" />
+                  Admin
+                </Button>
               </Link>
             )}
             {!loading && (
               user ? (
                 <UserMenu />
               ) : (
-                <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                  Sign In
+                <Link to="/auth">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
                 </Link>
               )
             )}
-            <Button onClick={handleStartBuilding} size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+            <Button 
+              size="sm" 
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              onClick={handleStartBuilding}
+            >
               Start Building
             </Button>
           </div>
 
-          {/* Mobile Menu */}
-          <div className="md:hidden">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-72">
-                <div className="flex flex-col gap-6 mt-6">
-                  {/* Header */}
-                  <div className="flex items-center gap-2 pb-4 border-b border-border">
-                    <div className="w-8 h-8 rounded-full border-2 border-primary flex items-center justify-center">
-                      <span className="text-primary font-bold text-sm">E</span>
-                    </div>
-                    <span className="text-foreground font-semibold text-lg">Excellion</span>
-                  </div>
-
-                  {/* Navigation Links */}
-                  <div className="flex flex-col gap-3">
-                    <button onClick={() => scrollTo("how-it-works")} className="text-muted-foreground hover:text-foreground transition-colors text-sm text-left py-2">
-                      How it Works
-                    </button>
-                    <button onClick={() => scrollTo("pricing")} className="text-muted-foreground hover:text-foreground transition-colors text-sm text-left py-2">
-                      Pricing
-                    </button>
-                    <button onClick={() => scrollTo("faq")} className="text-muted-foreground hover:text-foreground transition-colors text-sm text-left py-2">
-                      FAQ
-                    </button>
-                  </div>
-
-                  {/* User Section */}
-                  <div className="flex flex-col gap-3 pt-4 border-t border-border">
-                    {isAdmin && (
-                      <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-2 py-2">
-                        <Shield className="h-4 w-4" />
-                        Admin
-                      </Link>
-                    )}
-                    {!loading && (
-                      user ? (
-                        <>
-                          <div className="text-sm text-muted-foreground flex items-center gap-2 py-2">
-                            <User className="h-4 w-4" />
-                            {user.email}
-                          </div>
-                          <Link to="/billing" className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2">
-                            Billing
-                          </Link>
-                          <button onClick={handleSignOut} className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-2 py-2 text-left">
-                            <LogOut className="h-4 w-4" />
-                            Sign Out
-                          </button>
-                        </>
-                      ) : (
-                        <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2">
-                          Sign In
-                        </Link>
-                      )
-                    )}
-                    <Button onClick={handleStartBuilding} className="w-full mt-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground" variant="outline">
-                      Start Building
-                    </Button>
+          <Sheet>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="sm" className="h-9 w-9 p-0 touch-manipulation" aria-label="Open navigation menu">
+                <Menu className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[85vw] max-w-[320px] p-0">
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="p-4 border-b border-border/50">
+                  <div className="flex items-center gap-2">
+                    <img src={excellionLogo} alt="Excellion" className="h-6 w-6" />
+                    <span className="font-semibold text-foreground">Excellion</span>
                   </div>
                 </div>
-              </SheetContent>
-            </Sheet>
-          </div>
+                
+                {/* Navigation Links */}
+                <div className="flex flex-col p-4 gap-1">
+                  <a 
+                    href="/#how-it-works" 
+                    className="flex items-center h-12 px-3 rounded-lg text-base font-medium text-foreground hover:bg-secondary/50 transition-colors touch-manipulation"
+                  >
+                    How it Works
+                  </a>
+                  <Link 
+                    to="/pricing" 
+                    className="flex items-center h-12 px-3 rounded-lg text-base font-medium text-foreground hover:bg-secondary/50 transition-colors touch-manipulation"
+                  >
+                    Pricing
+                  </Link>
+                  <Link 
+                    to="/builder-faq" 
+                    className="flex items-center h-12 px-3 rounded-lg text-base font-medium text-foreground hover:bg-secondary/50 transition-colors touch-manipulation"
+                  >
+                    FAQ
+                  </Link>
+                </div>
+                
+                {/* User Section */}
+                <div className="mt-auto p-4 border-t border-border/50 space-y-3">
+                  {isAdmin && (
+                    <Link to="/admin">
+                      <Button variant="ghost" size="lg" className="w-full justify-start gap-2 h-12 touch-manipulation">
+                        <Shield className="h-4 w-4" />
+                        Admin
+                      </Button>
+                    </Link>
+                  )}
+                  {!loading && (
+                    user ? (
+                      <>
+                        <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground rounded-lg bg-secondary/30">
+                          <User className="h-4 w-4" />
+                          <span className="truncate">{user.email}</span>
+                        </div>
+                        <Link to="/billing">
+                          <Button variant="ghost" size="lg" className="w-full justify-start h-12 touch-manipulation">
+                            Billing
+                          </Button>
+                        </Link>
+                        <Button 
+                          variant="ghost" 
+                          size="lg" 
+                          className="w-full justify-start text-destructive h-12 touch-manipulation" 
+                          onClick={handleSignOut}
+                        >
+                          <LogOut className="h-4 w-4 mr-2" />
+                          Sign Out
+                        </Button>
+                      </>
+                    ) : (
+                      <Link to="/auth">
+                        <Button variant="ghost" size="lg" className="w-full justify-start h-12 touch-manipulation">
+                          Sign In
+                        </Button>
+                      </Link>
+                    )
+                  )}
+                  <Button 
+                    size="lg" 
+                    className="w-full bg-accent text-accent-foreground hover:bg-accent/90 h-12 touch-manipulation"
+                    onClick={handleStartBuilding}
+                  >
+                    Start Building
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </nav>

@@ -1,2 +1,7 @@
-const BillingSettings = () => <div><h2 className="text-xl font-semibold mb-4">Billing</h2><p className="text-muted-foreground">Manage billing and subscriptions.</p></div>;
-export default BillingSettings;
+import { useNavigate } from 'react-router-dom';
+import { useCredits, CREDIT_COSTS } from '@/hooks/useCredits';
+import Billing from '@/pages/Billing';
+
+export default function BillingSettings() {
+  return <Billing />;
+}

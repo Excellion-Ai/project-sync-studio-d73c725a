@@ -1,25 +1,31 @@
-import { lazy, ComponentType } from "react";
+import { lazy, ComponentType } from 'react';
 
-type ComponentModule = { default: ComponentType<any> };
+type ComponentImport<T> = () => Promise<{ default: T }>;
 
-export function lazyWithRetry(
-  factory: () => Promise<ComponentModule>,
-  _name?: string
-): React.LazyExoticComponent<ComponentType<any>> {
+const hasRefreshed = (key: string): boolean => {
+  return sessionStorage.getItem(key) === 'true';
+};
+
+const setRefreshed = (key: string): void => {
+  sessionStorage.setItem(key, 'true');
+};
+
+export function lazyWithRetry<T extends ComponentType<unknown>>(
+  componentImport: ComponentImport<T>,
+  name: string
+): React.LazyExoticComponent<T> {
   return lazy(async () => {
-    const PAGE_ALREADY_FORCE_REFRESHED = "page-has-been-force-refreshed";
+    const storageKey = `retry-lazy-refreshed-${name}`;
+
     try {
-      const component = await factory();
-      sessionStorage.removeItem(PAGE_ALREADY_FORCE_REFRESHED);
+      const component = await componentImport();
+      sessionStorage.removeItem(storageKey);
       return component;
     } catch (error) {
-      const pageAlreadyForceRefreshed = JSON.parse(
-        sessionStorage.getItem(PAGE_ALREADY_FORCE_REFRESHED) || "false"
-      );
-      if (!pageAlreadyForceRefreshed) {
-        sessionStorage.setItem(PAGE_ALREADY_FORCE_REFRESHED, "true");
+      if (!hasRefreshed(storageKey)) {
+        setRefreshed(storageKey);
         window.location.reload();
-        return { default: () => null } as ComponentModule;
+        return { default: (() => null) as unknown as T };
       }
       throw error;
     }

@@ -1,3 +1,5 @@
-import PlaceholderPage from "@/components/PlaceholderPage";
-const SecretBuilder = () => <PlaceholderPage title="Course Builder" description="AI-powered course creation studio." />;
-export default SecretBuilder;
+import { BuilderShell } from '@/components/secret-builder/BuilderShell';
+
+export default function SecretBuilder() {
+  return <BuilderShell />;
+}
