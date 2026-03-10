@@ -191,7 +191,7 @@ const BuilderShell = ({
   const [userId, setUserId] = useState<string | null>(null);
 
   // Generation
-  const [idea, setIdea] = useState("");
+  const [idea, setIdea] = useState(initialIdea || "");
   const [isGenerating, setIsGenerating] = useState(false);
   const [steps, setSteps] = useState<GenerationStep[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
