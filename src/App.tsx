@@ -35,6 +35,7 @@ const PurchaseSuccess = lazyWithRetry(() => import("./pages/PurchaseSuccess"), "
 const Privacy = lazyWithRetry(() => import("./pages/Privacy"), "Privacy");
 const Terms = lazyWithRetry(() => import("./pages/Terms"), "Terms");
 const About = lazyWithRetry(() => import("./pages/About"), "About");
+const BuilderTest = lazyWithRetry(() => import("./pages/BuilderTest"), "BuilderTest");
 
 // Settings pages
 const Settings = lazyWithRetry(() => import("./pages/Settings"), "Settings");
