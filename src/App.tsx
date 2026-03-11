@@ -35,6 +35,7 @@ const PurchaseSuccess = lazyWithRetry(() => import("./pages/PurchaseSuccess"), "
 const Privacy = lazyWithRetry(() => import("./pages/Privacy"), "Privacy");
 const Terms = lazyWithRetry(() => import("./pages/Terms"), "Terms");
 const About = lazyWithRetry(() => import("./pages/About"), "About");
+const BuilderTest = lazyWithRetry(() => import("./pages/BuilderTest"), "BuilderTest");
 
 // Settings pages
 const Settings = lazyWithRetry(() => import("./pages/Settings"), "Settings");
@@ -74,6 +75,7 @@ const App = () => (
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/about" element={<About />} />
+          <Route path="/builder-test" element={<BuilderTest />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/thank-you" element={<ThankYou />} />
