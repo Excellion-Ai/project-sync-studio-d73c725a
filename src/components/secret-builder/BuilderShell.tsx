@@ -238,13 +238,15 @@ const BuilderShell = ({
       updateStep("design", "complete");
 
       updateStep("save", "in_progress");
-      const { data: proj } = await supabase
-        .from("builder_projects")
-        .insert({ name: course.title, user_id: userId })
-        .select("id")
-        .single();
-
-      const bProjectId = proj?.id ?? null;
+      let bProjectId = projectId;
+      if (!bProjectId) {
+        const { data: proj } = await supabase
+          .from("builder_projects")
+          .insert({ name: course.title, user_id: userId })
+          .select("id")
+          .single();
+        bProjectId = proj?.id ?? null;
+      }
       if (bProjectId) setProjectId(bProjectId);
 
       const saved = await saveCourseToDatabase({
