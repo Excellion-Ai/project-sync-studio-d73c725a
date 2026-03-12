@@ -153,6 +153,23 @@ const BuilderShell = ({
     });
   }, []);
 
+  // ── Auto-trigger generation from hub ──────────────────────
+  const handleGenerateCourseRef = useRef<((options: CourseOptions) => Promise<void>) | null>(null);
+  
+  useEffect(() => {
+    if (hasAutoTriggered || !resolvedIdea || !userId || isGenerating) return;
+    if (!handleGenerateCourseRef.current) return;
+    setHasAutoTriggered(true);
+    localStorage.removeItem("builder-initial-idea");
+    handleGenerateCourseRef.current({
+      difficulty: "beginner",
+      duration_weeks: 6,
+      includeQuizzes: true,
+      includeAssignments: true,
+      template: "creator",
+    });
+  }, [userId, resolvedIdea, hasAutoTriggered, isGenerating]);
+
   // ── Auto-save ─────────────────────────────────────────────
 
   useEffect(() => {
