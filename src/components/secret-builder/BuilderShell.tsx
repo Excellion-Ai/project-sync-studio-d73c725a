@@ -118,9 +118,11 @@ const BuilderShell = ({
   const [projectId, setProjectId] = useState<string | null>(initialProjectId || null);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Generation
-  const [idea, setIdea] = useState(initialIdea || "");
+  // Generation — read from prop, then localStorage fallback
+  const resolvedIdea = initialIdea || localStorage.getItem("builder-initial-idea") || "";
+  const [idea, setIdea] = useState(resolvedIdea);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [hasAutoTriggered, setHasAutoTriggered] = useState(false);
   const [steps, setSteps] = useState<GenerationStep[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
@@ -150,6 +152,23 @@ const BuilderShell = ({
       if (data.user) setUserId(data.user.id);
     });
   }, []);
+
+  // ── Auto-trigger generation from hub ──────────────────────
+  const handleGenerateCourseRef = useRef<((options: CourseOptions) => Promise<void>) | null>(null);
+  
+  useEffect(() => {
+    if (hasAutoTriggered || !resolvedIdea || !userId || isGenerating) return;
+    if (!handleGenerateCourseRef.current) return;
+    setHasAutoTriggered(true);
+    localStorage.removeItem("builder-initial-idea");
+    handleGenerateCourseRef.current({
+      difficulty: "beginner",
+      duration_weeks: 6,
+      includeQuizzes: true,
+      includeAssignments: true,
+      template: "creator",
+    });
+  }, [userId, resolvedIdea, hasAutoTriggered, isGenerating]);
 
   // ── Auto-save ─────────────────────────────────────────────
 
@@ -219,13 +238,15 @@ const BuilderShell = ({
       updateStep("design", "complete");
 
       updateStep("save", "in_progress");
-      const { data: proj } = await supabase
-        .from("builder_projects")
-        .insert({ name: course.title, user_id: userId })
-        .select("id")
-        .single();
-
-      const bProjectId = proj?.id ?? null;
+      let bProjectId = projectId;
+      if (!bProjectId) {
+        const { data: proj } = await supabase
+          .from("builder_projects")
+          .insert({ name: course.title, user_id: userId })
+          .select("id")
+          .single();
+        bProjectId = proj?.id ?? null;
+      }
       if (bProjectId) setProjectId(bProjectId);
 
       const saved = await saveCourseToDatabase({
@@ -261,9 +282,12 @@ const BuilderShell = ({
     } finally {
       setIsGenerating(false);
     }
-  }, [idea, userId]);
+  }, [idea, userId, projectId]);
 
-  // ── Publish / Unpublish ───────────────────────────────────
+  // Assign ref for auto-trigger
+  handleGenerateCourseRef.current = handleGenerateCourse;
+
+
 
   const handlePublish = useCallback(async () => {
     if (!courseId) return;

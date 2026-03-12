@@ -163,7 +163,7 @@ function HubContent() {
       const { data: proj, error } = await supabase.from("builder_projects").insert({ name: idea.slice(0, 80), user_id: userId }).select("id").single();
       if (error || !proj) throw error;
       localStorage.setItem("builder-initial-idea", idea);
-      navigate(`/studio/${proj.id}`);
+      navigate(`/studio/${proj.id}`, { state: { initialIdea: idea } });
     } catch (err) {
       console.error(err);
       toast.error("Failed to create project.");
