@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import excellionLogo from "@/assets/excellion-logo.png";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 

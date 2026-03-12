@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import excellionLogo from "@/assets/excellion-logo.png";
 import { ExternalLink } from "lucide-react";
 
 const Footer = () => {

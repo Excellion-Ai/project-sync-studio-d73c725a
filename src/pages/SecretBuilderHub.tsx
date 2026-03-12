@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import excellionLogo from "@/assets/excellion-logo.png";
 import { useNavigate, Navigate } from "react-router-dom";
 import {
   Sparkles,
