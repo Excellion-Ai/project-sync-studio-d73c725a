@@ -31,16 +31,16 @@ const faqs = [
 
 const FAQSection = () => {
   return (
-    <section id="faq" className="py-24 bg-background">
-      <div className="max-w-2xl mx-auto px-4">
+    <section id="faq" className="py-24 bg-background relative radial-glow">
+      <div className="max-w-2xl mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Frequently Asked Questions</h2>
-          <p className="text-muted-foreground">Everything you need to know about Excellion</p>
+          <h2 className="text-3xl sm:text-4xl font-heading font-bold text-foreground mb-4">Frequently Asked Questions</h2>
+          <p className="text-muted-foreground font-body">Everything you need to know about Excellion</p>
         </motion.div>
 
         <motion.div
@@ -50,11 +50,11 @@ const FAQSection = () => {
         >
           <Accordion type="single" collapsible className="space-y-3">
             {faqs.map((faq, i) => (
-              <AccordionItem key={i} value={`item-${i}`} className="glass-card rounded-xl px-6 border-none">
-                <AccordionTrigger className="text-foreground text-sm font-medium hover:no-underline">
+              <AccordionItem key={i} value={`item-${i}`} className="premium-card px-6 border-none">
+                <AccordionTrigger className="text-foreground text-sm font-heading font-semibold hover:no-underline hover:text-primary py-5">
                   {faq.q}
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-sm leading-relaxed">
+                <AccordionContent className="text-muted-foreground text-sm leading-relaxed font-body pb-5">
                   {faq.a}
                 </AccordionContent>
               </AccordionItem>
