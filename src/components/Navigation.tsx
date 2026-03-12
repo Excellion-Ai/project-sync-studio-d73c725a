@@ -96,9 +96,7 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full border-2 border-primary flex items-center justify-center">
-              <span className="text-primary font-bold text-sm">E</span>
-            </div>
+            <img src={excellionLogo} alt="Excellion" className="w-8 h-8 rounded-full object-cover" />
             <span className="text-foreground font-semibold text-lg">Excellion</span>
           </Link>
 
