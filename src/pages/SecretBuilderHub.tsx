@@ -235,9 +235,7 @@ function HubContent() {
         {/* Brand */}
         <div className="p-5 pb-4">
           <button onClick={() => navigate("/")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="h-10 w-10 rounded-full border border-border flex items-center justify-center bg-background">
-              <span className="text-sm font-bold text-foreground">€</span>
-            </div>
+            <img src={excellionLogo} alt="Excellion" className="h-10 w-10 rounded-full object-cover" />
             <div className="text-left">
               <p className="text-sm font-semibold text-foreground">Excellion</p>
               <p className="text-xs text-muted-foreground">Builder</p>
