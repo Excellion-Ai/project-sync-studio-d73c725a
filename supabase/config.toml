@@ -1,1 +1,22 @@
 project_id = "vyppeqwxwzrtystobfch"
+
+[functions.generate-course]
+verify_jwt = false
+
+[functions.interpret-course-command]
+verify_jwt = false
+
+[functions.builder-agent]
+verify_jwt = false
+
+[functions.code-agent]
+verify_jwt = false
+
+[functions.database-ai]
+verify_jwt = false
+
+[functions.bot-chat]
+verify_jwt = false
+
+[functions.help-chat]
+verify_jwt = false

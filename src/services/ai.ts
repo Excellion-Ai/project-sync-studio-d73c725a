@@ -57,6 +57,18 @@ export const AI = {
   generateNicheImage: (payload: Record<string, unknown>) =>
     callEdgeFn("generate-niche-image", payload),
 
+  /** Generate site spec / blueprint */
+  builderAgent: (prompt: string, extras?: Record<string, unknown>) =>
+    callEdgeFn("builder-agent", { prompt, ...extras }),
+
+  /** Generate React code from spec */
+  codeAgent: (prompt: string, spec?: Record<string, unknown>, existingCode?: string) =>
+    callEdgeFn("code-agent", { prompt, spec, existingCode }),
+
+  /** Database schema queries / SQL generation */
+  databaseAI: (prompt: string, currentSchema?: Record<string, unknown>, context?: Record<string, unknown>) =>
+    callEdgeFn("database-ai", { prompt, currentSchema, context }),
+
   /** Streaming chat via bot-chat edge function */
   chatStream: async function* (
     messages: Array<{ role: string; content: string }>,
