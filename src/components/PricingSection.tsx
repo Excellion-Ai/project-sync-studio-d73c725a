@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const features = [
-  "Up to 3 active courses",
+  "Unlimited courses",
   "Unlimited page views",
   "Custom domain",
   "Intake & check-ins",
