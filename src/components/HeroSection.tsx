@@ -53,7 +53,17 @@ const HeroSection = () => {
             <em className="not-italic text-gradient-gold">1 weekend.</em>
           </h1>
 
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10 font-body font-light">
+          <p
+            className="max-w-2xl mx-auto mb-10 font-body font-light rounded-lg inline-block"
+            style={{
+              fontSize: "18px",
+              color: "rgba(255,255,255,0.90)",
+              textShadow: "0 2px 12px rgba(0,0,0,0.8)",
+              background: "rgba(0,0,0,0.3)",
+              borderRadius: "8px",
+              padding: "8px 16px",
+            }}
+          >
             Excellion generates your course outline, lesson plan, sales page copy, and student portal from 1 prompt. Spend the weekend polishing, filming, and publishing.
           </p>
         </motion.div>
