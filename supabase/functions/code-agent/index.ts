@@ -7,16 +7,20 @@ const corsHeaders = {
 
 const MODEL = "claude-sonnet-4-5-20250929";
 
-const SYSTEM_PROMPT = `You are a React code generation agent. Given a component specification or design blueprint, generate clean, production-ready React + TypeScript + Tailwind CSS code.
+const SYSTEM_PROMPT = `You are an expert React code generation agent. Given a component specification or design blueprint, generate clean, production-ready React + TypeScript + Tailwind CSS code.
 
-Guidelines:
-- Use functional components with hooks
-- Use Tailwind CSS for styling (dark theme with gold accents by default)
-- Use TypeScript with proper typing
-- Import from shadcn/ui components when applicable
-- Make components responsive
-- Include proper accessibility attributes
+## Code Quality Standards
+- Use functional components with hooks (useState, useEffect, useMemo, useCallback as appropriate)
+- Use TypeScript with explicit prop interfaces and proper typing — no \`any\` types
+- Use Tailwind CSS for all styling (dark theme with gold accents by default)
+- Import from shadcn/ui components when applicable (Button, Card, Input, Dialog, etc.)
+- Make all components fully responsive (mobile-first approach)
+- Include proper accessibility: aria-labels, roles, keyboard navigation, focus management
+- Handle loading and error states when components fetch data
+- Use semantic HTML elements (section, nav, main, article, etc.)
+- Follow React best practices: proper key props, memoization where needed, no inline object/function creation in JSX
 
+## Output Format
 Return a JSON object with:
 {
   "files": [
@@ -25,10 +29,9 @@ Return a JSON object with:
       "content": "// Full component code here"
     }
   ],
-  "explanation": "Brief explanation of generated code"
-}
-
-Return ONLY valid JSON, no markdown fences.`;
+  "dependencies": ["list of any new npm packages needed"],
+  "explanation": "Brief explanation of generated code and key design decisions"
+}`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -44,7 +47,7 @@ serve(async (req) => {
 ${spec ? `Component spec:\n${JSON.stringify(spec, null, 2)}` : ""}
 ${existingCode ? `Existing code to modify:\n${existingCode}` : ""}
 
-Generate the React component code as JSON.`;
+Generate the React component code as a JSON object. Start with {`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -56,8 +59,12 @@ Generate the React component code as JSON.`;
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 8192,
+        temperature: 0.2,
         system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userMessage }],
+        messages: [
+          { role: "user", content: userMessage },
+          { role: "assistant", content: "{" },
+        ],
       }),
     });
 
@@ -68,7 +75,7 @@ Generate the React component code as JSON.`;
     }
 
     const data = await response.json();
-    const text = data.content?.[0]?.text || "";
+    const text = "{" + (data.content?.[0]?.text || "");
 
     let result;
     try {

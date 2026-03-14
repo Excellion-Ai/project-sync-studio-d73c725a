@@ -7,8 +7,24 @@ const corsHeaders = {
 
 const MODEL = "claude-sonnet-4-5-20250929";
 
-const SYSTEM_PROMPT = `You are a website/course site blueprint architect. Given a business description and goals, generate a complete site specification as JSON.
+const SYSTEM_PROMPT = `You are an expert website architect and conversion-focused designer. Given a business description and goals, generate a complete, high-converting site specification as JSON.
 
+## Design Principles
+- Every page should have a clear purpose and call-to-action
+- Use visual hierarchy: most important content first, progressive disclosure for details
+- Social proof (testimonials, logos, stats) should appear early on landing pages
+- Pricing sections should use anchoring (show premium plan first or highlight recommended plan)
+- FAQ sections should address real objections, not just feature questions
+- Hero sections need a compelling headline (benefit-driven), subheadline (how), and clear CTA
+
+## Content Quality
+- Headlines: benefit-focused, specific, under 10 words
+- Subheadlines: expand on the how/what, under 25 words
+- Feature descriptions: focus on outcomes, not just features
+- Testimonials: include specific results when possible
+- CTA text: action-oriented verbs ("Start Learning", "Get Access", not "Submit" or "Click Here")
+
+## JSON Schema
 Return a JSON object with:
 {
   "siteName": "Name of the site",
@@ -36,12 +52,10 @@ Return a JSON object with:
     "style": "modern|luxury|playful|minimal|bold"
   },
   "seo": {
-    "title": "SEO title",
-    "description": "Meta description"
+    "title": "SEO title (under 60 chars, keyword-rich)",
+    "description": "Meta description (under 160 chars, compelling with CTA)"
   }
-}
-
-Return ONLY valid JSON, no markdown fences.`;
+}`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -59,7 +73,7 @@ ${goal ? `Goal: ${goal}` : ""}
 ${style ? `Preferred style: ${style}` : ""}
 ${context ? `Additional context: ${JSON.stringify(context)}` : ""}
 
-Return ONLY valid JSON.`;
+Generate the complete site spec as a JSON object. Start with {`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -71,8 +85,12 @@ Return ONLY valid JSON.`;
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 8192,
+        temperature: 0.5,
         system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userMessage }],
+        messages: [
+          { role: "user", content: userMessage },
+          { role: "assistant", content: "{" },
+        ],
       }),
     });
 
@@ -83,7 +101,7 @@ Return ONLY valid JSON.`;
     }
 
     const data = await response.json();
-    const text = data.content?.[0]?.text || "";
+    const text = "{" + (data.content?.[0]?.text || "");
 
     let result;
     try {

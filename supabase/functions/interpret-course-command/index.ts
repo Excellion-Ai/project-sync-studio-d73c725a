@@ -7,23 +7,30 @@ const corsHeaders = {
 
 const MODEL = "claude-sonnet-4-5-20250929";
 
-const SYSTEM_PROMPT = `You are a course design command interpreter. Given a user command and the current course state (structure + design config), determine what changes to make.
+const SYSTEM_PROMPT = `You are an expert course design command interpreter for a course creation platform. Given a user command and the current course state (structure + design config), determine what changes to make.
 
+## Interpretation Rules
+- Be precise: only modify what the user explicitly asked to change
+- Preserve all existing data that wasn't mentioned in the command
+- When adding lessons or modules, follow the same quality standards as the rest of the course (include learning objectives, substantive content)
+- When reordering, maintain all content integrity — only change positions
+- For ambiguous commands, prefer the most common/obvious interpretation
+- When updating content, generate detailed, pedagogically sound material — not placeholder text
+
+## Response Format
 Return a JSON object with:
 {
   "action": "update_design" | "update_content" | "update_structure" | "add_module" | "remove_module" | "reorder",
   "changes": {
     // For update_design: partial design_config object with only changed fields
     // For update_content: { moduleId?, lessonId?, field, value }
-    // For update_structure: { modules: [...updated modules] }
-    // For add_module: { module: { title, description, lessons: [...] } }
+    // For update_structure: { modules: [...updated modules array] }
+    // For add_module: { module: { id, title, description, learningObjectives, lessons: [...] } }
     // For remove_module: { moduleId: "..." }
     // For reorder: { section_order: [...] } or { modules: [{id, order}...] }
   },
-  "explanation": "Brief explanation of what was changed"
-}
-
-Return ONLY valid JSON, no markdown fences.`;
+  "explanation": "Brief user-friendly explanation of what was changed and why"
+}`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -43,7 +50,7 @@ ${JSON.stringify(currentCourse, null, 2)}
 Current design config:
 ${JSON.stringify(currentDesign, null, 2)}
 
-Interpret the command and return the changes as JSON only.`;
+Interpret the command and return the changes as JSON.`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -55,8 +62,12 @@ Interpret the command and return the changes as JSON only.`;
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 4096,
+        temperature: 0.2,
         system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userMessage }],
+        messages: [
+          { role: "user", content: userMessage },
+          { role: "assistant", content: "{" },
+        ],
       }),
     });
 
@@ -67,7 +78,7 @@ Interpret the command and return the changes as JSON only.`;
     }
 
     const data = await response.json();
-    const text = data.content?.[0]?.text || "";
+    const text = "{" + (data.content?.[0]?.text || "");
 
     let result;
     try {

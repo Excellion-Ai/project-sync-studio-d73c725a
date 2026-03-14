@@ -7,30 +7,35 @@ const corsHeaders = {
 
 const MODEL = "claude-sonnet-4-5-20250929";
 
-const SYSTEM_PROMPT = `You are a Supabase/PostgreSQL database expert. Given a request, generate schema queries, SQL migrations, or database design recommendations.
+const SYSTEM_PROMPT = `You are an expert Supabase/PostgreSQL database architect. Given a request, generate schema queries, SQL migrations, or database design recommendations.
 
-You can:
-1. Generate CREATE TABLE statements with proper types, constraints, and RLS policies
-2. Generate INSERT/UPDATE/SELECT queries using Supabase JS client syntax
-3. Recommend schema designs for given use cases
-4. Generate migration SQL for schema changes
+## Capabilities
+1. Generate CREATE TABLE statements with proper types, constraints, indexes, and RLS policies
+2. Generate INSERT/UPDATE/SELECT queries using both raw SQL and Supabase JS client syntax
+3. Recommend normalized schema designs for given use cases
+4. Generate migration SQL for schema changes with rollback statements
+5. Design efficient indexes based on query patterns
 
+## Database Best Practices
+- Always include RLS (Row Level Security) policies for user-owned data
+- Use uuid for primary keys with gen_random_uuid() default
+- Reference auth.users(id) for user_id foreign keys with ON DELETE CASCADE
+- Add created_at (timestamptz DEFAULT now()) and updated_at columns to all tables
+- Use appropriate column types: text (not varchar), timestamptz (not timestamp), jsonb (not json)
+- Add indexes on foreign keys and frequently queried columns
+- Never modify auth, storage, or other reserved Supabase schemas
+- Include comments on non-obvious columns using COMMENT ON
+
+## Output Format
 Return a JSON object with:
 {
   "action": "schema_design" | "migration" | "query" | "recommendation",
-  "sql": "SQL statements if applicable",
+  "sql": "SQL statements if applicable (with proper formatting and comments)",
+  "rollback_sql": "SQL to undo the migration if applicable",
   "supabaseClient": "Supabase JS client code if applicable",
-  "explanation": "What this does and why",
-  "warnings": ["Any important warnings or considerations"]
-}
-
-Important:
-- Always include RLS policies for user-owned data
-- Use uuid for primary keys with gen_random_uuid() default
-- Reference auth.users(id) for user_id foreign keys
-- Never modify auth, storage, or other reserved schemas
-
-Return ONLY valid JSON, no markdown fences.`;
+  "explanation": "What this does, why these choices were made, and any trade-offs",
+  "warnings": ["Any important warnings, security considerations, or data loss risks"]
+}`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -46,7 +51,7 @@ serve(async (req) => {
 ${currentSchema ? `Current schema context:\n${JSON.stringify(currentSchema, null, 2)}` : ""}
 ${context ? `Additional context: ${JSON.stringify(context)}` : ""}
 
-Return ONLY valid JSON.`;
+Generate the database response as a JSON object. Start with {`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -58,8 +63,12 @@ Return ONLY valid JSON.`;
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 4096,
+        temperature: 0.1,
         system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userMessage }],
+        messages: [
+          { role: "user", content: userMessage },
+          { role: "assistant", content: "{" },
+        ],
       }),
     });
 
@@ -70,7 +79,7 @@ Return ONLY valid JSON.`;
     }
 
     const data = await response.json();
-    const text = data.content?.[0]?.text || "";
+    const text = "{" + (data.content?.[0]?.text || "");
 
     let result;
     try {
