@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 
 const stats = [
-  { icon: "🎯", title: "Launch This Weekend", subtitle: "Go from idea to live course in hours" },
-  { icon: "📱", title: "Built for Fitness Creators", subtitle: "Designed specifically for coaches and influencers" },
-  { icon: "🔥", title: "No Tech Skills Needed", subtitle: "If you can type a sentence you can build a course" },
+  { icon: "◈", title: "Launch This Weekend", subtitle: "Go from idea to live course in hours" },
+  { icon: "▸", title: "Built for Fitness Creators", subtitle: "Designed specifically for coaches and influencers" },
+  { icon: "✦", title: "No Tech Skills Needed", subtitle: "If you can type a sentence you can build a course" },
   { icon: "✦", title: "Sell Directly to Your Audience", subtitle: "No middleman, no marketplace, just you and your students" },
 ];
 
