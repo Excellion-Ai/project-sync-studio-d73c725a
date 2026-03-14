@@ -1,12 +1,12 @@
 const messages = [
-  "Sarah K. launched her 8-week course this weekend",
-  "Mike R. made $4,200 in 48 hours",
-  "Jessica T. enrolled 120 students in her first week",
-  "David M. built his course in just 6 hours",
-  "Amanda L. replaced her 9-5 income with course sales",
-  "Chris P. scaled to $12K/month with one course",
-  "Rachel W. launched her postpartum fitness program overnight",
-  "James B. went from idea to 500 students in 30 days",
+  "✦ Generate a full course from 1 prompt",
+  "✦ AI writes your entire course outline automatically",
+  "✦ Publish on your own custom domain",
+  "✦ Built specifically for fitness influencers and coaches",
+  "✦ No technical skills required to launch",
+  "✦ Go from idea to live course in one weekend",
+  "✦ Your audience already trusts you — now monetize it",
+  "✦ One course can earn while you sleep every night",
 ];
 
 const SocialProofTicker = () => {
