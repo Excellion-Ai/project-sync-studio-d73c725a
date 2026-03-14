@@ -4,7 +4,7 @@ import SocialProofTicker from "@/components/SocialProofTicker";
 import StatsBar from "@/components/StatsBar";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import FeaturesSection from "@/components/FeaturesSection";
-import TestimonialsSection from "@/components/TestimonialsSection";
+
 import QuickstartSection from "@/components/QuickstartSection";
 import PricingSection from "@/components/PricingSection";
 import GuaranteeSection from "@/components/GuaranteeSection";
