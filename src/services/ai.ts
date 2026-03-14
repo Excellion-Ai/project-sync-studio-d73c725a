@@ -34,12 +34,75 @@ export interface CourseGenerationOptions {
   includeQuizzes?: boolean;
   includeAssignments?: boolean;
   template?: string;
+  audience?: string;
+  niche?: string;
+}
+
+export interface GenerationEvent {
+  type: "step" | "outline" | "complete" | "error";
+  data: any;
 }
 
 export const AI = {
-  /** Generate a full course from a prompt */
+  /** Generate a full course from a prompt (non-streaming, backwards compatible) */
   generateCourse: (prompt: string, options?: CourseGenerationOptions) =>
     callEdgeFn("generate-course", { prompt, options }),
+
+  /**
+   * Generate a course with streaming progress events (SSE).
+   * Yields GenerationEvent objects as the pipeline progresses:
+   * - { type: "step", data: { step: "structure"|"content"|"quiz"|"design", status: "in_progress"|"complete" } }
+   * - { type: "outline", data: courseOutline } — partial course (structure only, no lesson content)
+   * - { type: "complete", data: fullCourse } — final course with all content
+   * - { type: "error", data: { message: string } }
+   */
+  generateCourseStream: async function* (
+    prompt: string,
+    options?: CourseGenerationOptions,
+  ): AsyncGenerator<GenerationEvent> {
+    const headers = await getAuthHeaders();
+    const res = await fetch(edgeFnUrl("generate-course"), {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ prompt, options, stream: true }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`generate-course stream failed: ${err}`);
+    }
+
+    const reader = res.body?.getReader();
+    if (!reader) return;
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      let currentEvent = "";
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (trimmed === "data: [DONE]") return;
+
+        if (trimmed.startsWith("event: ")) {
+          currentEvent = trimmed.slice(7);
+        } else if (trimmed.startsWith("data: ")) {
+          const jsonStr = trimmed.slice(6);
+          try {
+            const data = JSON.parse(jsonStr);
+            yield { type: currentEvent as GenerationEvent["type"], data };
+          } catch {
+            // skip unparseable
+          }
+        }
+      }
+    }
+  },
 
   /** Interpret a design/content command against current course state */
   interpretCommand: (command: string, currentCourse: any, currentDesign: any) =>

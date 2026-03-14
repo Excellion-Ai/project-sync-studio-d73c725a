@@ -17,6 +17,7 @@ import {
   GenerationStep,
   AttachmentItem,
 } from "./CourseBuilderPanel";
+import { AI } from "@/services/ai";
 import BuilderHeader from "./BuilderHeader";
 import BuilderChatPanel from "./BuilderChatPanel";
 import BuilderPreviewArea from "./BuilderPreviewArea";
@@ -49,51 +50,11 @@ const DEFAULT_SETTINGS: CourseSettings = {
   offerType: "standard",
 };
 
-// ── Mock course builder ─────────────────────────────────────
-
-function buildMockCourse(idea: string, options: CourseOptions): ExtendedCourse {
-  const title = idea.length > 60 ? idea.slice(0, 57) + "…" : idea;
-  return {
-    title,
-    description: idea,
-    tagline: `Master ${title} step-by-step`,
-    difficulty: options.difficulty,
-    duration_weeks: options.duration_weeks,
-    layout_style: options.template,
-    learningOutcomes: [
-      "Understand core concepts",
-      "Apply knowledge practically",
-      "Build a real project",
-    ],
-    modules: Array.from({ length: Math.ceil(options.duration_weeks / 2) }, (_, i) => ({
-      id: `mod-${i}`,
-      title: `Module ${i + 1}`,
-      description: `Week ${i * 2 + 1}–${i * 2 + 2} content`,
-      is_first: i === 0,
-      is_last: i === Math.ceil(options.duration_weeks / 2) - 1,
-      lessons: [
-        { id: `mod-${i}-les-0`, title: "Introduction", duration: "15m", type: "text" as const, content_markdown: "Lesson content goes here." },
-        { id: `mod-${i}-les-1`, title: "Deep Dive", duration: "25m", type: "video" as const, video_url: "" },
-        ...(options.includeQuizzes ? [{ id: `mod-${i}-les-2`, title: "Knowledge Check", duration: "10m", type: "quiz" as const, quiz_questions: [], passing_score: 70 }] : []),
-        ...(options.includeAssignments ? [{ id: `mod-${i}-les-3`, title: "Assignment", duration: "30m", type: "assignment" as const, assignment_brief: "Complete the practical exercise." }] : []),
-      ],
-    })),
-    pages: { landing_sections: ["hero", "outcomes", "curriculum", "instructor", "faq"] },
-    design_config: {
-      colors: { primary: "#d4a853", secondary: "#1a1a1a", accent: "#f59e0b", background: "#0a0a0a", cardBackground: "#111111", text: "#ffffff", textMuted: "#9ca3af" },
-      fonts: { heading: "Inter", body: "Inter" },
-      spacing: "normal",
-      borderRadius: "medium",
-      heroStyle: "gradient",
-    },
-  };
-}
-
 const GENERATION_STEPS: GenerationStep[] = [
-  { id: "analyze", label: "Analyzing your idea", status: "pending" },
   { id: "structure", label: "Building course structure", status: "pending" },
   { id: "content", label: "Generating lesson content", status: "pending" },
-  { id: "design", label: "Applying design theme", status: "pending" },
+  { id: "quiz", label: "Creating quiz questions", status: "pending" },
+  { id: "design", label: "Polishing titles & copy", status: "pending" },
   { id: "save", label: "Saving to database", status: "pending" },
 ];
 
@@ -210,8 +171,7 @@ const BuilderShell = ({
   const handleGenerateCourse = useCallback(async (options: CourseOptions) => {
     if (!idea.trim() || !userId) return;
     setIsGenerating(true);
-    const genSteps = GENERATION_STEPS.map((s) => ({ ...s }));
-    setSteps(genSteps);
+    setSteps(GENERATION_STEPS.map((s) => ({ ...s })));
 
     const updateStep = (id: string, status: GenerationStep["status"]) => {
       setSteps((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
@@ -220,23 +180,36 @@ const BuilderShell = ({
     setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: idea }]);
 
     try {
-      updateStep("analyze", "in_progress");
-      await new Promise((r) => setTimeout(r, 600));
-      updateStep("analyze", "complete");
+      // Stream course generation with real-time step updates
+      let course: ExtendedCourse | null = null;
 
-      updateStep("structure", "in_progress");
-      await new Promise((r) => setTimeout(r, 800));
-      updateStep("structure", "complete");
+      for await (const event of AI.generateCourseStream(idea, {
+        difficulty: options.difficulty,
+        duration_weeks: options.duration_weeks,
+        includeQuizzes: options.includeQuizzes,
+        includeAssignments: options.includeAssignments,
+        template: options.template,
+      })) {
+        switch (event.type) {
+          case "step":
+            updateStep(event.data.step, event.data.status === "complete" ? "complete" : "in_progress");
+            break;
+          case "outline":
+            // Show preview as soon as structure is ready (before content fills in)
+            setCourseSpec({ ...event.data, layout_style: options.template } as ExtendedCourse);
+            break;
+          case "complete":
+            course = { ...event.data, layout_style: options.template } as ExtendedCourse;
+            setCourseSpec(course);
+            break;
+          case "error":
+            throw new Error(event.data.message);
+        }
+      }
 
-      updateStep("content", "in_progress");
-      await new Promise((r) => setTimeout(r, 1000));
-      const course = buildMockCourse(idea, options);
-      updateStep("content", "complete");
+      if (!course) throw new Error("No course data received");
 
-      updateStep("design", "in_progress");
-      await new Promise((r) => setTimeout(r, 500));
-      updateStep("design", "complete");
-
+      // Save to database
       updateStep("save", "in_progress");
       let bProjectId = projectId;
       if (!bProjectId) {
@@ -245,12 +218,11 @@ const BuilderShell = ({
           .insert({ name: course.title, user_id: userId })
           .select("id")
           .single();
-        if (projError) console.error("❌ builder_projects insert error:", projError);
+        if (projError) console.error("builder_projects insert error:", projError);
         bProjectId = proj?.id ?? null;
       }
       if (bProjectId) setProjectId(bProjectId);
 
-      console.log("📦 Saving course with userId:", userId, "projectId:", bProjectId);
       const saved = await saveCourseToDatabase({
         userId,
         title: course.title,
@@ -278,9 +250,12 @@ const BuilderShell = ({
       toast.success("Course generated successfully!");
     } catch (err) {
       console.error("Generation failed:", err);
-      const failedStep = genSteps.find((s) => s.status === "in_progress");
-      if (failedStep) updateStep(failedStep.id, "error");
-      toast.error("Failed to generate course.");
+      setSteps((prev) => {
+        const inProgress = prev.find((s) => s.status === "in_progress");
+        if (inProgress) return prev.map((s) => s.id === inProgress.id ? { ...s, status: "error" as const } : s);
+        return prev;
+      });
+      toast.error("Failed to generate course. Please try again.");
     } finally {
       setIsGenerating(false);
     }
