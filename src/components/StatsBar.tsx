@@ -21,7 +21,7 @@ const StatsBar = () => {
               transition={{ delay: i * 0.1 }}
               className="text-center"
             >
-              <div className="text-3xl mb-2">{stat.icon}</div>
+              <div className="text-3xl mb-2" style={{ color: '#C9A84C' }}>{stat.icon}</div>
               <div className="text-lg sm:text-xl font-heading font-black text-gradient-gold mb-1">
                 {stat.title}
               </div>
