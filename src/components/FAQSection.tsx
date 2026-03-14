@@ -31,7 +31,7 @@ const faqs = [
 
 const FAQSection = () => {
   return (
-    <section id="faq" className="py-24 bg-background relative radial-glow">
+    <section id="faq" className="py-[60px] bg-background relative radial-glow">
       <div className="max-w-2xl mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

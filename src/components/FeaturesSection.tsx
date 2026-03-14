@@ -36,7 +36,7 @@ const features = [
 
 const FeaturesSection = () => {
   return (
-    <section className="py-24 bg-[hsl(0_0%_5%)] relative">
+    <section className="py-[60px] bg-[hsl(0_0%_5%)] relative">
       {/* Radial glow */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-[700px] h-[500px] bg-[radial-gradient(ellipse,hsl(43_52%_54%/0.06)_0%,transparent_70%)]" />

@@ -16,7 +16,7 @@ const PricingSection = () => {
   const [yearly, setYearly] = useState(false);
 
   return (
-    <section id="pricing" className="py-24 bg-background relative radial-glow">
+    <section id="pricing" className="py-[60px] bg-background relative radial-glow">
       <div className="max-w-lg mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

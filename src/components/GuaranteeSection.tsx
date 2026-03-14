@@ -3,7 +3,7 @@ import { Shield } from "lucide-react";
 
 const GuaranteeSection = () => {
   return (
-    <section className="py-16 bg-background">
+    <section className="py-[60px] bg-background">
       <div className="max-w-2xl mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
