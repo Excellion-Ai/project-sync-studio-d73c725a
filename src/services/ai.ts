@@ -39,8 +39,27 @@ export interface CourseGenerationOptions {
 }
 
 export interface GenerationEvent {
-  type: "step" | "outline" | "complete" | "error";
+  type: "step" | "outline" | "complete" | "error" | "warning" | "metrics";
   data: any;
+}
+
+export interface QualityMetrics {
+  totalModules: number;
+  totalLessons: number;
+  lessonsByType: Record<string, number>;
+  wordCountPerLesson: Array<{ id: string; title: string; type: string; wordCount: number }>;
+  avgWordsPerTextLesson: number;
+  minWordsTextLesson: number;
+  maxWordsTextLesson: number;
+  totalQuizQuestions: number;
+  quizQuestionsPerModule: Record<string, number>;
+  assignmentCount: number;
+  avgAssignmentWords: number;
+  emptyContentLessons: string[];
+  emptyQuizLessons: string[];
+  emptyAssignmentLessons: string[];
+  generationSteps: Array<{ step: string; durationMs: number; retries: number; status: string }>;
+  totalDurationMs: number;
 }
 
 export const AI = {

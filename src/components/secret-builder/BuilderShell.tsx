@@ -182,6 +182,7 @@ const BuilderShell = ({
     try {
       // Stream course generation with real-time step updates
       let course: ExtendedCourse | null = null;
+      const generationWarnings: string[] = [];
 
       for await (const event of AI.generateCourseStream(idea, {
         difficulty: options.difficulty,
@@ -192,7 +193,11 @@ const BuilderShell = ({
       })) {
         switch (event.type) {
           case "step":
-            updateStep(event.data.step, event.data.status === "complete" ? "complete" : "in_progress");
+            if (event.data.status === "error") {
+              updateStep(event.data.step, "error");
+            } else {
+              updateStep(event.data.step, event.data.status === "complete" ? "complete" : "in_progress");
+            }
             break;
           case "outline":
             // Show preview as soon as structure is ready (before content fills in)
@@ -202,12 +207,19 @@ const BuilderShell = ({
             course = { ...event.data, layout_style: options.template } as ExtendedCourse;
             setCourseSpec(course);
             break;
+          case "warning":
+            generationWarnings.push(event.data.message);
+            console.warn("[generation warning]", event.data.message, event.data.details);
+            break;
+          case "metrics":
+            console.log("[generation metrics]", event.data);
+            break;
           case "error":
-            throw new Error(event.data.message);
+            throw new Error(event.data.message || "Course generation failed");
         }
       }
 
-      if (!course) throw new Error("No course data received");
+      if (!course) throw new Error("No course data was returned. The AI may have timed out — try a simpler course topic or shorter duration.");
 
       // Save to database
       updateStep("save", "in_progress");
@@ -242,20 +254,41 @@ const BuilderShell = ({
       updateStep("save", "complete");
       setCourseSpec(course);
 
+      const totalLessons = course.modules.reduce((sum: number, m: any) => sum + (m.lessons?.length || 0), 0);
+      let assistantMsg = `Your course "${course.title}" has been generated with ${course.modules.length} modules and ${totalLessons} lessons. You can now preview, edit, and refine it.`;
+      if (generationWarnings.length > 0) {
+        assistantMsg += `\n\n⚠️ **Heads up:** ${generationWarnings.join(" ")} You can fix these by using the Refine tab to regenerate specific sections.`;
+      }
+
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: `Your course "${course.title}" has been generated with ${course.modules.length} modules. You can now preview, edit, and refine it.`,
+        content: assistantMsg,
       }]);
-      toast.success("Course generated successfully!");
+
+      if (generationWarnings.length > 0) {
+        toast.success("Course generated with some sections using placeholder content. Use Refine to improve them.");
+      } else {
+        toast.success("Course generated successfully!");
+      }
     } catch (err) {
       console.error("Generation failed:", err);
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+
       setSteps((prev) => {
         const inProgress = prev.find((s) => s.status === "in_progress");
         if (inProgress) return prev.map((s) => s.id === inProgress.id ? { ...s, status: "error" as const } : s);
         return prev;
       });
-      toast.error("Failed to generate course. Please try again.");
+
+      // Show detailed error in chat so the user knows what went wrong
+      setMessages((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: `❌ **Generation failed:** ${errorMessage}\n\nYou can try again with a different course idea, simpler topic, or shorter duration.`,
+      }]);
+
+      toast.error(errorMessage.length > 100 ? errorMessage.slice(0, 100) + "…" : errorMessage);
     } finally {
       setIsGenerating(false);
     }
