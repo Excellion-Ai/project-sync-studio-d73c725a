@@ -50,7 +50,19 @@ const DEFAULT_SETTINGS: CourseSettings = {
   offerType: "standard",
 };
 
-const GENERATION_STEPS: GenerationStep[] = [
+const OUTLINE_STEPS: GenerationStep[] = [
+  { id: "structure", label: "Building course structure", status: "pending" },
+];
+
+const CONTENT_STEPS: GenerationStep[] = [
+  { id: "structure", label: "Course structure approved", status: "complete" },
+  { id: "content", label: "Generating lesson content", status: "pending" },
+  { id: "quiz", label: "Creating quiz questions", status: "pending" },
+  { id: "design", label: "Polishing titles & copy", status: "pending" },
+  { id: "save", label: "Saving to database", status: "pending" },
+];
+
+const FULL_GENERATION_STEPS: GenerationStep[] = [
   { id: "structure", label: "Building course structure", status: "pending" },
   { id: "content", label: "Generating lesson content", status: "pending" },
   { id: "quiz", label: "Creating quiz questions", status: "pending" },
@@ -88,6 +100,10 @@ const BuilderShell = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
 
+  // Outline-first approval flow
+  const [pendingOutline, setPendingOutline] = useState<ExtendedCourse | null>(null);
+  const [pendingOptions, setPendingOptions] = useState<CourseOptions | null>(null);
+
   // Publishing
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
@@ -116,7 +132,7 @@ const BuilderShell = ({
 
   // ── Auto-trigger generation from hub ──────────────────────
   const handleGenerateCourseRef = useRef<((options: CourseOptions) => Promise<void>) | null>(null);
-  
+
   useEffect(() => {
     if (hasAutoTriggered || !resolvedIdea || !userId || isGenerating) return;
     if (!handleGenerateCourseRef.current) return;
@@ -124,6 +140,7 @@ const BuilderShell = ({
     localStorage.removeItem("builder-initial-idea");
     handleGenerateCourseRef.current({
       difficulty: "beginner",
+      depth: "standard",
       duration_weeks: 6,
       includeQuizzes: true,
       includeAssignments: true,
@@ -166,12 +183,14 @@ const BuilderShell = ({
     return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
   }, [courseSpec, courseId, projectId, userId]);
 
-  // ── Generate ──────────────────────────────────────────────
+  // ── Generate (Phase 1: Outline Only) ───────────────────────
 
   const handleGenerateCourse = useCallback(async (options: CourseOptions) => {
     if (!idea.trim() || !userId) return;
     setIsGenerating(true);
-    setSteps(GENERATION_STEPS.map((s) => ({ ...s })));
+    setPendingOutline(null);
+    setPendingOptions(options);
+    setSteps(OUTLINE_STEPS.map((s) => ({ ...s })));
 
     const updateStep = (id: string, status: GenerationStep["status"]) => {
       setSteps((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
@@ -180,16 +199,18 @@ const BuilderShell = ({
     setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", content: idea }]);
 
     try {
-      // Stream course generation with real-time step updates
-      let course: ExtendedCourse | null = null;
-      const generationWarnings: string[] = [];
+      let outline: ExtendedCourse | null = null;
 
       for await (const event of AI.generateCourseStream(idea, {
         difficulty: options.difficulty,
+        depth: options.depth,
         duration_weeks: options.duration_weeks,
         includeQuizzes: options.includeQuizzes,
         includeAssignments: options.includeAssignments,
         template: options.template,
+        audience: options.audience,
+        niche: options.niche,
+        outlineOnly: true,
       })) {
         switch (event.type) {
           case "step":
@@ -200,15 +221,20 @@ const BuilderShell = ({
             }
             break;
           case "outline":
-            // Show preview as soon as structure is ready (before content fills in)
             setCourseSpec({ ...event.data, layout_style: options.template } as ExtendedCourse);
             break;
+          case "outline_ready":
+            // Phase 1 complete — show outline for approval
+            outline = { ...event.data, layout_style: options.template } as ExtendedCourse;
+            setCourseSpec(outline);
+            setPendingOutline(outline);
+            break;
           case "complete":
-            course = { ...event.data, layout_style: options.template } as ExtendedCourse;
-            setCourseSpec(course);
+            // Full generation (fallback if outline_ready wasn't emitted)
+            outline = { ...event.data, layout_style: options.template } as ExtendedCourse;
+            setCourseSpec(outline);
             break;
           case "warning":
-            generationWarnings.push(event.data.message);
             console.warn("[generation warning]", event.data.message, event.data.details);
             break;
           case "metrics":
@@ -219,7 +245,101 @@ const BuilderShell = ({
         }
       }
 
-      if (!course) throw new Error("No course data was returned. The AI may have timed out — try a simpler course topic or shorter duration.");
+      if (!outline) throw new Error("No course data was returned. The AI may have timed out — try a simpler course topic or shorter duration.");
+
+      if (pendingOutline || outline) {
+        const totalLessons = outline.modules.reduce((sum: number, m: any) => sum + (m.lessons?.length || 0), 0);
+        setMessages((prev) => [...prev, {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: `Course outline ready: "${outline!.title}" with ${outline!.modules.length} modules and ${totalLessons} lessons.\n\nReview the outline in the preview panel. You can edit module/lesson titles and structure. When you're happy with it, click **"Approve & Generate Content"** to create the full lesson content.`,
+        }]);
+        toast.success("Course outline ready for review!");
+      }
+    } catch (err) {
+      console.error("Generation failed:", err);
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+
+      setSteps((prev) => {
+        const inProgress = prev.find((s) => s.status === "in_progress");
+        if (inProgress) return prev.map((s) => s.id === inProgress.id ? { ...s, status: "error" as const } : s);
+        return prev;
+      });
+
+      setMessages((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: `❌ **Generation failed:** ${errorMessage}\n\nYou can try again with a different course idea, simpler topic, or shorter duration.`,
+      }]);
+
+      toast.error(errorMessage.length > 100 ? errorMessage.slice(0, 100) + "…" : errorMessage);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [idea, userId, projectId]);
+
+  // ── Generate (Phase 2: Content from Approved Outline) ──────
+
+  const handleApproveOutline = useCallback(async () => {
+    if (!courseSpec || !userId || !pendingOptions) return;
+    setIsGenerating(true);
+    setPendingOutline(null);
+    setSteps(CONTENT_STEPS.map((s) => ({ ...s })));
+
+    const updateStep = (id: string, status: GenerationStep["status"]) => {
+      setSteps((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
+    };
+
+    setMessages((prev) => [...prev, {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: "Outline approved — generating full content...",
+    }]);
+
+    try {
+      let course: ExtendedCourse | null = null;
+      const generationWarnings: string[] = [];
+
+      for await (const event of AI.generateFromOutlineStream(courseSpec, {
+        difficulty: pendingOptions.difficulty,
+        depth: pendingOptions.depth,
+        duration_weeks: pendingOptions.duration_weeks,
+        includeQuizzes: pendingOptions.includeQuizzes,
+        includeAssignments: pendingOptions.includeAssignments,
+        template: pendingOptions.template,
+        audience: pendingOptions.audience,
+        niche: pendingOptions.niche,
+        approvedOutline: courseSpec,
+      })) {
+        switch (event.type) {
+          case "step":
+            if (event.data.status === "error") {
+              updateStep(event.data.step, "error");
+            } else {
+              updateStep(event.data.step, event.data.status === "complete" ? "complete" : "in_progress");
+            }
+            break;
+          case "outline":
+            // Already have outline, just update
+            setCourseSpec({ ...event.data, layout_style: pendingOptions.template } as ExtendedCourse);
+            break;
+          case "complete":
+            course = { ...event.data, layout_style: pendingOptions.template } as ExtendedCourse;
+            setCourseSpec(course);
+            break;
+          case "warning":
+            generationWarnings.push(event.data.message);
+            console.warn("[generation warning]", event.data.message, event.data.details);
+            break;
+          case "metrics":
+            console.log("[generation metrics]", event.data);
+            break;
+          case "error":
+            throw new Error(event.data.message || "Content generation failed");
+        }
+      }
+
+      if (!course) throw new Error("No course data was returned. The AI may have timed out — try a simpler course or shorter duration.");
 
       // Save to database
       updateStep("save", "in_progress");
@@ -247,7 +367,7 @@ const BuilderShell = ({
         sectionOrder: course.pages?.landing_sections,
         pageSections: course.pages,
         builderProjectId: bProjectId ?? undefined,
-        offerType: options.template,
+        offerType: pendingOptions.template,
       });
 
       if (saved) { course.id = saved.id; setCourseId(saved.id); }
@@ -272,7 +392,7 @@ const BuilderShell = ({
         toast.success("Course generated successfully!");
       }
     } catch (err) {
-      console.error("Generation failed:", err);
+      console.error("Content generation failed:", err);
       const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
 
       setSteps((prev) => {
@@ -281,18 +401,19 @@ const BuilderShell = ({
         return prev;
       });
 
-      // Show detailed error in chat so the user knows what went wrong
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: `❌ **Generation failed:** ${errorMessage}\n\nYou can try again with a different course idea, simpler topic, or shorter duration.`,
+        content: `❌ **Content generation failed:** ${errorMessage}\n\nYou can try again — your outline is still saved.`,
       }]);
 
+      // Restore the pending outline so user can try again
+      setPendingOutline(courseSpec);
       toast.error(errorMessage.length > 100 ? errorMessage.slice(0, 100) + "…" : errorMessage);
     } finally {
       setIsGenerating(false);
     }
-  }, [idea, userId, projectId]);
+  }, [courseSpec, userId, projectId, pendingOptions]);
 
   // Assign ref for auto-trigger
   handleGenerateCourseRef.current = handleGenerateCourse;
@@ -398,6 +519,8 @@ const BuilderShell = ({
               onRemoveAttachment={(id) => setAttachments((prev) => prev.filter((a) => a.id !== id))}
               onRefinePrompt={handleRefine}
               hasCourse={!!courseSpec}
+              pendingOutline={pendingOutline}
+              onApproveOutline={handleApproveOutline}
             />
           </ResizablePanel>
 

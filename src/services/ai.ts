@@ -30,16 +30,19 @@ async function callEdgeFn<T = any>(fnName: string, body: Record<string, unknown>
 
 export interface CourseGenerationOptions {
   difficulty?: string;
+  depth?: "overview" | "standard" | "deep_dive";
   duration_weeks?: number;
   includeQuizzes?: boolean;
   includeAssignments?: boolean;
   template?: string;
   audience?: string;
   niche?: string;
+  approvedOutline?: any;
+  outlineOnly?: boolean;
 }
 
 export interface GenerationEvent {
-  type: "step" | "outline" | "complete" | "error" | "warning" | "metrics";
+  type: "step" | "outline" | "outline_ready" | "complete" | "error" | "warning" | "metrics";
   data: any;
 }
 
@@ -118,6 +121,52 @@ export const AI = {
           } catch {
             // skip unparseable
           }
+        }
+      }
+    }
+  },
+
+  /** Generate full content from an approved outline (phase 2 of outline-first flow) */
+  generateFromOutlineStream: async function* (
+    outline: any,
+    options?: CourseGenerationOptions,
+  ): AsyncGenerator<GenerationEvent> {
+    const headers = await getAuthHeaders();
+    const res = await fetch(edgeFnUrl("generate-course"), {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ prompt: outline.title, options: { ...options, approvedOutline: outline }, stream: true }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`generate-course stream failed: ${err}`);
+    }
+
+    const reader = res.body?.getReader();
+    if (!reader) return;
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      let currentEvent = "";
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (trimmed === "data: [DONE]") return;
+        if (trimmed.startsWith("event: ")) {
+          currentEvent = trimmed.slice(7);
+        } else if (trimmed.startsWith("data: ")) {
+          const jsonStr = trimmed.slice(6);
+          try {
+            const data = JSON.parse(jsonStr);
+            yield { type: currentEvent as GenerationEvent["type"], data };
+          } catch { /* skip */ }
         }
       }
     }

@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -31,12 +32,18 @@ import {
 import { cn } from "@/lib/utils";
 import { CourseLayoutStyle } from "@/types/course-pages";
 
+export type CourseDepth = "overview" | "standard" | "deep_dive";
+export type ExpertiseLevel = "beginner" | "intermediate" | "advanced";
+
 export interface CourseOptions {
-  difficulty: "beginner" | "intermediate" | "advanced";
+  difficulty: ExpertiseLevel;
+  depth: CourseDepth;
   duration_weeks: number;
   includeQuizzes: boolean;
   includeAssignments: boolean;
   template: CourseLayoutStyle;
+  audience?: string;
+  niche?: string;
 }
 
 export interface GenerationStep {
@@ -113,10 +120,13 @@ const CourseBuilderPanel = ({
   const [showOptions, setShowOptions] = useState(false);
   const [courseOptions, setCourseOptions] = useState<CourseOptions>({
     difficulty: "beginner",
+    depth: "standard",
     duration_weeks: 6,
     includeQuizzes: true,
     includeAssignments: true,
     template: "creator",
+    audience: "",
+    niche: "",
   });
 
   const detected = useMemo(() => detectTemplate(idea), [idea]);
@@ -250,6 +260,36 @@ const CourseBuilderPanel = ({
               </RadioGroup>
             </div>
 
+            {/* Course Depth */}
+            <div className="space-y-2">
+              <Label className="text-xs text-foreground">Course Depth</Label>
+              <RadioGroup
+                value={courseOptions.depth}
+                onValueChange={(v) => updateOption("depth", v as CourseOptions["depth"])}
+                className="flex gap-2"
+              >
+                {([
+                  { value: "overview" as const, label: "Overview", hint: "~5 min lessons" },
+                  { value: "standard" as const, label: "Standard", hint: "~15 min lessons" },
+                  { value: "deep_dive" as const, label: "Deep Dive", hint: "~30 min lessons" },
+                ]).map((d) => (
+                  <Label
+                    key={d.value}
+                    className={cn(
+                      "flex flex-col items-center text-xs px-2.5 py-1.5 rounded-md border cursor-pointer transition-colors",
+                      courseOptions.depth === d.value
+                        ? "border-primary bg-primary/5 text-foreground"
+                        : "border-border text-muted-foreground hover:border-primary/40"
+                    )}
+                  >
+                    <RadioGroupItem value={d.value} className="sr-only" />
+                    <span className="font-medium">{d.label}</span>
+                    <span className="text-[9px] text-muted-foreground">{d.hint}</span>
+                  </Label>
+                ))}
+              </RadioGroup>
+            </div>
+
             {/* Duration */}
             <div className="space-y-2">
               <Label className="text-xs text-foreground">Duration: {courseOptions.duration_weeks} weeks</Label>
@@ -301,6 +341,26 @@ const CourseBuilderPanel = ({
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Audience & Niche (Build Assist) */}
+            <div className="space-y-2">
+              <Label className="text-xs text-foreground">Target Audience <span className="text-muted-foreground">(optional)</span></Label>
+              <Input
+                value={courseOptions.audience || ""}
+                onChange={(e) => updateOption("audience", e.target.value)}
+                placeholder="e.g. Busy moms over 30, competitive lifters"
+                className="text-xs h-8"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-foreground">Fitness Niche <span className="text-muted-foreground">(optional)</span></Label>
+              <Input
+                value={courseOptions.niche || ""}
+                onChange={(e) => updateOption("niche", e.target.value)}
+                placeholder="e.g. Powerlifting, yoga, functional fitness"
+                className="text-xs h-8"
+              />
             </div>
           </CollapsibleContent>
         </Collapsible>

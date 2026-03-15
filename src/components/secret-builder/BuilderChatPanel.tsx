@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -60,6 +61,8 @@ interface BuilderChatPanelProps {
   onRefinePrompt?: (prompt: string) => void;
   isRefining?: boolean;
   hasCourse?: boolean;
+  pendingOutline?: any;
+  onApproveOutline?: () => void;
 }
 
 // ── Template detection ────────────────────────────────────────
@@ -111,6 +114,8 @@ const BuilderChatPanel = ({
   onRefinePrompt,
   isRefining,
   hasCourse,
+  pendingOutline,
+  onApproveOutline,
 }: BuilderChatPanelProps) => {
   const [activeTab, setActiveTab] = useState<"build" | "refine" | "help">("build");
   const [showOptions, setShowOptions] = useState(false);
@@ -120,10 +125,13 @@ const BuilderChatPanel = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [courseOptions, setCourseOptions] = useState<CourseOptions>({
     difficulty: "beginner",
+    depth: "standard",
     duration_weeks: 6,
     includeQuizzes: true,
     includeAssignments: true,
     template: "creator",
+    audience: "",
+    niche: "",
   });
 
   const detected = useMemo(() => detectTemplate(idea), [idea]);
@@ -185,6 +193,8 @@ const BuilderChatPanel = ({
           courseOptions={courseOptions}
           updateOption={updateOption}
           messagesEndRef={messagesEndRef}
+          pendingOutline={pendingOutline}
+          onApproveOutline={onApproveOutline}
         />
       )}
 
@@ -225,12 +235,14 @@ interface BuildTabProps {
   courseOptions: CourseOptions;
   updateOption: <K extends keyof CourseOptions>(key: K, val: CourseOptions[K]) => void;
   messagesEndRef: React.RefObject<HTMLDivElement>;
+  pendingOutline?: any;
+  onApproveOutline?: () => void;
 }
 
 const BuildTab = ({
   idea, onIdeaChange, onGenerate, isGenerating, steps, messages,
   attachments, onRemoveAttachment, showOptions, setShowOptions,
-  courseOptions, updateOption, messagesEndRef,
+  courseOptions, updateOption, messagesEndRef, pendingOutline, onApproveOutline,
 }: BuildTabProps) => (
   <>
     {/* Messages / Progress / Examples */}
@@ -369,6 +381,35 @@ const BuildTab = ({
               ))}
             </RadioGroup>
           </div>
+          {/* Course Depth */}
+          <div className="space-y-2">
+            <Label className="text-xs text-foreground">Course Depth</Label>
+            <RadioGroup
+              value={courseOptions.depth}
+              onValueChange={(v) => updateOption("depth", v as CourseOptions["depth"])}
+              className="flex gap-2"
+            >
+              {([
+                { value: "overview" as const, label: "Overview", hint: "~5 min" },
+                { value: "standard" as const, label: "Standard", hint: "~15 min" },
+                { value: "deep_dive" as const, label: "Deep Dive", hint: "~30 min" },
+              ]).map((d) => (
+                <Label
+                  key={d.value}
+                  className={cn(
+                    "flex flex-col items-center text-xs px-2.5 py-1.5 rounded-md border cursor-pointer transition-colors",
+                    courseOptions.depth === d.value
+                      ? "border-primary bg-primary/5 text-foreground"
+                      : "border-border text-muted-foreground hover:border-primary/40"
+                  )}
+                >
+                  <RadioGroupItem value={d.value} className="sr-only" />
+                  <span className="font-medium">{d.label}</span>
+                  <span className="text-[9px] text-muted-foreground">{d.hint}</span>
+                </Label>
+              ))}
+            </RadioGroup>
+          </div>
           {/* Duration */}
           <div className="space-y-2">
             <Label className="text-xs text-foreground">Duration: {courseOptions.duration_weeks} weeks</Label>
@@ -411,9 +452,44 @@ const BuildTab = ({
               ))}
             </div>
           </div>
+          {/* Audience & Niche (Build Assist) */}
+          <div className="space-y-2">
+            <Label className="text-xs text-foreground">Target Audience <span className="text-muted-foreground">(optional)</span></Label>
+            <Input
+              value={courseOptions.audience || ""}
+              onChange={(e) => updateOption("audience", e.target.value)}
+              placeholder="e.g. Busy moms over 30, competitive lifters"
+              className="text-xs h-8"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-foreground">Fitness Niche <span className="text-muted-foreground">(optional)</span></Label>
+            <Input
+              value={courseOptions.niche || ""}
+              onChange={(e) => updateOption("niche", e.target.value)}
+              placeholder="e.g. Powerlifting, yoga, functional fitness"
+              className="text-xs h-8"
+            />
+          </div>
         </CollapsibleContent>
       </Collapsible>
     </div>
+
+    {/* Outline approval button */}
+    {pendingOutline && !isGenerating && onApproveOutline && (
+      <div className="px-4 py-3 border-t border-border">
+        <Button
+          onClick={onApproveOutline}
+          className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+        >
+          <Check className="h-4 w-4" />
+          Approve & Generate Content
+        </Button>
+        <p className="text-[10px] text-muted-foreground text-center mt-1.5">
+          Review the outline in preview, then click to generate full lesson content
+        </p>
+      </div>
+    )}
 
     {/* Input area */}
     <div className="px-4 pb-3 pt-2 border-t border-border space-y-2">

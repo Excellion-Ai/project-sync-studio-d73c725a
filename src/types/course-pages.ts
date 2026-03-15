@@ -54,6 +54,59 @@ export interface QuizQuestion {
   options: string[];
   correct_index: number;
   explanation: string;
+  distractor_explanations?: string[];
+  bloom_level?: 'remember' | 'understand' | 'apply' | 'analyze' | 'evaluate' | 'create';
+}
+
+export interface ExerciseDemo {
+  name: string;
+  muscle_groups: string[];
+  equipment?: string;
+  sets?: string;
+  reps?: string;
+  tempo?: string;
+  rest?: string;
+  rpe?: string;
+  form_cues: string[];
+  common_mistakes?: string[];
+  substitutions?: string[];
+  video_url?: string;
+}
+
+export interface WorkoutTemplate {
+  name: string;
+  type: 'strength' | 'hypertrophy' | 'endurance' | 'hiit' | 'mobility' | 'deload';
+  warmup?: string;
+  exercises: ExerciseDemo[];
+  cooldown?: string;
+  total_duration?: string;
+  notes?: string;
+}
+
+export interface NutritionGuideline {
+  context: string;
+  calories?: string;
+  protein_g?: string;
+  carbs_g?: string;
+  fat_g?: string;
+  meal_timing?: string[];
+  sample_meals?: Array<{ meal: string; description: string }>;
+  supplements?: string[];
+  hydration?: string;
+}
+
+export interface ProgressMetric {
+  metric: string;
+  how_to_measure: string;
+  frequency: string;
+  target?: string;
+}
+
+export interface RecoveryProtocol {
+  type: 'sleep' | 'active_recovery' | 'stretching' | 'foam_rolling' | 'deload' | 'other';
+  description: string;
+  frequency: string;
+  duration?: string;
 }
 
 export interface LessonContent {
@@ -69,6 +122,12 @@ export interface LessonContent {
   passing_score?: number;
   assignment_brief?: string;
   resources?: Array<{ title: string; url: string }>;
+  // Structured fitness fields
+  exercise_demos?: ExerciseDemo[];
+  workout_template?: WorkoutTemplate;
+  nutrition_guidelines?: NutritionGuideline;
+  progress_metrics?: ProgressMetric[];
+  recovery_protocol?: RecoveryProtocol[];
 }
 
 export interface ModuleWithContent {

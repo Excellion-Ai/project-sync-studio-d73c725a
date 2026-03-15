@@ -17,11 +17,45 @@ const TEMP_QUIZ = 0.3;
 const TEMP_POLISH = 0.9;
 
 const TOKENS_STRUCTURE = 4096;
-const TOKENS_CONTENT = 6144;
 const TOKENS_QUIZ = 3072;
 const TOKENS_POLISH = 2048;
 
 const MAX_RETRIES = 2;
+
+// Depth-based content token limits and word targets
+const DEPTH_CONFIG: Record<string, { tokens: number; minWords: number; targetWords: number; lessonDuration: string }> = {
+  overview: { tokens: 3072, minWords: 200, targetWords: 400, lessonDuration: "5m" },
+  standard: { tokens: 6144, minWords: 500, targetWords: 800, lessonDuration: "15m" },
+  deep_dive: { tokens: 8192, minWords: 1000, targetWords: 1500, lessonDuration: "30m" },
+};
+
+// Expertise-level prompt modifiers
+const EXPERTISE_MODIFIERS: Record<string, string> = {
+  beginner: `## EXPERTISE LEVEL: BEGINNER
+- Use simple, encouraging language. Explain ALL terminology the first time it appears.
+- Assume zero gym experience. Describe movement patterns from scratch.
+- Provide bodyweight alternatives for every exercise.
+- Focus on building habits and confidence, not performance metrics.
+- RPE explanations: use simple scales like "light effort" / "moderate" / "challenging" instead of numbers.
+- Nutrition: use hand-size portions instead of exact grams. Keep supplement talk minimal.
+- Include "What this means for you" callouts to translate jargon into plain language.`,
+
+  intermediate: `## EXPERTISE LEVEL: INTERMEDIATE
+- Assume 6-12 months of training experience. Familiar with basic lifts and gym equipment.
+- Use proper terminology (RPE, progressive overload, compound vs isolation) but briefly define advanced concepts.
+- Include specific numbers: sets/reps/tempo/RPE ranges.
+- Discuss training splits, periodization basics, and deload protocols.
+- Nutrition: use macros in grams, discuss nutrient timing around workouts.
+- Include "Level Up" callouts with advanced variations for faster progressors.`,
+
+  advanced: `## EXPERTISE LEVEL: ADVANCED
+- Assume 2+ years of consistent training. Fluent in training terminology.
+- Use advanced programming concepts: undulating periodization, conjugate method, autoregulation, RPE/RIR, velocity-based training.
+- Include precise loading percentages (% of 1RM), advanced tempo prescriptions (e.g., 4-0-1-0), cluster sets, mechanical drop sets.
+- Nutrition: discuss periodized nutrition, carb cycling, peak week protocols, refeeds vs diet breaks.
+- Recovery: HRV-guided training, sleep architecture optimization, targeted supplementation with dosing.
+- Include research references and evidence-based rationale for programming choices.`,
+};
 
 // ═══════════════════════════════════════════════════════════════
 // SECTION 1: STRICT SCHEMA VALIDATORS
@@ -437,9 +471,25 @@ Fix ALL errors listed above. Return corrected JSON. Start with {`;
 // SECTION 5: PROMPTS
 // ═══════════════════════════════════════════════════════════════
 
-const OUTLINE_PROMPT = `You are Excellion's AI course architect — a world-class fitness education designer who builds courses for fitness influencers and online coaches.
+function buildOutlinePrompt(options: any): string {
+  const depth = options?.depth || "standard";
+  const depthCfg = DEPTH_CONFIG[depth] || DEPTH_CONFIG.standard;
+  const expertise = options?.difficulty || "intermediate";
+  const nicheContext = options?.niche ? `\nFitness niche focus: ${options.niche}. Tailor ALL examples, exercises, and terminology to this niche.` : "";
+  const audienceContext = options?.audience ? `\nTarget audience: ${options.audience}. Write titles and descriptions that speak directly to this audience's goals, frustrations, and language.` : "";
+
+  return `You are Excellion's AI course architect — a world-class fitness education designer who builds courses for fitness influencers and online coaches.
+${nicheContext}${audienceContext}
 
 Generate ONLY the course outline/structure — NO lesson content yet. Focus on logical progression, compelling titles, and clear learning objectives.
+
+${EXPERTISE_MODIFIERS[expertise] || EXPERTISE_MODIFIERS.intermediate}
+
+## DEPTH LEVEL: ${depth.toUpperCase()}
+- Target lesson duration: ${depthCfg.lessonDuration}
+${depth === "overview" ? "- Keep modules concise: 2-3 lessons per module, 3-5 modules total. Quick-start format." : ""}
+${depth === "standard" ? "- Standard depth: 3-5 lessons per module, 4-8 modules per course." : ""}
+${depth === "deep_dive" ? "- Maximum depth: 5-7 lessons per module, 6-10 modules per course. Include deep technical breakdowns, case studies, and advanced programming." : ""}
 
 ## STRUCTURE RULES
 - Module titles must be engaging and specific — NEVER "Module 1: Introduction". Examples:
@@ -450,8 +500,7 @@ Generate ONLY the course outline/structure — NO lesson content yet. Focus on l
 - First module: hook with quick wins and foundational concepts
 - Last module: long-term sustainability and independence
 - Mix lesson types: text (teaching), quiz (knowledge check), assignment (action)
-- 3-5 lessons per module, 4-8 modules per course
-- Every lesson MUST have: id (string), title (string, 5+ chars), duration (string like "15m"), type (one of: text, video, quiz, assignment)
+- Every lesson MUST have: id (string), title (string, 5+ chars), duration (string like "${depthCfg.lessonDuration}"), type (one of: text, video, quiz, assignment)
 - Every module MUST have: id (string), title (string, 5+ chars), description (string), learningObjectives (string array), lessons (array with 2+ lessons)
 
 ## JSON SCHEMA (outline only — set content_markdown to empty string "", quiz_questions to [], assignment_brief to "")
@@ -464,25 +513,52 @@ Generate ONLY the course outline/structure — NO lesson content yet. Focus on l
   "prerequisites": ["string array"],
   "targetAudience": "string",
   "learningOutcomes": ["At least 2 measurable outcomes"],
-  "modules": [{ "id": "mod-0", "title": "...", "description": "...", "learningObjectives": ["..."], "lessons": [{ "id": "mod-0-les-0", "title": "...", "duration": "15m", "type": "text", "content_markdown": "", "quiz_questions": [], "assignment_brief": "" }] }],
+  "modules": [{ "id": "mod-0", "title": "...", "description": "...", "learningObjectives": ["..."], "lessons": [{ "id": "mod-0-les-0", "title": "...", "duration": "${depthCfg.lessonDuration}", "type": "text", "content_markdown": "", "quiz_questions": [], "assignment_brief": "" }] }],
   "design_config": { "colors": {"primary":"#d4a853","secondary":"#1a1a1a","accent":"#f59e0b","background":"#0a0a0a","cardBackground":"#111111","text":"#ffffff","textMuted":"#9ca3af"}, "fonts": {"heading":"Inter","body":"Inter"}, "spacing": "normal", "borderRadius": "medium", "heroStyle": "gradient" },
   "pages": { "landing_sections": ["hero","outcomes","curriculum","instructor","faq"] }
 }`;
+}
 
-const CONTENT_PROMPT = `You are a fitness coach writing detailed lesson content for an online course. Write as a coach talking directly to clients — motivational, direct, no-BS.
+function buildContentPrompt(options: any): string {
+  const depth = options?.depth || "standard";
+  const depthCfg = DEPTH_CONFIG[depth] || DEPTH_CONFIG.standard;
+  const expertise = options?.difficulty || "intermediate";
+  const nicheContext = options?.niche ? `\nFitness niche: ${options.niche}. Use niche-specific exercises, terminology, and examples throughout.` : "";
+  const audienceContext = options?.audience ? `\nTarget audience: ${options.audience}. Write as if speaking directly to this person — use their language, reference their daily challenges.` : "";
+
+  return `You are a fitness coach writing detailed lesson content for an online course. Write as a coach talking directly to clients — motivational, direct, no-BS.
+${nicheContext}${audienceContext}
+
+${EXPERTISE_MODIFIERS[expertise] || EXPERTISE_MODIFIERS.intermediate}
 
 ## VOICE
 - Second person: "You're going to...", "Here's what most people get wrong..."
 - Power phrases: "Here's the deal", "Game-changer", "Non-negotiable"
 - Be specific: "3 sets of 8-12 reps at RPE 7-8", not "do some exercises"
 
-## CONTENT REQUIREMENTS (minimum 500 words per text lesson)
+## CONTENT DEPTH: ${depth.toUpperCase()} (minimum ${depthCfg.minWords} words, target ${depthCfg.targetWords} words per text lesson)
+${depth === "overview" ? "- Concise and actionable. Key takeaways, quick exercises, and main points only." : ""}
+${depth === "standard" ? "- Thorough coverage with practical examples, sample workouts, and clear progressions." : ""}
+${depth === "deep_dive" ? "- Exhaustive detail. Include research rationale, advanced programming variables, multiple workout variations, troubleshooting guides, and periodization strategies." : ""}
+
+## CONTENT REQUIREMENTS
 For Training lessons: exercises with sets/reps/tempo/rest, RPE guidelines, form cues, common mistakes, exercise substitutions, sample workout, progressive overload strategy
 For Nutrition lessons: specific macros in grams, meal timing, sample meal plans with portions, meal prep tips
 For Mindset lessons: specific daily habits, accountability frameworks, real-world scenarios
 For assignment lessons: Write assignment_brief (200+ words) with specific gym/kitchen tasks, deliverables, and rubric
 
 NEVER use filler like "In this lesson, we will explore..." — jump straight into teaching.
+
+## STRUCTURED FITNESS FIELDS
+In addition to content_markdown, include these structured fields when relevant to the lesson topic:
+
+- "exercise_demos": Array of exercises with { name, muscle_groups[], equipment, sets, reps, tempo, rest, rpe, form_cues[], common_mistakes[], substitutions[] }
+- "workout_template": { name, type (strength|hypertrophy|endurance|hiit|mobility|deload), warmup, exercises[], cooldown, total_duration, notes }
+- "nutrition_guidelines": { context, calories, protein_g, carbs_g, fat_g, meal_timing[], sample_meals[{meal, description}], supplements[], hydration }
+- "progress_metrics": [{ metric, how_to_measure, frequency, target }]
+- "recovery_protocol": [{ type (sleep|active_recovery|stretching|foam_rolling|deload|other), description, frequency, duration }]
+
+Only include fields that are relevant to the lesson topic. Training lessons should have exercise_demos and workout_template. Nutrition lessons should have nutrition_guidelines. All lessons can include progress_metrics and recovery_protocol where relevant.
 
 ## CRITICAL: Return EXACTLY this JSON structure:
 {
@@ -492,15 +568,31 @@ NEVER use filler like "In this lesson, we will explore..." — jump straight int
       "title": "keep-original-title",
       "duration": "keep-original",
       "type": "keep-original",
-      "content_markdown": "FULL content (500+ words for text type)",
+      "content_markdown": "FULL content (${depthCfg.minWords}+ words for text type)",
       "quiz_questions": [],
-      "assignment_brief": "200+ words for assignment type, empty string otherwise"
+      "assignment_brief": "200+ words for assignment type, empty string otherwise",
+      "exercise_demos": [],
+      "workout_template": null,
+      "nutrition_guidelines": null,
+      "progress_metrics": [],
+      "recovery_protocol": []
     }
   ]
 }
 Return ALL lessons from the input, not just text/assignment ones. Keep quiz and video lessons with their original empty content.`;
+}
 
-const QUIZ_PROMPT = `You are a fitness education assessment expert. Generate quiz questions that test REAL-WORLD APPLICATION — not memorization.
+function buildQuizPrompt(options: any): string {
+  const expertise = options?.difficulty || "intermediate";
+  const nicheContext = options?.niche ? `\nFitness niche: ${options.niche}. Use niche-specific scenarios (e.g., if powerlifting, use scenarios about squat/bench/deadlift programming).` : "";
+  const audienceContext = options?.audience ? `\nTarget audience: ${options.audience}. Frame scenarios around this audience's real situations.` : "";
+
+  return `You are a fitness education assessment expert. Generate quiz questions that test REAL-WORLD APPLICATION — not memorization.
+${nicheContext}${audienceContext}
+
+${expertise === "beginner" ? "Use simple, clear scenarios. Avoid advanced jargon. Test understanding of basic concepts and safe practices." : ""}
+${expertise === "intermediate" ? "Use practical gym/nutrition scenarios. Test ability to apply training principles to real situations." : ""}
+${expertise === "advanced" ? "Use complex programming scenarios. Test ability to analyze training variables, troubleshoot plateaus, and design periodized programs." : ""}
 
 ## QUIZ RULES
 - Test APPLICATION: "A client says their set of 10 felt like a 6 RPE. What should you recommend?" NOT "What does RPE stand for?"
@@ -530,8 +622,13 @@ const QUIZ_PROMPT = `You are a fitness education assessment expert. Generate qui
 - Each quiz lesson must have at least 3 questions
 - correct_index must be a valid index into the options array (0-based)
 - For true_false type, options should be ["True", "False"] and correct_index 0 or 1`;
+}
 
-const POLISH_PROMPT = `You are a fitness marketing copywriter. Polish course titles, descriptions, and tagline to be compelling and sellable.
+function buildPolishPrompt(options: any): string {
+  const nicheContext = options?.niche ? ` in the ${options.niche} space` : "";
+  const audienceContext = options?.audience ? ` targeting ${options.audience}` : "";
+
+  return `You are a fitness marketing copywriter. Polish course titles, descriptions, and tagline to be compelling and sellable for a fitness course${nicheContext}${audienceContext}.
 
 Rules:
 - Titles: promise transformation or reveal secrets
@@ -541,6 +638,7 @@ Rules:
 
 Return ONLY this JSON:
 { "title": "string", "description": "string", "tagline": "string", "modules": [{ "id": "mod-0", "title": "string", "description": "string" }] }`;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // SECTION 6: SSE HELPERS
@@ -559,45 +657,64 @@ async function runPipeline(
   prompt: string,
   options: any,
   onEvent?: (event: string, data: any) => void,
-): Promise<{ course: any; metrics: QualityMetrics }> {
+): Promise<{ course: any; metrics: QualityMetrics; outlineOnly?: boolean }> {
   const emit = onEvent || (() => {});
   const stepTimings: Array<{ step: string; durationMs: number; retries: number; status: string }> = [];
+  const depth = options?.depth || "standard";
+  const depthCfg = DEPTH_CONFIG[depth] || DEPTH_CONFIG.standard;
 
   const userContext = `Create a comprehensive fitness course about: ${prompt}
 ${options?.difficulty ? `Difficulty level: ${options.difficulty}` : "Difficulty level: intermediate"}
+${options?.depth ? `Content depth: ${options.depth}` : "Content depth: standard"}
 ${options?.duration_weeks ? `Target duration: ${options.duration_weeks} weeks` : ""}
 ${options?.audience ? `Target audience: ${options.audience}` : "Target audience: Fitness enthusiasts looking for a structured, results-driven program"}
 ${options?.prerequisites ? `Prerequisites: ${options.prerequisites}` : ""}
 ${options?.niche ? `Fitness niche: ${options.niche}` : ""}`;
 
-  // ── STEP 1: OUTLINE ─────────────────────────────────────────
-  emit("step", { step: "structure", status: "in_progress" });
-  const step1Start = Date.now();
   let course: any;
-  let step1Retries = 0;
 
-  try {
-    const result = await callWithValidation(
-      apiKey, MODEL_STRUCTURE, OUTLINE_PROMPT,
-      `${userContext}\n\nGenerate the course outline as JSON. Start with {`,
-      TOKENS_STRUCTURE, TEMP_STRUCTURE,
-      validateOutline, "outline",
-    );
-    course = result.data;
-    step1Retries = result.retries;
-    if (result.warnings.length > 0) console.warn("[outline] Warnings:", result.warnings);
-  } catch (err) {
-    stepTimings.push({ step: "structure", durationMs: Date.now() - step1Start, retries: MAX_RETRIES, status: "failed" });
-    emit("step", { step: "structure", status: "error" });
-    const msg = err instanceof Error ? err.message : "Course outline generation failed";
-    emit("error", { message: `Could not generate course structure: ${msg}. Try rephrasing your course idea or simplifying the topic.`, step: "structure", details: msg });
-    throw err;
+  // ── STEP 1: OUTLINE (skip if approvedOutline provided) ──────
+  if (options?.approvedOutline) {
+    // Phase 2: user already approved the outline
+    course = options.approvedOutline;
+    stepTimings.push({ step: "structure", durationMs: 0, retries: 0, status: "skipped_approved" });
+    emit("step", { step: "structure", status: "complete" });
+    emit("outline", course);
+  } else {
+    emit("step", { step: "structure", status: "in_progress" });
+    const step1Start = Date.now();
+    let step1Retries = 0;
+
+    try {
+      const result = await callWithValidation(
+        apiKey, MODEL_STRUCTURE, buildOutlinePrompt(options),
+        `${userContext}\n\nGenerate the course outline as JSON. Start with {`,
+        TOKENS_STRUCTURE, TEMP_STRUCTURE,
+        validateOutline, "outline",
+      );
+      course = result.data;
+      step1Retries = result.retries;
+      if (result.warnings.length > 0) console.warn("[outline] Warnings:", result.warnings);
+    } catch (err) {
+      stepTimings.push({ step: "structure", durationMs: Date.now() - step1Start, retries: MAX_RETRIES, status: "failed" });
+      emit("step", { step: "structure", status: "error" });
+      const msg = err instanceof Error ? err.message : "Course outline generation failed";
+      emit("error", { message: `Could not generate course structure: ${msg}. Try rephrasing your course idea or simplifying the topic.`, step: "structure", details: msg });
+      throw err;
+    }
+
+    applyOutlineFallbacks(course, prompt);
+    stepTimings.push({ step: "structure", durationMs: Date.now() - step1Start, retries: step1Retries, status: "ok" });
+    emit("step", { step: "structure", status: "complete" });
+
+    // If no approvedOutline and outline_only mode, return outline for user approval
+    if (options?.outlineOnly) {
+      emit("outline_ready", course);
+      return { course, metrics: computeMetrics(course, stepTimings), outlineOnly: true };
+    }
+
+    emit("outline", course);
   }
-
-  applyOutlineFallbacks(course, prompt);
-  stepTimings.push({ step: "structure", durationMs: Date.now() - step1Start, retries: step1Retries, status: "ok" });
-  emit("step", { step: "structure", status: "complete" });
-  emit("outline", course);
 
   // ── STEP 2: LESSON CONTENT (parallel per module) ────────────
   emit("step", { step: "content", status: "in_progress" });
@@ -614,6 +731,9 @@ ${options?.niche ? `Fitness niche: ${options.niche}` : ""}`;
 Module ${i + 1} of ${course.modules.length}: "${mod.title}" — ${mod.description}
 Module objectives: ${(mod.learningObjectives || []).join(", ")}
 Difficulty: ${course.difficulty}
+Content depth: ${depth} (target ${depthCfg.targetWords} words per lesson, minimum ${depthCfg.minWords})
+${options?.niche ? `Fitness niche: ${options.niche}` : ""}
+${options?.audience ? `Target audience: ${options.audience}` : ""}
 
 Here are ALL the lessons in this module (write content for text and assignment types, pass through others unchanged):
 ${JSON.stringify(mod.lessons, null, 2)}
@@ -622,8 +742,8 @@ Return JSON with ALL lessons. Start with {`;
 
     try {
       const result = await callWithValidation(
-        apiKey, MODEL_CONTENT, CONTENT_PROMPT,
-        moduleContext, TOKENS_CONTENT, TEMP_CONTENT,
+        apiKey, MODEL_CONTENT, buildContentPrompt(options),
+        moduleContext, depthCfg.tokens, TEMP_CONTENT,
         (data) => validateContent(data, expectedIds),
         `content-mod-${i}`,
       );
@@ -647,6 +767,12 @@ Return JSON with ALL lessons. Start with {`;
       if (existing) {
         if (lessonContent.content_markdown) existing.content_markdown = lessonContent.content_markdown;
         if (lessonContent.assignment_brief) existing.assignment_brief = lessonContent.assignment_brief;
+        // Merge structured fitness fields
+        if (Array.isArray(lessonContent.exercise_demos) && lessonContent.exercise_demos.length > 0) existing.exercise_demos = lessonContent.exercise_demos;
+        if (lessonContent.workout_template) existing.workout_template = lessonContent.workout_template;
+        if (lessonContent.nutrition_guidelines) existing.nutrition_guidelines = lessonContent.nutrition_guidelines;
+        if (Array.isArray(lessonContent.progress_metrics) && lessonContent.progress_metrics.length > 0) existing.progress_metrics = lessonContent.progress_metrics;
+        if (Array.isArray(lessonContent.recovery_protocol) && lessonContent.recovery_protocol.length > 0) existing.recovery_protocol = lessonContent.recovery_protocol;
       }
     }
   }
@@ -688,7 +814,7 @@ Generate 4-5 scenario-based questions per quiz lesson. Return JSON. Start with {
 
       try {
         const result = await callWithValidation(
-          apiKey, MODEL_QUIZ, QUIZ_PROMPT,
+          apiKey, MODEL_QUIZ, buildQuizPrompt(options),
           quizContext, TOKENS_QUIZ, TEMP_QUIZ,
           (data) => validateQuizzes(data, expectedIds),
           `quiz-mod-${i}`,
@@ -743,7 +869,7 @@ Modules: ${JSON.stringify(course.modules.map((m: any) => ({ id: m.id, title: m.t
 Return polished JSON. Start with {`;
 
     const result = await callWithValidation(
-      apiKey, MODEL_POLISH, POLISH_PROMPT,
+      apiKey, MODEL_POLISH, buildPolishPrompt(options),
       polishContext, TOKENS_POLISH, TEMP_POLISH,
       validatePolish, "polish",
     );
@@ -811,18 +937,22 @@ serve(async (req) => {
       const readableStream = new ReadableStream({
         async start(controller) {
           try {
-            const { course, metrics } = await runPipeline(
+            const { course, metrics, outlineOnly } = await runPipeline(
               ANTHROPIC_API_KEY, prompt.trim(), options,
               (event, data) => controller.enqueue(sseEvent(encoder, event, data)),
             );
 
             controller.enqueue(sseEvent(encoder, "metrics", metrics));
-            controller.enqueue(sseEvent(encoder, "complete", course));
+            if (outlineOnly) {
+              // Outline-first flow: emit outline_ready instead of complete
+              controller.enqueue(sseEvent(encoder, "outline_ready", course));
+            } else {
+              controller.enqueue(sseEvent(encoder, "complete", course));
+            }
             controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             controller.close();
           } catch (err) {
             console.error("Pipeline error:", err);
-            // Only emit error if we haven't already (runPipeline emits step-specific errors)
             try { controller.close(); } catch { /* already closed */ }
           }
         },
