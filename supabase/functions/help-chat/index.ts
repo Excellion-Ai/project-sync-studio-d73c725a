@@ -53,6 +53,7 @@ serve(async (req) => {
         system: systemPrompt || SYSTEM_PROMPT,
         messages: anthropicMessages,
       }),
+      signal: AbortSignal.timeout(120_000),
     });
 
     if (!response.ok) {

@@ -73,6 +73,7 @@ Generate the React component code as a JSON object. Start with {`;
           { role: "assistant", content: "{" },
         ],
       }),
+      signal: AbortSignal.timeout(120_000),
     });
 
     if (!response.ok) {

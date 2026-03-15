@@ -55,6 +55,7 @@ serve(async (req) => {
         system: systemPrompt || SYSTEM_PROMPT,
         messages: anthropicMessages,
       }),
+      signal: AbortSignal.timeout(120_000),
     });
 
     if (!response.ok) {
@@ -91,7 +92,7 @@ serve(async (req) => {
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`));
                 }
                 if (event.type === "message_stop") {
-                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                  // [DONE] is emitted after the loop — no need to emit here
                 }
               } catch {
                 // skip unparseable

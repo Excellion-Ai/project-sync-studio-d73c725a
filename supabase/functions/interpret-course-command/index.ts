@@ -77,6 +77,7 @@ Interpret the command and return the changes as JSON.`;
           { role: "assistant", content: "{" },
         ],
       }),
+      signal: AbortSignal.timeout(120_000),
     });
 
     if (!response.ok) {

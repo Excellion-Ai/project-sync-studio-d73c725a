@@ -152,7 +152,7 @@ function validateContent(data: any, expectedLessonIds: string[]): ValidationResu
         errors.push(`lessons[${i}] ("${les.title || les.id}"): assignment_brief is missing`);
       } else {
         const wordCount = les.assignment_brief.split(/\s+/).filter(Boolean).length;
-        if (wordCount < 30) errors.push(`lessons[${i}] ("${les.title || les.id}"): assignment_brief too short (${wordCount} words, need 50+)`);
+        if (wordCount < 50) errors.push(`lessons[${i}] ("${les.title || les.id}"): assignment_brief too short (${wordCount} words, need 50+)`);
       }
     }
   }
@@ -400,6 +400,7 @@ async function callAnthropic(apiKey: string, model: string, systemPrompt: string
       model, max_tokens: maxTokens, temperature, system: systemPrompt,
       messages: [{ role: "user", content: userMessage }, { role: "assistant", content: "{" }],
     }),
+    signal: AbortSignal.timeout(120_000),
   });
   if (!response.ok) {
     const errText = await response.text();
@@ -953,6 +954,9 @@ serve(async (req) => {
             controller.close();
           } catch (err) {
             console.error("Pipeline error:", err);
+            const msg = err instanceof Error ? err.message : "Generation failed";
+            try { controller.enqueue(sseEvent(encoder, "error", { message: msg })); } catch { /* already closed */ }
+            try { controller.enqueue(encoder.encode("data: [DONE]\n\n")); } catch { /* already closed */ }
             try { controller.close(); } catch { /* already closed */ }
           }
         },
