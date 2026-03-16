@@ -16,6 +16,7 @@ const HeroSection = () => {
 
   const handleGenerate = () => {
     if (prompt.trim()) {
+      localStorage.setItem("builder-initial-idea", prompt.trim());
       navigate("/auth");
     }
   };
