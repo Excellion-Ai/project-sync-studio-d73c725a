@@ -11,6 +11,7 @@ import {
   updateCourseInDatabase,
   ensureCourseExists,
 } from "@/lib/coursePersistence";
+import { AI } from "@/services/ai";
 import { ExtendedCourse } from "@/types/course-pages";
 import {
   CourseOptions,

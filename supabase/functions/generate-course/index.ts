@@ -8,47 +8,64 @@ const corsHeaders = {
 
 const MODEL = "claude-sonnet-4-5-20250929";
 
-const SYSTEM_PROMPT = `You are an expert course curriculum designer. Given a course idea and optional parameters, generate a complete course structure as JSON.
+const SYSTEM_PROMPT = `You are an expert course creator. Generate a comprehensive, professional online course based on the user's topic.
 
-Return a JSON object with:
+RULES:
+- The subtitle must be a specific benefit statement, NEVER repeat the title. Example: for 'Home Workout Fundamentals' use 'Build strength and flexibility at home in just 20 minutes a day with zero equipment'
+- Generate 5-8 modules minimum
+- Each module must have 3-5 lessons
+- Module titles must be specific and engaging, never generic like 'Module 1: Introduction'. Use descriptive titles like 'Week 1: Building Your Foundation Without Equipment'
+- What You'll Learn must list 6 specific, measurable outcomes unique to this course topic
+- Each lesson must contain 300+ words of actionable, specific content in markdown format
+- Include practical exercises, assignments, or action items in every lesson
+- The course description must sell the transformation the student will experience
+- Generate a unique design color palette that matches the course topic's mood
+
+OUTPUT FORMAT: Return ONLY valid JSON (no markdown fences) with this exact structure:
 {
-  "title": "Course title",
-  "description": "Course description",
-  "tagline": "Short tagline",
+  "title": "string",
+  "subtitle": "string (NEVER repeat the title - must be a benefit statement)",
+  "description": "string (2-3 compelling paragraphs)",
+  "tagline": "string (short punchy tagline)",
   "difficulty": "beginner|intermediate|advanced",
   "duration_weeks": number,
-  "learningOutcomes": ["outcome1", "outcome2", ...],
+  "learningOutcomes": ["6 specific measurable outcomes unique to this topic"],
   "modules": [
     {
       "id": "mod-0",
-      "title": "Module title",
-      "description": "Module description",
+      "title": "Descriptive module title (NOT generic like Module 1)",
+      "description": "What students will accomplish in this module",
       "lessons": [
         {
           "id": "mod-0-les-0",
-          "title": "Lesson title",
-          "duration": "15m",
-          "type": "text|video|quiz|assignment",
-          "content_markdown": "Lesson content in markdown (for text lessons)",
-          "quiz_questions": [{"id":"q1","question":"...","type":"multiple_choice","options":["a","b","c","d"],"correct_index":0,"explanation":"..."}],
-          "assignment_brief": "Assignment description (for assignment lessons)"
+          "title": "Specific lesson title",
+          "duration": "20m",
+          "type": "text",
+          "content_markdown": "300+ words of actionable content in markdown with headers, lists, examples",
+          "assignment_brief": "Practical exercise or action item for this lesson"
         }
       ]
     }
   ],
   "design_config": {
-    "colors": {"primary":"#d4a853","secondary":"#1a1a1a","accent":"#f59e0b","background":"#0a0a0a","cardBackground":"#111111","text":"#ffffff","textMuted":"#9ca3af"},
-    "fonts": {"heading":"Inter","body":"Inter"},
+    "colors": {
+      "primary": "#hex matching course mood",
+      "secondary": "#1a1a1a",
+      "accent": "#hex complementary accent",
+      "background": "#0a0a0a",
+      "cardBackground": "#111111",
+      "text": "#ffffff",
+      "textMuted": "#9ca3af"
+    },
+    "fonts": {"heading": "Inter", "body": "Inter"},
     "spacing": "normal",
     "borderRadius": "medium",
     "heroStyle": "gradient"
   },
   "pages": {
-    "landing_sections": ["hero","outcomes","curriculum","instructor","faq"]
+    "landing_sections": ["hero", "outcomes", "curriculum", "instructor", "faq"]
   }
-}
-
-Generate detailed, real lesson content. Include quiz questions if requested. Make content engaging and practical.`;
+}`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -75,12 +92,22 @@ serve(async (req) => {
     const { prompt, options } = await req.json();
     if (!prompt) throw new Error("prompt is required");
 
-    const userMessage = `Create a course about: ${prompt}
-${options?.difficulty ? `Difficulty: ${options.difficulty}` : ""}
-${options?.duration_weeks ? `Duration: ${options.duration_weeks} weeks` : ""}
-${options?.includeQuizzes ? "Include quiz questions for each module." : ""}
-${options?.includeAssignments ? "Include practical assignments for each module." : ""}
-${options?.template ? `Layout style: ${options.template}` : ""}
+    const userMessage = `Create a complete, detailed course about: ${prompt}
+
+Requirements:
+- Difficulty level: ${options?.difficulty || "beginner"}
+- Target duration: ${options?.duration_weeks || 6} weeks
+${options?.includeQuizzes ? "- Include quiz questions for knowledge checks in each module" : ""}
+${options?.includeAssignments ? "- Include detailed practical assignments for each module" : ""}
+${options?.template ? `- Layout style preference: ${options.template}` : ""}
+
+Remember:
+- Generate 5-8 modules with 3-5 lessons each
+- Every lesson needs 300+ words of real, actionable content
+- Module titles must be specific and descriptive, NOT generic
+- The subtitle must describe the transformation, NOT repeat the title
+- Learning outcomes must be specific to THIS topic (6 outcomes)
+- Include assignments/exercises in every lesson
 
 Return ONLY valid JSON, no markdown fences.`;
 
@@ -93,7 +120,7 @@ Return ONLY valid JSON, no markdown fences.`;
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 8192,
+        max_tokens: 16384,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userMessage }],
       }),
