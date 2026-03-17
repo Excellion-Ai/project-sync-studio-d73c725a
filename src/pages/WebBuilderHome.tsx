@@ -27,6 +27,7 @@ const WebBuilderHome = () => {
       <PricingSection />
       <GuaranteeSection />
       <FAQSection />
+      <WaitlistSection />
       <CTASection />
       <Footer />
     </div>
