@@ -224,20 +224,24 @@ const BuilderShell = ({
 
     try {
       updateStep("analyze", "in_progress");
-      await new Promise((r) => setTimeout(r, 600));
-      updateStep("analyze", "complete");
-
       updateStep("structure", "in_progress");
-      await new Promise((r) => setTimeout(r, 800));
-      updateStep("structure", "complete");
-
       updateStep("content", "in_progress");
-      await new Promise((r) => setTimeout(r, 1000));
-      const course = buildMockCourse(idea, options);
+
+      // Call the real AI edge function
+      const aiResponse = await AI.generateCourse(idea, {
+        difficulty: options.difficulty,
+        duration_weeks: options.duration_weeks,
+        includeQuizzes: options.includeQuizzes,
+        includeAssignments: options.includeAssignments,
+        template: options.template,
+      });
+
+      updateStep("analyze", "complete");
+      updateStep("structure", "complete");
+      const course = mapAIResponseToCourse(aiResponse, options);
       updateStep("content", "complete");
 
       updateStep("design", "in_progress");
-      await new Promise((r) => setTimeout(r, 500));
       updateStep("design", "complete");
 
       updateStep("save", "in_progress");
