@@ -27,6 +27,7 @@ const Index = () => {
       <PricingSection />
       <GuaranteeSection />
       <FAQSection />
+      <WaitlistSection />
       <CTASection />
       <Footer />
     </div>
