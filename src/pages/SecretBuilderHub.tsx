@@ -596,7 +596,7 @@ const SecretBuilderHub = () => {
     );
   }
 
-  if (!isAuthenticated) return <Navigate to="/auth" replace />;
+  if (!isAuthenticated) return <Navigate to="/#waitlist" replace />;
 
   return <HubContent />;
 };
