@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MODEL = "claude-haiku-4-5-20251001";
+const MODEL = "claude-sonnet-4-20250514";
 
 const SYSTEM_PROMPT = `You are a helpful assistant for Excellion, a course creation platform. Answer questions about:
 - How to create and structure courses
@@ -18,13 +18,12 @@ const SYSTEM_PROMPT = `You are a helpful assistant for Excellion, a course creat
 Be friendly, concise, and provide actionable advice. Use markdown formatting when helpful.`;
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -33,7 +32,7 @@ serve(async (req) => {
     );
     const { data, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !data?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || Deno.env.get("ANTHROPIC_KEY");
@@ -56,7 +55,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 2048,
+        max_tokens: 4096,
         system: systemPrompt || SYSTEM_PROMPT,
         messages: anthropicMessages,
       }),

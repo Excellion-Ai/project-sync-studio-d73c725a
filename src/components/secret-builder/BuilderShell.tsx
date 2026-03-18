@@ -283,11 +283,12 @@ const BuilderShell = ({
         content: `Your course "${course.title}" has been generated with ${course.modules.length} modules. You can now preview, edit, and refine it.`,
       }]);
       toast.success("Course generated successfully!");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Generation failed:", err);
       const failedStep = genSteps.find((s) => s.status === "in_progress");
       if (failedStep) updateStep(failedStep.id, "error");
-      toast.error("Failed to generate course.");
+      const errorMsg = err?.message || err?.error || "Unknown error";
+      toast.error(`Course generation failed: ${errorMsg}`);
     } finally {
       setIsGenerating(false);
     }
