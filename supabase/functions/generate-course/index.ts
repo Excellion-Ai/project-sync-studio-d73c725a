@@ -132,6 +132,10 @@ Return ONLY valid JSON, no markdown fences.`;
       }
     }
 
+    if (!course?.title || !Array.isArray(course?.modules)) {
+      throw new Error("AI response missing required course fields");
+    }
+
     return new Response(JSON.stringify(course), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
