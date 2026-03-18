@@ -150,7 +150,7 @@ const Auth = () => {
               disabled={loading}
               className="w-full px-4 py-3 rounded-lg gradient-gold text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
+              {loading ? "Loading..." : "Sign In"}
             </button>
           </form>
 
