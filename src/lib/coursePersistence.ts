@@ -34,7 +34,17 @@ function generateSubdomain(title: string): string {
 
 export async function saveCourseToDatabase(
   params: SaveCourseParams
-): Promise<{ id: string } | null> {
+): Promise<{ id: string; error?: string } | null> {
+  console.log("💾 [saveCourse] START — params:", JSON.stringify({
+    userId: params.userId,
+    title: params.title,
+    modulesCount: params.modules?.length ?? 0,
+    difficulty: params.difficulty,
+    offerType: params.offerType,
+    hasDesignConfig: !!params.designConfig,
+    hasBuilderProjectId: !!params.builderProjectId,
+  }));
+
   const {
     userId,
     title = "Untitled Course",
@@ -50,6 +60,20 @@ export async function saveCourseToDatabase(
     offerType = "standard",
   } = params;
 
+  if (!userId) {
+    console.error("💾 [saveCourse] ABORT — no userId provided");
+    return null;
+  }
+
+  // Verify auth session is valid
+  const { data: sessionData } = await supabase.auth.getSession();
+  console.log("💾 [saveCourse] Auth session exists:", !!sessionData?.session, "uid:", sessionData?.session?.user?.id);
+
+  if (!sessionData?.session) {
+    console.error("💾 [saveCourse] ABORT — no active Supabase session");
+    return null;
+  }
+
   const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -59,51 +83,50 @@ export async function saveCourseToDatabase(
   for (let attempt = 0; attempt < 3; attempt++) {
     const subdomain = generateSubdomain(title);
 
+    const payload = {
+      user_id: userId,
+      title,
+      description: description ?? null,
+      slug: `${slug}-${subdomain.slice(-6)}`,
+      subdomain,
+      curriculum: modules as any,
+      status: "draft",
+      type: offerType,
+      design_config: designConfig as any,
+      layout_template: layoutTemplate,
+      section_order: sectionOrder as any,
+      page_sections: pageSections as any,
+      builder_project_id: builderProjectId ?? null,
+      meta: { difficulty, duration_weeks: durationWeeks } as any,
+    };
+
+    console.log(`💾 [saveCourse] Attempt ${attempt + 1}/3 — inserting with slug:`, payload.slug);
+
     const { data, error } = await supabase
       .from("courses")
-      .insert({
-        user_id: userId,
-        title,
-        description: description ?? null,
-        slug: `${slug}-${subdomain.slice(-6)}`,
-        subdomain,
-        curriculum: modules as any,
-        status: "draft",
-        type: offerType,
-        design_config: designConfig as any,
-        layout_template: layoutTemplate,
-        section_order: sectionOrder as any,
-        page_sections: pageSections as any,
-        builder_project_id: builderProjectId ?? null,
-        meta: { difficulty, duration_weeks: durationWeeks } as any,
-      })
+      .insert(payload)
       .select("id")
       .single();
 
     if (!error && data) {
-      console.log("✅ Course saved successfully:", data.id);
+      console.log("✅ [saveCourse] SUCCESS — course id:", data.id);
       return { id: data.id };
     }
 
     // Retry only on unique constraint violation (code 23505)
     if (error?.code === "23505") {
-      console.warn(`Subdomain collision (attempt ${attempt + 1}/3), retrying...`);
+      console.warn(`💾 [saveCourse] Subdomain collision (attempt ${attempt + 1}/3), retrying...`);
       continue;
     }
 
-    console.error("❌ Failed to save course:", JSON.stringify(error, null, 2));
-    console.error("❌ Insert payload:", JSON.stringify({
-      user_id: userId,
-      title,
-      slug: `${slug}-${subdomain.slice(-6)}`,
-      subdomain,
-      status: "draft",
-      type: offerType,
-    }, null, 2));
+    const errorDetail = `Code: ${error?.code}, Message: ${error?.message}, Details: ${error?.details}, Hint: ${error?.hint}`;
+    console.error("❌ [saveCourse] FAILED:", errorDetail);
+    console.error("❌ [saveCourse] Full error:", JSON.stringify(error, null, 2));
+    console.error("❌ [saveCourse] Payload keys:", Object.keys(payload).join(", "));
     return null;
   }
 
-  console.error("Failed to save course after 3 attempts (subdomain collisions)");
+  console.error("💾 [saveCourse] FAILED after 3 attempts (subdomain collisions)");
   return null;
 }
 
