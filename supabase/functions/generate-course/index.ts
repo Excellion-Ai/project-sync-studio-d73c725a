@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MODEL = "claude-haiku-4-5-20251001";
+const MODEL = "claude-sonnet-4-20250514";
 const REQUEST_TIMEOUT_MS = 45000;
 
 const SYSTEM_PROMPT = `You are an expert course creator. Generate a professional online course as compact valid JSON.
@@ -62,12 +62,7 @@ function isTimeoutError(error: unknown) {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        ...corsHeaders,
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-      },
-    });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
@@ -99,7 +94,10 @@ serve(async (req) => {
     console.log("generate-course auth ok", authData.user.id);
 
     const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY") || Deno.env.get("ANTHROPIC_KEY");
-    if (!anthropicApiKey) throw new Error("ANTHROPIC_API_KEY is not configured");
+    if (!anthropicApiKey) {
+      console.error("ANTHROPIC_API_KEY not found in env");
+      throw new Error("ANTHROPIC_API_KEY is not configured");
+    }
 
     const { prompt, options } = await req.json();
     if (!prompt || typeof prompt !== "string") throw new Error("prompt is required");
@@ -120,7 +118,7 @@ Important:
 - Learning outcomes must be unique to this topic
 - Return ONLY valid JSON with the keys: title, subtitle, description, learningOutcomes, modules`;
 
-    console.log("generate-course requesting Anthropic");
+    console.log("generate-course requesting Anthropic with model:", MODEL);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -131,7 +129,7 @@ Important:
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 7000,
+        max_tokens: 8192,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userMessage }],
       }),
@@ -143,7 +141,7 @@ Important:
     if (!response.ok) {
       const errText = await response.text();
       console.error("Anthropic API error:", response.status, errText);
-      throw new Error(`Anthropic API error: ${response.status}`);
+      throw new Error(`Anthropic API error: ${response.status} - ${errText}`);
     }
 
     const data = await response.json();
