@@ -21,6 +21,11 @@ const WaitlistSection = () => {
     setSubmitting(false);
 
     if (error) {
+      if (error.code === "23505") {
+        setSubmitted(true);
+        toast({ title: "You're already on the list! 💪", description: "We've got your spot saved — stay tuned for launch day." });
+        return;
+      }
       toast({ title: "Something went wrong", description: "Please try again.", variant: "destructive" });
       return;
     }
