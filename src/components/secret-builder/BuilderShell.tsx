@@ -227,7 +227,7 @@ const BuilderShell = ({
       updateStep("structure", "in_progress");
       updateStep("content", "in_progress");
 
-      // Call the real AI edge function
+      console.log("🚀 [generate] Step 1: Calling AI.generateCourse with idea:", idea.slice(0, 80));
       const aiResponse = await AI.generateCourse(idea, {
         difficulty: options.difficulty,
         duration_weeks: options.duration_weeks,
@@ -235,10 +235,23 @@ const BuilderShell = ({
         includeAssignments: options.includeAssignments,
         template: options.template,
       });
+      console.log("🚀 [generate] Step 2: AI response received:", {
+        hasTitle: !!aiResponse?.title,
+        hasModules: !!aiResponse?.modules,
+        modulesCount: aiResponse?.modules?.length ?? 0,
+        keys: Object.keys(aiResponse || {}),
+      });
 
       updateStep("analyze", "complete");
       updateStep("structure", "complete");
+
+      console.log("🚀 [generate] Step 3: Mapping AI response to ExtendedCourse");
       const course = mapAIResponseToCourse(aiResponse, options);
+      console.log("🚀 [generate] Step 3 done:", {
+        title: course.title,
+        modulesCount: course.modules.length,
+        lessonsCount: course.modules.reduce((sum: number, m: any) => sum + (m.lessons?.length ?? 0), 0),
+      });
       updateStep("content", "complete");
 
       updateStep("design", "in_progress");
@@ -247,17 +260,22 @@ const BuilderShell = ({
       updateStep("save", "in_progress");
       let bProjectId = projectId;
       if (!bProjectId) {
+        console.log("🚀 [generate] Step 4a: Creating builder_project");
         const { data: proj, error: projError } = await supabase
           .from("builder_projects")
           .insert({ name: course.title, user_id: userId })
           .select("id")
           .single();
-        if (projError) console.error("❌ builder_projects insert error:", projError);
+        if (projError) {
+          console.error("❌ [generate] builder_projects insert error:", JSON.stringify(projError));
+          toast.error(`Failed to create project: ${projError.message}`);
+        }
         bProjectId = proj?.id ?? null;
+        console.log("🚀 [generate] Step 4a done — projectId:", bProjectId);
       }
       if (bProjectId) setProjectId(bProjectId);
 
-      console.log("📦 Saving course with userId:", userId, "projectId:", bProjectId);
+      console.log("🚀 [generate] Step 5: Saving course to database");
       const saved = await saveCourseToDatabase({
         userId,
         title: course.title,
@@ -273,8 +291,18 @@ const BuilderShell = ({
         offerType: options.template,
       });
 
-      if (saved) { course.id = saved.id; setCourseId(saved.id); }
-      updateStep("save", "complete");
+      if (saved) {
+        console.log("✅ [generate] Step 5 done — course saved with id:", saved.id);
+        course.id = saved.id;
+        setCourseId(saved.id);
+        updateStep("save", "complete");
+        toast.success(`Course "${course.title}" saved successfully!`);
+      } else {
+        console.error("❌ [generate] Step 5 FAILED — saveCourseToDatabase returned null");
+        updateStep("save", "error");
+        toast.error("Course was generated but failed to save to database. Check console for details.");
+      }
+
       setCourseSpec(course);
 
       setMessages((prev) => [...prev, {
@@ -282,9 +310,13 @@ const BuilderShell = ({
         role: "assistant",
         content: `Your course "${course.title}" has been generated with ${course.modules.length} modules. You can now preview, edit, and refine it.`,
       }]);
-      toast.success("Course generated successfully!");
     } catch (err: any) {
-      console.error("Generation failed:", err);
+      console.error("❌ [generate] CAUGHT ERROR:", err);
+      console.error("❌ [generate] Error details:", {
+        message: err?.message,
+        name: err?.name,
+        stack: err?.stack?.slice(0, 300),
+      });
       const failedStep = genSteps.find((s) => s.status === "in_progress");
       if (failedStep) updateStep(failedStep.id, "error");
       const errorMsg = err?.message || err?.error || "Unknown error";
