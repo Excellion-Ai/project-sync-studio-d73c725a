@@ -128,8 +128,7 @@ const Auth = () => {
               </div>
             </div>
 
-            {!isSignUp && (
-              <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
                   <input
                     type="checkbox"
@@ -143,7 +142,6 @@ const Auth = () => {
                   Forgot password?
                 </button>
               </div>
-            )}
 
             <button
               type="submit"
