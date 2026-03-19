@@ -157,72 +157,7 @@ const QUICK_PROMPTS = [
 
 // ── Template cards ───────────────────────────────────────────
 
-interface TemplateCard {
-  id: string;
-  title: string;
-  description: string;
-  icon: any;
-  prompt: string;
-  style: "creator" | "technical" | "academic" | "visual";
-  accentClass: string;
-}
-
-const TEMPLATE_CARDS: TemplateCard[] = [
-  {
-    id: "creator-course",
-    title: "Creator Course",
-    description: "Personal brand course with video lessons and community access",
-    icon: Star,
-    prompt: "Create a comprehensive personal brand creator course with video lessons, community elements, and a polished landing page",
-    style: "creator",
-    accentClass: "border-amber-500/30 hover:border-amber-500/60 bg-amber-500/5",
-  },
-  {
-    id: "tech-bootcamp",
-    title: "Tech Bootcamp",
-    description: "Hands-on coding bootcamp with projects and quizzes",
-    icon: Code,
-    prompt: "Build a hands-on coding bootcamp with project-based modules, coding exercises, quizzes, and a certificate of completion",
-    style: "technical",
-    accentClass: "border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-500/5",
-  },
-  {
-    id: "academic-program",
-    title: "Academic Program",
-    description: "Structured learning program with assessments and certificates",
-    icon: GraduationCap,
-    prompt: "Design a structured academic program with modules, readings, assessments, graded assignments, and a formal certificate",
-    style: "academic",
-    accentClass: "border-blue-500/30 hover:border-blue-500/60 bg-blue-500/5",
-  },
-  {
-    id: "visual-workshop",
-    title: "Visual Workshop",
-    description: "Portfolio-style workshop with galleries and creative projects",
-    icon: Palette,
-    prompt: "Create a visual arts workshop with portfolio projects, image galleries, creative briefs, and a stunning visual landing page",
-    style: "visual",
-    accentClass: "border-violet-500/30 hover:border-violet-500/60 bg-violet-500/5",
-  },
-  {
-    id: "coaching-program",
-    title: "Coaching Program",
-    description: "1-on-1 coaching with modules, worksheets, and progress tracking",
-    icon: Users,
-    prompt: "Build a coaching program with self-paced modules, downloadable worksheets, progress tracking, and weekly milestones",
-    style: "creator",
-    accentClass: "border-pink-500/30 hover:border-pink-500/60 bg-pink-500/5",
-  },
-  {
-    id: "growth-course",
-    title: "Growth & Marketing",
-    description: "Marketing and business growth course with case studies",
-    icon: TrendingUp,
-    prompt: "Create a growth marketing course with case studies, actionable frameworks, A/B testing exercises, and analytics dashboards",
-    style: "technical",
-    accentClass: "border-orange-500/30 hover:border-orange-500/60 bg-orange-500/5",
-  },
-];
+// Templates removed — replaced by saved courses grid
 
 // ── Sidebar nav items ────────────────────────────────────────
 
