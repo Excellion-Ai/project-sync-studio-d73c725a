@@ -1,8 +1,17 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Play, CheckCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const QuickstartSection = () => {
+  const [open, setOpen] = useState(false);
+
   return (
     <section className="py-[60px] bg-background relative radial-glow">
       <div className="max-w-6xl mx-auto px-4 relative z-10">
@@ -58,17 +67,37 @@ const QuickstartSection = () => {
               ))}
             </ul>
 
-            <Link
-              to="/auth"
+            <button
+              onClick={() => setOpen(true)}
               className="mt-6 w-full px-6 py-3 rounded-[10px] btn-primary text-sm flex items-center justify-center gap-2 font-body"
             >
               Access the Quickstart Course
-            </Link>
+            </button>
 
             <p className="text-xs text-muted-foreground text-center mt-3 font-body">Most coaches finish setup in 1 weekend.</p>
           </motion.div>
         </div>
       </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md text-center">
+          <DialogHeader className="items-center">
+            <DialogTitle className="font-heading text-xl">Coming April 7th 🚀</DialogTitle>
+            <DialogDescription className="font-body text-base mt-2">
+              Join the waitlist below to get early access before everyone else.
+            </DialogDescription>
+          </DialogHeader>
+          <button
+            onClick={() => {
+              setOpen(false);
+              document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="mt-2 w-full px-6 py-3 rounded-[10px] btn-primary text-sm font-body"
+          >
+            Join the Waitlist →
+          </button>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
