@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Sparkles, Mic, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -12,17 +11,13 @@ const suggestions = [
 
 const HeroSection = () => {
   const [prompt, setPrompt] = useState("");
-  const navigate = useNavigate();
 
   const handleGenerate = () => {
-    if (prompt.trim()) {
-      localStorage.setItem("builder-initial-idea", prompt.trim());
-      navigate("/auth");
-    }
+    document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleExample = () => {
-    setPrompt("Help busy dads lose 20lbs in 12 weeks with home workouts");
+  const handleHowItWorks = () => {
+    document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
