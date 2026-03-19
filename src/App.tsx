@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
 import { Suspense } from "react";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Pages
 const WebBuilderHome = lazyWithRetry(() => import("./pages/WebBuilderHome"), "WebBuilderHome");
