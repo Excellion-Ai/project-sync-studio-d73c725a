@@ -95,9 +95,12 @@ function mapAIResponseToCourse(ai: any, options: CourseOptions): ExtendedCourse 
 
 const GENERATION_STEPS: GenerationStep[] = [
   { id: "analyze", label: "Analyzing your idea", status: "pending" },
-  { id: "structure", label: "Building course structure", status: "pending" },
+  { id: "structure", label: "Building course outline", status: "pending" },
+  { id: "save-outline", label: "Saving outline to database", status: "pending" },
   { id: "content", label: "Generating lesson content", status: "pending" },
   { id: "design", label: "Applying design theme", status: "pending" },
+  { id: "save", label: "Finalizing course", status: "pending" },
+];
   { id: "save", label: "Saving to database", status: "pending" },
 ];
 
