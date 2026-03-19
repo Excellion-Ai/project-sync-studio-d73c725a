@@ -1,13 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Play, CheckCircle } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import WaitlistModal from "@/components/WaitlistModal";
 
 const QuickstartSection = () => {
   const [open, setOpen] = useState(false);
@@ -79,25 +73,7 @@ const QuickstartSection = () => {
         </div>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md text-center">
-          <DialogHeader className="items-center">
-            <DialogTitle className="font-heading text-xl">Coming April 7th 🚀</DialogTitle>
-            <DialogDescription className="font-body text-base mt-2">
-              Join the waitlist below to get early access before everyone else.
-            </DialogDescription>
-          </DialogHeader>
-          <button
-            onClick={() => {
-              setOpen(false);
-              document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
-            }}
-            className="mt-2 w-full px-6 py-3 rounded-[10px] btn-primary text-sm font-body"
-          >
-            Join the Waitlist →
-          </button>
-        </DialogContent>
-      </Dialog>
+      <WaitlistModal open={open} onClose={() => setOpen(false)} />
     </section>
   );
 };
