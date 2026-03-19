@@ -127,7 +127,11 @@ const Navigation = () => {
             {!loading && (
               user ? (
                 <UserMenu />
-              ) : null
+              ) : (
+                <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                  Sign In
+                </Link>
+              )
             )}
             <Button onClick={handleStartBuilding} size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
               Start Building
