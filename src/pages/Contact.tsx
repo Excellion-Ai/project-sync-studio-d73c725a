@@ -1,4 +1,4 @@
-import { Mail, Twitter, Zap } from "lucide-react";
+import { Mail, Twitter, MessageCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -18,10 +18,10 @@ const infoCards = [
     href: "https://twitter.com/excellionai",
   },
   {
-    icon: Zap,
-    label: "Response Time",
-    value: "Within 24 hours",
-    href: null as string | null,
+    icon: MessageCircle,
+    label: "Discord",
+    value: "Join our community",
+    href: "https://discord.gg/C5WZUHZUJJ",
   },
 ];
 
