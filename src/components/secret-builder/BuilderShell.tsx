@@ -283,85 +283,20 @@ const BuilderShell = ({
 
       setCourseSpec(course);
 
-      // ── STEP 3: Generate lesson content one lesson at a time ─────
-      updateStep("content", "in_progress");
-      const totalModules = course.modules.length;
-      const totalLessons = course.modules.reduce(
-        (count, module) => count + module.lessons.length,
-        0
-      );
-      let completedLessons = 0;
-
-      for (let i = 0; i < totalModules; i++) {
-        const mod = course.modules[i];
-
-        for (let j = 0; j < mod.lessons.length; j++) {
-          const lesson = mod.lessons[j];
-          updateStep(
-            "content",
-            "in_progress",
-            `Generating lesson ${completedLessons + 1} of ${totalLessons}...`
-          );
-
-          try {
-            console.log(
-              `🚀 [generate] Lesson ${completedLessons + 1}/${totalLessons}: "${lesson.title}" in "${mod.title}"`
-            );
-
-            const contentResponse = await AI.generateLessonContent({
-              courseTitle: course.title,
-              moduleTitle: mod.title,
-              lessonTitle: lesson.title,
-              difficulty: options.difficulty,
-              includeAssignments: options.includeAssignments,
-            });
-
-            const generated = contentResponse?.lessons?.[0];
-            if (generated) {
-              lesson.content_markdown = generated.content || "";
-              lesson.assignment_brief = generated.assignment || undefined;
-            }
-
-            setCourseSpec((prev: any) => {
-              if (!prev) return prev;
-              const updatedModules = [...prev.modules];
-              const updatedModule = { ...updatedModules[i] };
-              const updatedLessons = [...updatedModule.lessons];
-              updatedLessons[j] = { ...lesson };
-              updatedModule.lessons = updatedLessons;
-              updatedModules[i] = updatedModule;
-              return { ...prev, modules: updatedModules };
-            });
-
-            if (saved?.id) {
-              await updateCourseInDatabase(saved.id, {
-                curriculum: course.modules as any,
-              });
-            }
-
-            completedLessons += 1;
-            console.log(`✅ Lesson ${completedLessons}/${totalLessons} content saved`);
-          } catch (lessonErr: any) {
-            completedLessons += 1;
-            console.error(`❌ Lesson "${lesson.title}" content failed:`, lessonErr?.message);
-            toast.error(`Lesson "${lesson.title}" timed out. You can refine it later.`);
-          }
-        }
-      }
-
-      updateStep("content", "complete", "Generating lesson content");
-
+      // ── STEP 3: Apply design & finalize ──────────────────
       updateStep("design", "in_progress");
       updateStep("design", "complete");
       updateStep("save", "in_progress");
       updateStep("save", "complete");
 
-      toast.success(`Course "${course.title}" generated with ${totalModules} modules!`);
+      const totalModules = course.modules.length;
+      const totalLessons = course.modules.reduce((c, m) => c + m.lessons.length, 0);
+      toast.success(`Course "${course.title}" created with ${totalModules} modules and ${totalLessons} lessons. Add your content!`);
 
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: `Your course "${course.title}" has been generated with ${course.modules.length} modules. You can now preview, edit, and refine it.`,
+        content: `Your course "${course.title}" has been created with ${totalModules} modules and ${totalLessons} lessons.\n\nThe structure is ready — now add your own content:\n• Write or paste lesson text\n• Embed videos (YouTube, Vimeo)\n• Upload images and resources\n• Add quiz questions\n• Customize colors, fonts, and layout`,
       }]);
     } catch (err: any) {
       console.error("❌ [generate] CAUGHT ERROR:", err);
