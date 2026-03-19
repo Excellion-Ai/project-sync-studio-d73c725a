@@ -50,7 +50,20 @@ export interface CourseGenerationOptions {
 }
 
 export const AI = {
-  /** Generate a full course from a prompt */
+  /** Generate course outline only (titles, no content) */
+  generateCourseOutline: (prompt: string, options?: CourseGenerationOptions) =>
+    callEdgeFn("generate-course", { prompt, options }, 30000),
+
+  /** Generate detailed lesson content for a single module */
+  generateLessonContent: (params: {
+    courseTitle: string;
+    moduleTitle: string;
+    lessonTitles: string[];
+    difficulty?: string;
+    includeAssignments?: boolean;
+  }) => callEdgeFn("generate-lesson-content", params, 35000),
+
+  /** @deprecated Use generateCourseOutline + generateLessonContent */
   generateCourse: (prompt: string, options?: CourseGenerationOptions) =>
     callEdgeFn("generate-course", { prompt, options }, 90000),
 

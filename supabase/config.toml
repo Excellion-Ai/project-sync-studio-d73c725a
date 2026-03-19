@@ -3,6 +3,9 @@ project_id = "vyppeqwxwzrtystobfch"
 [functions.generate-course]
 verify_jwt = false
 
+[functions.generate-lesson-content]
+verify_jwt = false
+
 [functions.interpret-course-command]
 verify_jwt = false
 
