@@ -98,7 +98,7 @@ export async function saveCourseToDatabase(
       subdomain,
       curriculum: modules as any,
       status: "draft",
-      type: offerType,
+      type: resolvedType,
       design_config: designConfig as any,
       layout_template: layoutTemplate,
       section_order: sectionOrder as any,
