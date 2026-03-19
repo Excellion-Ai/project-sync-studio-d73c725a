@@ -54,14 +54,14 @@ export const AI = {
   generateCourseOutline: (prompt: string, options?: CourseGenerationOptions) =>
     callEdgeFn("generate-course", { prompt, options }, 30000),
 
-  /** Generate detailed lesson content for a single module */
+  /** Generate detailed lesson content for a single lesson */
   generateLessonContent: (params: {
     courseTitle: string;
     moduleTitle: string;
-    lessonTitles: string[];
+    lessonTitle: string;
     difficulty?: string;
     includeAssignments?: boolean;
-  }) => callEdgeFn("generate-lesson-content", params, 35000),
+  }) => callEdgeFn("generate-lesson-content", params, 20000),
 
   /** @deprecated Use generateCourseOutline + generateLessonContent */
   generateCourse: (prompt: string, options?: CourseGenerationOptions) =>

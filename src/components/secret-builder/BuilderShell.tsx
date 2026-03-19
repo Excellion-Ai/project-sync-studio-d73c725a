@@ -284,57 +284,69 @@ const BuilderShell = ({
 
       setCourseSpec(course);
 
-      // ── STEP 3: Generate lesson content per module ───────
+      // ── STEP 3: Generate lesson content one lesson at a time ─────
       updateStep("content", "in_progress");
       const totalModules = course.modules.length;
+      const totalLessons = course.modules.reduce(
+        (count, module) => count + module.lessons.length,
+        0
+      );
+      let completedLessons = 0;
 
       for (let i = 0; i < totalModules; i++) {
         const mod = course.modules[i];
-        updateStep("content", "in_progress", `Generating Module ${i + 1} of ${totalModules}...`);
 
-        try {
-          const lessonTitles = mod.lessons.map((l: any) => l.title);
-          console.log(`🚀 [generate] Module ${i + 1}/${totalModules}: "${mod.title}"`);
+        for (let j = 0; j < mod.lessons.length; j++) {
+          const lesson = mod.lessons[j];
+          updateStep(
+            "content",
+            "in_progress",
+            `Generating lesson ${completedLessons + 1} of ${totalLessons}...`
+          );
 
-          const contentResponse = await AI.generateLessonContent({
-            courseTitle: course.title,
-            moduleTitle: mod.title,
-            lessonTitles,
-            difficulty: options.difficulty,
-            includeAssignments: options.includeAssignments,
-          });
+          try {
+            console.log(
+              `🚀 [generate] Lesson ${completedLessons + 1}/${totalLessons}: "${lesson.title}" in "${mod.title}"`
+            );
 
-          // Merge generated content back into lessons
-          if (contentResponse?.lessons) {
-            for (let j = 0; j < mod.lessons.length; j++) {
-              const generated = contentResponse.lessons[j];
-              if (generated) {
-                mod.lessons[j].content_markdown = generated.content || "";
-                mod.lessons[j].assignment_brief = generated.assignment || undefined;
-              }
-            }
-          }
-
-          // Update in-memory course and save progress
-          setCourseSpec((prev: any) => {
-            if (!prev) return prev;
-            const updated = { ...prev, modules: [...prev.modules] };
-            updated.modules[i] = { ...mod };
-            return updated;
-          });
-
-          // Persist updated module content to DB
-          if (saved?.id) {
-            await updateCourseInDatabase(saved.id, {
-              curriculum: course.modules as any,
+            const contentResponse = await AI.generateLessonContent({
+              courseTitle: course.title,
+              moduleTitle: mod.title,
+              lessonTitle: lesson.title,
+              difficulty: options.difficulty,
+              includeAssignments: options.includeAssignments,
             });
-          }
 
-          console.log(`✅ Module ${i + 1}/${totalModules} content saved`);
-        } catch (modErr: any) {
-          console.error(`❌ Module ${i + 1} content failed:`, modErr?.message);
-          toast.error(`Module "${mod.title}" content failed. You can refine it later.`);
-          // Continue with remaining modules
+            const generated = contentResponse?.lessons?.[0];
+            if (generated) {
+              lesson.content_markdown = generated.content || "";
+              lesson.assignment_brief = generated.assignment || undefined;
+            }
+
+            setCourseSpec((prev: any) => {
+              if (!prev) return prev;
+              const updatedModules = [...prev.modules];
+              const updatedModule = { ...updatedModules[i] };
+              const updatedLessons = [...updatedModule.lessons];
+              updatedLessons[j] = { ...lesson };
+              updatedModule.lessons = updatedLessons;
+              updatedModules[i] = updatedModule;
+              return { ...prev, modules: updatedModules };
+            });
+
+            if (saved?.id) {
+              await updateCourseInDatabase(saved.id, {
+                curriculum: course.modules as any,
+              });
+            }
+
+            completedLessons += 1;
+            console.log(`✅ Lesson ${completedLessons}/${totalLessons} content saved`);
+          } catch (lessonErr: any) {
+            completedLessons += 1;
+            console.error(`❌ Lesson "${lesson.title}" content failed:`, lessonErr?.message);
+            toast.error(`Lesson "${lesson.title}" timed out. You can refine it later.`);
+          }
         }
       }
 
