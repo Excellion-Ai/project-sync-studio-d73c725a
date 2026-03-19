@@ -75,7 +75,7 @@ const HeroSection = () => {
           transition={{ duration: 0.7, delay: 0.2 }}
           className="premium-card p-6 space-y-4"
         >
-          <div className="relative">
+          <div className="relative rounded-xl border border-primary/20 bg-black/40 backdrop-blur-sm p-3">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
