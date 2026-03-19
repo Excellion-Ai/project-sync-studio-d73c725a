@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const MODEL = "claude-sonnet-4-20250514";
-const REQUEST_TIMEOUT_MS = 45000;
+const REQUEST_TIMEOUT_MS = 120000;
 
 const SYSTEM_PROMPT = `You are an expert course creator. Generate a professional online course as compact valid JSON.
 
