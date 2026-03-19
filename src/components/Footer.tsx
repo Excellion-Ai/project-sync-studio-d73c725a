@@ -40,9 +40,9 @@ const Footer = () => {
             <h4 className="text-foreground font-heading font-semibold text-sm mb-4">Company</h4>
             <ul className="space-y-3">
               <li>
-                <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors text-sm font-body">
+                <button onClick={() => { const el = document.getElementById("how-it-works"); if (el) el.scrollIntoView({ behavior: "smooth" }); else window.location.href = "/#how-it-works"; }} className="text-muted-foreground hover:text-foreground transition-colors text-sm font-body">
                   About
-                </Link>
+                </button>
               </li>
               <li>
                 <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors text-sm font-body">
