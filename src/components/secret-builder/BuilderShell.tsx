@@ -221,7 +221,7 @@ const BuilderShell = ({
       updateStep("analyze", "in_progress");
       console.log("🚀 [generate] Step 1: Generating course outline");
 
-      const outlineResponse = await AI.generateCourseOutline(idea, {
+      const outlineResponse = await AI.generateCourse(idea, {
         difficulty: options.difficulty,
         duration_weeks: options.duration_weeks,
         includeQuizzes: options.includeQuizzes,
