@@ -101,8 +101,6 @@ const GENERATION_STEPS: GenerationStep[] = [
   { id: "design", label: "Applying design theme", status: "pending" },
   { id: "save", label: "Finalizing course", status: "pending" },
 ];
-  { id: "save", label: "Saving to database", status: "pending" },
-];
 
 // ── Component ───────────────────────────────────────────────
 
