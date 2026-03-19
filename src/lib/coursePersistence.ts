@@ -73,6 +73,7 @@ export async function saveCourseToDatabase(
 
   if (!sessionData?.session) {
     console.error("💾 [saveCourse] ABORT — no active Supabase session");
+    toast.error("Session expired. Please sign in again.");
     return null;
   }
 
