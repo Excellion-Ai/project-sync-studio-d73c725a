@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -62,6 +63,7 @@ export async function saveCourseToDatabase(
 
   if (!userId) {
     console.error("💾 [saveCourse] ABORT — no userId provided");
+    toast.error("Cannot save: you are not signed in.");
     return null;
   }
 
@@ -71,6 +73,7 @@ export async function saveCourseToDatabase(
 
   if (!sessionData?.session) {
     console.error("💾 [saveCourse] ABORT — no active Supabase session");
+    toast.error("Session expired. Please sign in again.");
     return null;
   }
 
@@ -123,6 +126,7 @@ export async function saveCourseToDatabase(
     console.error("❌ [saveCourse] FAILED:", errorDetail);
     console.error("❌ [saveCourse] Full error:", JSON.stringify(error, null, 2));
     console.error("❌ [saveCourse] Payload keys:", Object.keys(payload).join(", "));
+    toast.error(`Failed to save course: ${error?.message || "Unknown error"}`);
     return null;
   }
 

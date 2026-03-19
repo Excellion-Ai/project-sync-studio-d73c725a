@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -116,10 +117,11 @@ const BuilderShell = ({
   initialCourseId,
 }: BuilderShellProps) => {
   // Core state
+  const { user } = useAuth();
   const [courseSpec, setCourseSpec] = useState<ExtendedCourse | null>(null);
   const [courseId, setCourseId] = useState<string | null>(initialCourseId || null);
   const [projectId, setProjectId] = useState<string | null>(initialProjectId || null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const userId = user?.id ?? null;
 
   // Generation — read from prop, then localStorage fallback
   const resolvedIdea = initialIdea || localStorage.getItem("builder-initial-idea") || "";
@@ -147,14 +149,6 @@ const BuilderShell = ({
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const projectName = courseSpec?.title ?? "Untitled Project";
-
-  // ── Auth ───────────────────────────────────────────────────
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setUserId(data.user.id);
-    });
-  }, []);
 
   // ── Auto-trigger generation from hub ──────────────────────
   const handleGenerateCourseRef = useRef<((options: CourseOptions) => Promise<void>) | null>(null);

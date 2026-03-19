@@ -14,18 +14,31 @@ function edgeFnUrl(name: string) {
   return `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`;
 }
 
-async function callEdgeFn<T = any>(fnName: string, body: Record<string, unknown>): Promise<T> {
+async function callEdgeFn<T = any>(fnName: string, body: Record<string, unknown>, timeoutMs?: number): Promise<T> {
   const headers = await getAuthHeaders();
-  const res = await fetch(edgeFnUrl(fnName), {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Edge function ${fnName} failed: ${err}`);
+  const controller = new AbortController();
+  const timeout = timeoutMs ? setTimeout(() => controller.abort(), timeoutMs) : null;
+
+  try {
+    const res = await fetch(edgeFnUrl(fnName), {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Edge function ${fnName} failed: ${err}`);
+    }
+    return res.json();
+  } catch (err: any) {
+    if (err.name === "AbortError") {
+      throw new Error("Request timed out. Please try again.");
+    }
+    throw err;
+  } finally {
+    if (timeout) clearTimeout(timeout);
   }
-  return res.json();
 }
 
 export interface CourseGenerationOptions {
@@ -39,7 +52,7 @@ export interface CourseGenerationOptions {
 export const AI = {
   /** Generate a full course from a prompt */
   generateCourse: (prompt: string, options?: CourseGenerationOptions) =>
-    callEdgeFn("generate-course", { prompt, options }),
+    callEdgeFn("generate-course", { prompt, options }, 90000),
 
   /** Interpret a design/content command against current course state */
   interpretCommand: (command: string, currentCourse: any, currentDesign: any) =>
