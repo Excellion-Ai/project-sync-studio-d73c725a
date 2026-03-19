@@ -15,23 +15,24 @@ const SYSTEM_PROMPT = `You are an expert course creator. Generate a course OUTLI
 RULES:
 - Return exactly 5 modules unless the user explicitly asks for a different size
 - Return exactly 3 lessons per module
+- Each lesson gets a title and a 1-sentence description ONLY — no full content
 - The subtitle must be a concrete benefit statement and must not repeat the title
 - Module and lesson titles must be specific, not generic placeholders
 - Include exactly 6 measurable learning outcomes
-- Do NOT generate lesson content — only titles
 - Return ONLY the requested JSON keys
 
 OUTPUT FORMAT:
 {
   "title": "string",
   "subtitle": "string",
-  "description": "string",
+  "description": "string (2-3 sentences for the sales page)",
   "learningOutcomes": ["string","string","string","string","string","string"],
   "modules": [
     {
       "title": "string",
+      "description": "string (1 sentence)",
       "lessons": [
-        { "title": "string" }
+        { "title": "string", "description": "string (1 sentence)" }
       ]
     }
   ]
