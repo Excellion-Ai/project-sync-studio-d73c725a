@@ -49,8 +49,6 @@ import {
   Star,
   ArrowRight,
   Plus,
-  Layout,
-  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -157,72 +155,7 @@ const QUICK_PROMPTS = [
 
 // ── Template cards ───────────────────────────────────────────
 
-interface TemplateCard {
-  id: string;
-  title: string;
-  description: string;
-  icon: any;
-  prompt: string;
-  style: "creator" | "technical" | "academic" | "visual";
-  accentClass: string;
-}
-
-const TEMPLATE_CARDS: TemplateCard[] = [
-  {
-    id: "creator-course",
-    title: "Creator Course",
-    description: "Personal brand course with video lessons and community access",
-    icon: Star,
-    prompt: "Create a comprehensive personal brand creator course with video lessons, community elements, and a polished landing page",
-    style: "creator",
-    accentClass: "border-amber-500/30 hover:border-amber-500/60 bg-amber-500/5",
-  },
-  {
-    id: "tech-bootcamp",
-    title: "Tech Bootcamp",
-    description: "Hands-on coding bootcamp with projects and quizzes",
-    icon: Code,
-    prompt: "Build a hands-on coding bootcamp with project-based modules, coding exercises, quizzes, and a certificate of completion",
-    style: "technical",
-    accentClass: "border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-500/5",
-  },
-  {
-    id: "academic-program",
-    title: "Academic Program",
-    description: "Structured learning program with assessments and certificates",
-    icon: GraduationCap,
-    prompt: "Design a structured academic program with modules, readings, assessments, graded assignments, and a formal certificate",
-    style: "academic",
-    accentClass: "border-blue-500/30 hover:border-blue-500/60 bg-blue-500/5",
-  },
-  {
-    id: "visual-workshop",
-    title: "Visual Workshop",
-    description: "Portfolio-style workshop with galleries and creative projects",
-    icon: Palette,
-    prompt: "Create a visual arts workshop with portfolio projects, image galleries, creative briefs, and a stunning visual landing page",
-    style: "visual",
-    accentClass: "border-violet-500/30 hover:border-violet-500/60 bg-violet-500/5",
-  },
-  {
-    id: "coaching-program",
-    title: "Coaching Program",
-    description: "1-on-1 coaching with modules, worksheets, and progress tracking",
-    icon: Users,
-    prompt: "Build a coaching program with self-paced modules, downloadable worksheets, progress tracking, and weekly milestones",
-    style: "creator",
-    accentClass: "border-pink-500/30 hover:border-pink-500/60 bg-pink-500/5",
-  },
-  {
-    id: "growth-course",
-    title: "Growth & Marketing",
-    description: "Marketing and business growth course with case studies",
-    icon: TrendingUp,
-    prompt: "Create a growth marketing course with case studies, actionable frameworks, A/B testing exercises, and analytics dashboards",
-    style: "technical",
-    accentClass: "border-orange-500/30 hover:border-orange-500/60 bg-orange-500/5",
-  },
-];
+// Templates removed — replaced by saved courses grid
 
 // ── Sidebar nav items ────────────────────────────────────────
 
@@ -768,10 +701,8 @@ function HubContent() {
   const [trashedCourses, setTrashedCourses] = useState<CourseItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatingTemplate, setGeneratingTemplate] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
   const [showAllCourses, setShowAllCourses] = useState(false);
-  const [showTemplates, setShowTemplates] = useState(true);
 
   // Dialogs
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -853,47 +784,7 @@ function HubContent() {
     }
   }, [idea, userId, navigate]);
 
-  const handleGenerateFromTemplate = useCallback(
-    async (template: TemplateCard) => {
-      if (!userId) return;
-      setGeneratingTemplate(template.id);
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (!session) {
-          toast.error("Session expired.");
-          navigate("/auth");
-          return;
-        }
-
-        const { data: proj, error } = await supabase
-          .from("builder_projects")
-          .insert({
-            name: template.title,
-            user_id: session.user.id,
-          })
-          .select("id")
-          .single();
-        if (error || !proj) throw error;
-
-        localStorage.setItem("builder-initial-idea", template.prompt);
-        localStorage.setItem("last-project-id", proj.id);
-        navigate(`/studio/${proj.id}`, {
-          state: {
-            initialIdea: template.prompt,
-            courseMode: template.style,
-          },
-        });
-      } catch (err) {
-        console.error("handleGenerateFromTemplate error:", err);
-        toast.error("Failed to create project from template.");
-      } finally {
-        setGeneratingTemplate(null);
-      }
-    },
-    [userId, navigate]
-  );
+  // Template generation removed — users start from prompts or saved courses
 
   // Auto-trigger generation if idea came from home page
   useEffect(() => {
@@ -1293,70 +1184,6 @@ function HubContent() {
             ))}
           </div>
 
-          {/* ── Template Cards ────────────────────────────── */}
-          <section className="space-y-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Layout className="h-5 w-5 text-primary" />
-                Start from a Template
-              </h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs text-muted-foreground"
-                onClick={() => setShowTemplates(!showTemplates)}
-              >
-                {showTemplates ? "Hide" : "Show"}
-              </Button>
-            </div>
-
-            {showTemplates && (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {TEMPLATE_CARDS.map((template) => (
-                  <Card
-                    key={template.id}
-                    className={cn(
-                      "cursor-pointer transition-all border",
-                      template.accentClass,
-                      generatingTemplate === template.id && "opacity-60"
-                    )}
-                    onClick={() => {
-                      if (!generatingTemplate)
-                        handleGenerateFromTemplate(template);
-                    }}
-                  >
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
-                          {generatingTemplate === template.id ? (
-                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                          ) : (
-                            <template.icon className="h-5 w-5 text-foreground" />
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium">
-                            {template.title}
-                          </h3>
-                          <p className="text-[11px] text-muted-foreground capitalize">
-                            {template.style} style
-                          </p>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {template.description}
-                      </p>
-                      <div className="flex items-center gap-1 text-xs text-primary font-medium">
-                        <span>Use template</span>
-                        <ArrowRight className="h-3 w-3" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </section>
-
           {/* ── Your Courses ──────────────────────────────── */}
           {isLoading ? (
             <div className="flex justify-center py-12">
@@ -1365,7 +1192,8 @@ function HubContent() {
           ) : courses.length > 0 ? (
             <section className="space-y-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-foreground">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
                   Your Courses
                 </h2>
                 <div className="flex items-center gap-2">
@@ -1410,13 +1238,12 @@ function HubContent() {
                     No courses yet
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Describe your idea above or pick a template to get started.
+                    Describe your idea above to get started.
                   </p>
                 </div>
               </div>
             )
           )}
-
           {/* ── Trashed Courses ───────────────────────────── */}
           {trashedCourses.length > 0 && (
             <section className="space-y-4 pt-4 border-t border-border">

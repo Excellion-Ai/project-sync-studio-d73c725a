@@ -202,6 +202,18 @@ const BuilderShell = ({
     });
   }, [userId, resolvedIdea, hasAutoTriggered, isGenerating]);
 
+  // ── Warn before leaving with unsaved changes ──────────────
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
   // ── Auto-save (1.5s debounce) ─────────────────────────────
 
   useEffect(() => {
