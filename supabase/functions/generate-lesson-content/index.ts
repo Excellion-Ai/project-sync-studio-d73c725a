@@ -7,41 +7,33 @@ const corsHeaders = {
 };
 
 const MODEL = "claude-sonnet-4-20250514";
-const REQUEST_TIMEOUT_MS = 25000;
+const REQUEST_TIMEOUT_MS = 30000;
 
-const SYSTEM_PROMPT = `You are an expert course creator. Generate a course OUTLINE as compact valid JSON.
+const SYSTEM_PROMPT = `You are an expert course content writer. Generate detailed lesson content for a single module.
 
 RULES:
-- Return exactly 5 modules unless the user explicitly asks for a different size
-- Return exactly 3 lessons per module
-- The subtitle must be a concrete benefit statement and must not repeat the title
-- Module and lesson titles must be specific, not generic placeholders
-- Include exactly 6 measurable learning outcomes
-- Do NOT generate lesson content — only titles
-- Return ONLY the requested JSON keys
+- Each lesson must contain 300+ words of actionable, specific content
+- Every lesson must include a practical assignment or action step
+- Keep the writing dense and useful, never fluffy
+- Return ONLY the requested JSON
 
 OUTPUT FORMAT:
 {
-  "title": "string",
-  "subtitle": "string",
-  "description": "string",
-  "learningOutcomes": ["string","string","string","string","string","string"],
-  "modules": [
+  "lessons": [
     {
       "title": "string",
-      "lessons": [
-        { "title": "string" }
-      ]
+      "content": "string (300+ words of lesson content in markdown)",
+      "assignment": "string (practical exercise or action step)"
     }
   ]
 }`;
 
-function parseCourseJson(text: string) {
+function parseLessonJson(text: string) {
   try {
     return JSON.parse(text);
   } catch {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Failed to parse course JSON from AI response");
+    if (!jsonMatch) throw new Error("Failed to parse lesson JSON from AI response");
     return JSON.parse(jsonMatch[0]);
   }
 }
@@ -60,7 +52,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log("generate-course invoked (outline only)");
+    console.log("generate-lesson-content invoked");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -78,39 +70,37 @@ serve(async (req) => {
 
     const { data: authData, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !authData?.user) {
-      console.error("generate-course auth failed", authError);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log("generate-course auth ok", authData.user.id);
-
     const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY") || Deno.env.get("ANTHROPIC_KEY");
-    if (!anthropicApiKey) {
-      console.error("ANTHROPIC_API_KEY not found in env");
-      throw new Error("ANTHROPIC_API_KEY is not configured");
+    if (!anthropicApiKey) throw new Error("ANTHROPIC_API_KEY is not configured");
+
+    const { courseTitle, moduleTitle, lessonTitles, difficulty, includeAssignments } = await req.json();
+
+    if (!moduleTitle || !Array.isArray(lessonTitles) || lessonTitles.length === 0) {
+      throw new Error("moduleTitle and lessonTitles[] are required");
     }
 
-    const { prompt, options } = await req.json();
-    if (!prompt || typeof prompt !== "string") throw new Error("prompt is required");
+    const lessonList = lessonTitles.map((t: string, i: number) => `${i + 1}. ${t}`).join("\n");
 
-    const userMessage = `Create a course OUTLINE (titles only, no lesson content) about: ${prompt}
+    const userMessage = `Generate detailed lesson content for the module "${moduleTitle}" from the course "${courseTitle || ""}".
+
+Difficulty: ${difficulty || "beginner"}
+
+Lessons to write:
+${lessonList}
 
 Requirements:
-- Difficulty level: ${options?.difficulty || "beginner"}
-- Target duration: ${options?.duration_weeks || 6} weeks
-${options?.template ? `- Layout style preference: ${options.template}` : ""}
+- Each lesson needs 300+ words of real, actionable content in markdown
+${includeAssignments !== false ? "- Include a practical assignment in every lesson" : "- Include a practical action step in every lesson"}
+- Content must be specific to the topic, not generic filler
+- Return ONLY valid JSON with a "lessons" array`;
 
-Important:
-- Default to exactly 5 modules with exactly 3 lessons each
-- Only return titles for lessons — NO content or assignments
-- Subtitle must describe the transformation, not repeat the title
-- Learning outcomes must be unique to this topic
-- Return ONLY valid JSON with the keys: title, subtitle, description, learningOutcomes, modules`;
-
-    console.log("generate-course requesting Anthropic outline with model:", MODEL);
+    console.log("generate-lesson-content requesting content for module:", moduleTitle);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -121,43 +111,39 @@ Important:
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 1500,
+        max_tokens: 2000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userMessage }],
       }),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
 
-    console.log("generate-course Anthropic status", response.status);
-
     if (!response.ok) {
       const errText = await response.text();
       console.error("Anthropic API error:", response.status, errText);
-      throw new Error(`Anthropic API error: ${response.status} - ${errText}`);
+      throw new Error(`Anthropic API error: ${response.status}`);
     }
 
     const data = await response.json();
     const text = data.content?.[0]?.text || "";
-    const course = parseCourseJson(text);
+    const parsed = parseLessonJson(text);
 
-    if (!course?.title || !Array.isArray(course?.modules) || course.modules.length === 0) {
-      throw new Error("AI response missing required course fields");
+    if (!Array.isArray(parsed?.lessons) || parsed.lessons.length === 0) {
+      throw new Error("AI response missing lessons array");
     }
 
-    console.log("generate-course outline success:", course.title, course.modules.length, "modules");
+    console.log("generate-lesson-content success for module:", moduleTitle, "lessons:", parsed.lessons.length);
 
-    return new Response(JSON.stringify(course), {
+    return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("generate-course error:", e);
+    console.error("generate-lesson-content error:", e);
 
     const status = isTimeoutError(e) ? 504 : 500;
     const message = isTimeoutError(e)
-      ? "Course outline generation timed out. Please try again."
-      : e instanceof Error
-        ? e.message
-        : "Unknown error";
+      ? "Lesson content generation timed out. Please try again."
+      : e instanceof Error ? e.message : "Unknown error";
 
     return new Response(JSON.stringify({ error: message }), {
       status,
