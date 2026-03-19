@@ -102,7 +102,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: "Excellion <hello@excellioncourses.com>",
         to: [email],
-        subject: "You're on the list! 🎉 Welcome to Excellion",
+        subject: "You're on the Excellion waitlist 🎉",
         html: htmlBody,
       }),
     });
