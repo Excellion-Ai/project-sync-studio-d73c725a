@@ -10,133 +10,93 @@ async function getAuthHeaders() {
   };
 }
 
-function edgeFnUrl(name: string) {
-  return `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`;
-}
-
-async function callEdgeFn<T = any>(fnName: string, body: Record<string, unknown>, timeoutMs?: number): Promise<T> {
-  const headers = await getAuthHeaders();
-  const controller = new AbortController();
-  const timeout = timeoutMs ? setTimeout(() => controller.abort(), timeoutMs) : null;
-
-  try {
-    const res = await fetch(edgeFnUrl(fnName), {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Edge function ${fnName} failed: ${err}`);
-    }
-    return res.json();
-  } catch (err: any) {
-    if (err.name === "AbortError") {
-      throw new Error("Request timed out. Please try again.");
-    }
-    throw err;
-  } finally {
-    if (timeout) clearTimeout(timeout);
+function unwrap(fnName: string, data: unknown, error: unknown) {
+  if (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    throw new Error(`AI.${fnName} failed: ${msg}`);
   }
-}
-
-export interface CourseGenerationOptions {
-  difficulty?: string;
-  duration_weeks?: number;
-  includeQuizzes?: boolean;
-  includeAssignments?: boolean;
-  template?: string;
+  return data;
 }
 
 export const AI = {
-  /** Generate course outline only (titles, no content) */
-  generateCourseOutline: (prompt: string, options?: CourseGenerationOptions) =>
-    callEdgeFn("generate-course", { prompt, options }, 30000),
+  async generateCourse(prompt: string, options?: Record<string, unknown>) {
+    const { data, error } = await supabase.functions.invoke("generate-course", {
+      body: { prompt, options },
+    });
+    return unwrap("generateCourse", data, error);
+  },
 
-  /** Generate detailed lesson content for a single lesson */
-  generateLessonContent: (params: {
-    courseTitle: string;
-    moduleTitle: string;
-    lessonTitle: string;
-    difficulty?: string;
-    includeAssignments?: boolean;
-  }) => callEdgeFn("generate-lesson-content", params, 20000),
+  async interpretCommand(
+    command: string,
+    currentCourse: Record<string, unknown>,
+    currentDesign?: Record<string, unknown>
+  ) {
+    const { data, error } = await supabase.functions.invoke("interpret-course-command", {
+      body: { command, current_course: currentCourse, current_design: currentDesign },
+    });
+    return unwrap("interpretCommand", data, error);
+  },
 
-  /** @deprecated Use generateCourseOutline + generateLessonContent */
-  generateCourse: (prompt: string, options?: CourseGenerationOptions) =>
-    callEdgeFn("generate-course", { prompt, options }, 90000),
+  async builderAgent(payload: Record<string, unknown>) {
+    const { data, error } = await supabase.functions.invoke("builder-agent", {
+      body: payload,
+    });
+    return unwrap("builderAgent", data, error);
+  },
 
-  /** Interpret a design/content command against current course state */
-  interpretCommand: (command: string, currentCourse: any, currentDesign: any) =>
-    callEdgeFn("interpret-course-command", { command, currentCourse, currentDesign }),
+  async generateCode(payload: Record<string, unknown>) {
+    const { data, error } = await supabase.functions.invoke("code-agent", {
+      body: payload,
+    });
+    return unwrap("generateCode", data, error);
+  },
 
-  /** Help chat (non-streaming) */
-  help: (messages: Array<{ role: string; content: string }>, systemPrompt?: string) =>
-    callEdgeFn("help-chat", { messages, systemPrompt }),
-
-  /** Generate an image */
-  generateImage: (prompt: string, width = 1024, height = 1024) =>
-    callEdgeFn("generate-image", { prompt, width, height }),
-
-  /** Generate a niche-specific image */
-  generateNicheImage: (payload: Record<string, unknown>) =>
-    callEdgeFn("generate-niche-image", payload),
-
-  /** Generate site spec / blueprint */
-  builderAgent: (prompt: string, extras?: Record<string, unknown>) =>
-    callEdgeFn("builder-agent", { prompt, ...extras }),
-
-  /** Generate React code from spec */
-  codeAgent: (prompt: string, spec?: Record<string, unknown>, existingCode?: string) =>
-    callEdgeFn("code-agent", { prompt, spec, existingCode }),
-
-  /** Database schema queries / SQL generation */
-  databaseAI: (prompt: string, currentSchema?: Record<string, unknown>, context?: Record<string, unknown>) =>
-    callEdgeFn("database-ai", { prompt, currentSchema, context }),
-
-  /** Streaming chat via bot-chat edge function */
-  chatStream: async function* (
+  async chatStream(
     messages: Array<{ role: string; content: string }>,
     extras?: Record<string, unknown>
-  ) {
+  ): Promise<Response> {
     const headers = await getAuthHeaders();
-    const res = await fetch(edgeFnUrl("bot-chat"), {
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bot-chat`;
+    const res = await fetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify({ messages, ...extras }),
     });
-    if (!res.ok) throw new Error(`bot-chat failed: ${await res.text()}`);
-    const reader = res.body?.getReader();
-    if (!reader) return;
-    const decoder = new TextDecoder();
-    let buffer = "";
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith("data: ")) {
-          const data = trimmed.slice(6);
-          if (data === "[DONE]") return;
-          try {
-            yield JSON.parse(data);
-          } catch {
-            yield { text: data };
-          }
-        }
-      }
+    if (!res.ok) {
+      const text = await res.text().catch(() => res.statusText);
+      throw new Error(`AI.chatStream failed (${res.status}): ${text}`);
     }
+    return res;
   },
 
-  /** Check user credits */
-  checkCredits: (action: string) =>
-    callEdgeFn("check-credits", { action }),
+  async help(
+    messages: Array<{ role: string; content: string }>,
+    systemPrompt?: string
+  ) {
+    const { data, error } = await supabase.functions.invoke("help-chat", {
+      body: { messages, systemPrompt },
+    });
+    return unwrap("help", data, error);
+  },
 
-  /** Deduct credits after successful action */
-  deductCredits: (action: string, amount: number) =>
-    callEdgeFn("deduct-credits", { action, amount }),
+  async generateQuery(query: string, schema?: Record<string, unknown>) {
+    const { data, error } = await supabase.functions.invoke("database-ai", {
+      body: { query, schema },
+    });
+    return unwrap("generateQuery", data, error);
+  },
+
+  async generateImage(prompt: string, width = 1024, height = 1024) {
+    const { data, error } = await supabase.functions.invoke("generate-image", {
+      body: { prompt, width, height },
+    });
+    return unwrap("generateImage", data, error);
+  },
+
+  async generateNicheImage(payload: Record<string, unknown>) {
+    const { data, error } = await supabase.functions.invoke("generate-niche-image", {
+      body: payload,
+    });
+    return unwrap("generateNicheImage", data, error);
+  },
 };

@@ -221,7 +221,7 @@ const BuilderShell = ({
       updateStep("analyze", "in_progress");
       console.log("🚀 [generate] Step 1: Generating course outline");
 
-      const outlineResponse = await AI.generateCourseOutline(idea, {
+      const outlineResponse = await AI.generateCourse(idea, {
         difficulty: options.difficulty,
         duration_weeks: options.duration_weeks,
         includeQuizzes: options.includeQuizzes,
@@ -232,10 +232,11 @@ const BuilderShell = ({
       updateStep("analyze", "complete");
       updateStep("structure", "in_progress");
 
-      console.log("🚀 [generate] Outline received:", outlineResponse?.title, outlineResponse?.modules?.length, "modules");
+      const outline = outlineResponse as Record<string, any>;
+      console.log("🚀 [generate] Outline received:", outline?.title, outline?.modules?.length, "modules");
 
       // Map outline to course (lessons will have titles but no content yet)
-      const course = mapAIResponseToCourse(outlineResponse, options);
+      const course = mapAIResponseToCourse(outline, options);
       updateStep("structure", "complete");
 
       // ── STEP 2: Save outline immediately ─────────────────
