@@ -47,9 +47,9 @@ const SecurityScanPanel = () => {
             <Card key={r.label} className="border-border/50">
               <CardContent className="flex items-start gap-2 py-2 px-3">
                 {r.status === "pass" ? (
-                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <CheckCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 ) : (
-                  <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                  <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                 )}
                 <div>
                   <p className="text-xs font-medium text-foreground">{r.label}</p>

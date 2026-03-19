@@ -31,7 +31,7 @@ const DiffViewer = ({ title = "Changes", lines }: DiffViewerProps) => (
             key={i}
             className={cn(
               "px-4 py-0.5",
-              line.type === "added" && "bg-emerald-500/10 text-emerald-400",
+              line.type === "added" && "bg-primary/10 text-primary",
               line.type === "removed" && "bg-destructive/10 text-destructive",
               line.type === "unchanged" && "text-muted-foreground"
             )}
