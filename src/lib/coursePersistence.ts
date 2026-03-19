@@ -126,6 +126,7 @@ export async function saveCourseToDatabase(
     console.error("❌ [saveCourse] FAILED:", errorDetail);
     console.error("❌ [saveCourse] Full error:", JSON.stringify(error, null, 2));
     console.error("❌ [saveCourse] Payload keys:", Object.keys(payload).join(", "));
+    toast.error(`Failed to save course: ${error?.message || "Unknown error"}`);
     return null;
   }
 

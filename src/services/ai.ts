@@ -52,7 +52,7 @@ export interface CourseGenerationOptions {
 export const AI = {
   /** Generate a full course from a prompt */
   generateCourse: (prompt: string, options?: CourseGenerationOptions) =>
-    callEdgeFn("generate-course", { prompt, options }),
+    callEdgeFn("generate-course", { prompt, options }, 90000),
 
   /** Interpret a design/content command against current course state */
   interpretCommand: (command: string, currentCourse: any, currentDesign: any) =>
