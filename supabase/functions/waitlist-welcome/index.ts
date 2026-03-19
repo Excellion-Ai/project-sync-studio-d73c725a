@@ -51,30 +51,30 @@ serve(async (req) => {
           <tr>
             <td style="padding:0 40px 20px;">
               <h2 style="margin:0 0 16px;font-size:22px;font-weight:600;color:#ffffff;">
-                You're on the list! 🎉
+                You're on the list!
               </h2>
               <p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#9ca3af;">
-                Thanks for joining the Excellion early access waitlist. You're one step closer to building and selling premium fitness courses — powered by AI.
+                Thanks for joining the Excellion early access waitlist. You're one step closer to launching your fitness course with AI — fast, professional, and built for creators like you.
               </p>
               <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#9ca3af;">
-                We're launching on <strong style="color:#ffffff;">April 7th</strong>. As an early access member, you'll be first in line to:
+                We're launching <strong style="color:#ffffff;">April 7th</strong>. As an early access member, you'll be first in line to:
               </p>
               <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
                 <tr>
-                  <td style="padding:6px 0;font-size:15px;color:#d4a853;">✦</td>
+                  <td style="padding:6px 0;font-size:15px;color:#d4a853;">•</td>
                   <td style="padding:6px 0 6px 12px;font-size:15px;color:#9ca3af;">Generate full courses in under 60 seconds</td>
                 </tr>
                 <tr>
-                  <td style="padding:6px 0;font-size:15px;color:#d4a853;">✦</td>
-                  <td style="padding:6px 0 6px 12px;font-size:15px;color:#9ca3af;">Publish & sell with zero tech skills required</td>
+                  <td style="padding:6px 0;font-size:15px;color:#d4a853;">•</td>
+                  <td style="padding:6px 0 6px 12px;font-size:15px;color:#9ca3af;">Publish and sell with zero tech skills required</td>
                 </tr>
                 <tr>
-                  <td style="padding:6px 0;font-size:15px;color:#d4a853;">✦</td>
-                  <td style="padding:6px 0 6px 12px;font-size:15px;color:#9ca3af;">Keep 100% of your revenue — no platform fees</td>
+                  <td style="padding:6px 0;font-size:15px;color:#d4a853;">•</td>
+                  <td style="padding:6px 0 6px 12px;font-size:15px;color:#9ca3af;">Lock in exclusive early access pricing forever</td>
                 </tr>
               </table>
               <p style="margin:0 0 8px;font-size:15px;line-height:1.6;color:#9ca3af;">
-                We'll send you early access details before launch day. Stay tuned.
+                We'll send you everything you need before launch day. Get ready.
               </p>
             </td>
           </tr>
