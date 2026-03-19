@@ -63,6 +63,7 @@ export async function saveCourseToDatabase(
 
   if (!userId) {
     console.error("💾 [saveCourse] ABORT — no userId provided");
+    toast.error("Cannot save: you are not signed in.");
     return null;
   }
 
