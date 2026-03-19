@@ -53,12 +53,13 @@ const Navigation = () => {
   };
 
   const ALLOWED_EMAIL = "excellionai@gmail.com";
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
 
   const handleStartBuilding = () => {
     if (user && user.email === ALLOWED_EMAIL) {
       navigate("/secret-builder-hub");
     } else {
-      scrollTo("waitlist");
+      setWaitlistOpen(true);
     }
   };
 
