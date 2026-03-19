@@ -205,7 +205,10 @@ const Navigation = () => {
         </div>
       </div>
     </nav>
+      <WaitlistModal open={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
+    </>
   );
 };
+
 
 export default Navigation;
