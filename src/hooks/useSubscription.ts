@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useCallback } from "react";
 
 interface SubscriptionState {
   subscribed: boolean;
@@ -8,43 +7,22 @@ interface SubscriptionState {
   loading: boolean;
 }
 
+/**
+ * Stub hook — subscription infrastructure (table + edge function) not yet built.
+ * Returns subscribed: false and a no-op refresh.
+ * Replace with real logic once a subscriptions table + Stripe webhook exists.
+ */
 export function useSubscription() {
-  const [state, setState] = useState<SubscriptionState>({
+  const [state] = useState<SubscriptionState>({
     subscribed: false,
     productId: null,
     subscriptionEnd: null,
-    loading: true,
+    loading: false,
   });
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
   const refresh = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("check-subscription");
-      if (error) throw error;
-      setState({
-        subscribed: !!data?.subscribed,
-        productId: data?.productId ?? null,
-        subscriptionEnd: data?.subscriptionEnd ?? null,
-        loading: false,
-      });
-    } catch {
-      setState((prev) => ({ ...prev, loading: false }));
-    }
+    // No-op until subscription infrastructure is built
   }, []);
-
-  useEffect(() => {
-    refresh();
-    intervalRef.current = setInterval(refresh, 60_000);
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      refresh();
-    });
-
-    return () => {
-      clearInterval(intervalRef.current);
-      subscription.unsubscribe();
-    };
-  }, [refresh]);
 
   return { ...state, refresh };
 }
