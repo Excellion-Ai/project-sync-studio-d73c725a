@@ -527,12 +527,35 @@ const BuilderShell = ({
         };
       }
 
-      if (changes.layout_template) updated.layout_template = changes.layout_template;
+      // Layout template / style
+      if (changes.layout_template) {
+        updated.layout_template = changes.layout_template;
+        updated.layout_style = changes.layout_template;
+      }
+      if (changes.layout_style) {
+        updated.layout_style = changes.layout_style;
+        updated.layout_template = changes.layout_style;
+      }
+
+      // Section order
       if (changes.section_order) updated.section_order = changes.section_order;
 
-      // Deep-merge curriculum changes
+      // Content fields
+      if (changes.title) updated.title = changes.title;
+      if (changes.description) updated.description = changes.description;
+      if (changes.tagline) updated.tagline = changes.tagline;
+
+      // Curriculum / modules
       if (changes.curriculum && Array.isArray(changes.curriculum)) {
         updated.modules = changes.curriculum;
+      }
+      if (changes.modules && Array.isArray(changes.modules)) {
+        updated.modules = changes.modules;
+      }
+
+      // Page sections (instructor, faq, bonuses, etc.)
+      if (changes.pages) {
+        updated.pages = { ...updated.pages, ...changes.pages };
       }
 
       setCourseSpec(updated);
@@ -540,10 +563,14 @@ const BuilderShell = ({
       // Persist to DB
       if (courseId) {
         updateCourseInDatabase(courseId, {
+          title: updated.title,
+          description: updated.description,
+          tagline: updated.tagline,
           design_config: updated.design_config,
-          layout_template: updated.layout_template,
+          layout_template: updated.layout_template ?? updated.layout_style,
           section_order: updated.section_order,
           curriculum: updated.modules,
+          page_sections: updated.pages,
         });
       }
     },
@@ -552,18 +579,40 @@ const BuilderShell = ({
 
   // ── Refine ────────────────────────────────────────────────
 
+  const [isRefining, setIsRefining] = useState(false);
+
   const handleRefine = useCallback(
     async (prompt: string) => {
       if (!courseSpec) return;
+      setIsRefining(true);
       try {
         const result = (await AI.interpretCommand(
           prompt,
           courseSpec as any,
           courseSpec.design_config as any
         )) as Record<string, any>;
-        if (result) handleApplyChanges(result);
+
+        if (result) {
+          // The edge function returns { action, changes, explanation }
+          // Unwrap the changes object and apply it
+          const changesToApply = result.changes || result;
+          handleApplyChanges(changesToApply);
+
+          // Add assistant response to chat
+          const explanation = result.explanation || "Changes applied.";
+          setMessages((prev) => [
+            ...prev,
+            { id: crypto.randomUUID(), role: "assistant", content: explanation },
+          ]);
+        }
       } catch (err: any) {
-        toast.error(`Refine failed: ${err?.message}`);
+        toast.error(`Failed: ${err?.message}`);
+        setMessages((prev) => [
+          ...prev,
+          { id: crypto.randomUUID(), role: "assistant", content: `Sorry, that didn't work: ${err?.message}` },
+        ]);
+      } finally {
+        setIsRefining(false);
       }
     },
     [courseSpec, handleApplyChanges]
@@ -642,6 +691,7 @@ const BuilderShell = ({
               onIdeaChange={setIdea}
               onGenerate={handleGenerate}
               isGenerating={isGenerating}
+              isRefining={isRefining}
               steps={steps}
               messages={messages}
               attachments={attachments}
@@ -653,6 +703,7 @@ const BuilderShell = ({
               }
               onRefinePrompt={handleRefine}
               hasCourse={!!courseSpec}
+              onAddMessage={(msg) => setMessages((prev) => [...prev, msg])}
             />
           </ResizablePanel>
 
