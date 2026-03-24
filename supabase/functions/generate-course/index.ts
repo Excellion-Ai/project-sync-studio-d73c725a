@@ -38,10 +38,11 @@ DESIGN RULES — every course MUST look different:
 - Pick heroStyle from: "gradient", "minimal", "split"
 - Pick spacing from: "compact", "normal", "spacious"
 - Pick borderRadius from: "none", "small", "medium", "large"
-- Use dark backgrounds (background should be very dark: #0a-#15 range) with light text for premium feel
-- primary color should be vibrant and topic-appropriate (NOT always gold/amber)
+- Default to dark backgrounds (#0a-#15 range) with light text for premium feel, BUT if the user explicitly requests light/white backgrounds, honor their request
+- primary color must be a VIBRANT accent/brand color (NOT the same as background or text). It's used for buttons, icons, and highlights — it MUST contrast against both background and text
 - accent should complement primary but be distinct
-- cardBackground should be slightly lighter than background
+- cardBackground should be slightly lighter than background (for dark themes) or slightly darker (for light themes)
+- NEVER set primary to the same color as background or text — that makes UI elements invisible
 
 OUTPUT FORMAT:
 {

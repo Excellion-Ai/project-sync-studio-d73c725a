@@ -182,8 +182,9 @@ const BuilderShell = ({
   const [projectId, setProjectId] = useState<string | null>(initialProjectId || null);
   const [coursePublishedUrl, setCoursePublishedUrl] = useState<string | null>(null);
 
-  // Generation
+  // Generation — consume and clear localStorage idea immediately to prevent cross-project leaks
   const resolvedIdea = initialIdea || localStorage.getItem("builder-initial-idea") || "";
+  if (typeof window !== "undefined") localStorage.removeItem("builder-initial-idea");
   const [idea, setIdea] = useState(resolvedIdea);
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasAutoTriggered, setHasAutoTriggered] = useState(false);

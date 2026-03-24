@@ -46,6 +46,7 @@ const SecretBuilder = () => {
   return (
     <div className="min-h-screen">
       <BuilderShell
+        key={resolvedProjectId || state.courseId || "new"}
         initialIdea={state.initialIdea}
         initialProjectId={resolvedProjectId}
         initialCourseId={state.courseId}
