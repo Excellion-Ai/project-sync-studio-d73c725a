@@ -251,9 +251,7 @@ const BuilderShell = ({
         pages: pageSections,
         section_order: sectionOrder,
         design_config: designConfig,
-        instructor_name: data.instructor_name || "",
-        instructor_bio: data.instructor_bio || "",
-        thumbnail_url: data.thumbnail_url || "",
+        thumbnail: data.thumbnail_url || "",
       };
 
       setCourseSpec(loaded);
