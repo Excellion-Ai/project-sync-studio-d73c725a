@@ -162,9 +162,10 @@ const BuilderShell = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
 
-  // Publishing
+  // Publishing & Refining
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
 
   // Preview & UI
   const [previewMode, setPreviewMode] = useState<PreviewMode>("desktop");
@@ -578,8 +579,6 @@ const BuilderShell = ({
   );
 
   // ── Refine ────────────────────────────────────────────────
-
-  const [isRefining, setIsRefining] = useState(false);
 
   const handleRefine = useCallback(
     async (prompt: string) => {
