@@ -184,6 +184,96 @@ const BuilderShell = ({
   const { subscribed } = useSubscription();
   const isFounder = ALLOWED_EMAILS.includes(userEmail);
 
+  // ── Load existing course when reopening a saved project ───
+  useEffect(() => {
+    if (!projectId || !userId || courseSpec) return;
+    const loadExisting = async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .eq("builder_project_id", projectId)
+        .eq("user_id", userId)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      if (error || !data) {
+        console.log("📂 No existing course found for project:", projectId);
+        return;
+      }
+
+      console.log("📂 Loading saved course:", data.id, data.title);
+      setCourseId(data.id);
+      setIsPublished(data.status === "published");
+      if (data.published_at && data.subdomain) {
+        setCoursePublishedUrl(`${window.location.origin}/course/${data.subdomain}`);
+      }
+
+      // Rebuild ExtendedCourse from DB row
+      const modules = Array.isArray(data.curriculum) ? data.curriculum : [];
+      const designConfig = (data.design_config as any) || DEFAULT_DESIGN_CONFIG;
+      const pageSections = (data.page_sections as any) || {
+        landing_sections: ["hero", "outcomes", "curriculum", "instructor", "faq"],
+      };
+      const sectionOrder = Array.isArray(data.section_order)
+        ? data.section_order
+        : pageSections?.landing_sections;
+      const meta = (data.meta as any) || {};
+
+      const loaded: ExtendedCourse = {
+        id: data.id,
+        title: data.title,
+        description: data.description || "",
+        tagline: data.tagline || "",
+        difficulty: meta.difficulty || "beginner",
+        duration_weeks: meta.duration_weeks || 6,
+        layout_style: data.layout_template || "suspended",
+        layout_template: data.layout_template || "suspended",
+        learningOutcomes: [],
+        modules: (modules as any[]).map((mod: any, i: number) => ({
+          id: mod.id || `mod-${i}`,
+          title: mod.title || `Module ${i + 1}`,
+          description: mod.description || "",
+          is_first: i === 0,
+          is_last: i === (modules as any[]).length - 1,
+          lessons: (mod.lessons || []).map((les: any, j: number) => ({
+            id: les.id || `mod-${i}-les-${j}`,
+            title: les.title || `Lesson ${j + 1}`,
+            duration: les.duration || "20m",
+            type: les.type || "text",
+            description: les.description || "",
+            content_markdown: les.content_markdown || "",
+            video_url: les.video_url,
+            quiz_questions: les.quiz_questions,
+            passing_score: les.passing_score,
+            assignment_brief: les.assignment_brief,
+          })),
+        })),
+        pages: pageSections,
+        section_order: sectionOrder,
+        design_config: designConfig,
+        instructor_name: data.instructor_name || "",
+        instructor_bio: data.instructor_bio || "",
+        thumbnail_url: data.thumbnail_url || "",
+      };
+
+      setCourseSpec(loaded);
+      setIsDirty(false);
+      setSaveStatus("saved");
+
+      // Update settings from DB
+      setCourseSettings((prev) => ({
+        ...prev,
+        instructorName: data.instructor_name || "",
+        instructorBio: data.instructor_bio || "",
+        thumbnail: data.thumbnail_url || "",
+        seoTitle: data.seo_title || "",
+        seoDescription: data.seo_description || "",
+        offerType: data.type || "standard",
+      }));
+    };
+    loadExisting();
+  }, [projectId, userId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Auto-trigger generation ───────────────────────────────
 
   const handleGenerateCourseRef = useRef<((options: CourseOptions) => Promise<void>) | null>(null);
@@ -191,6 +281,8 @@ const BuilderShell = ({
   useEffect(() => {
     if (hasAutoTriggered || !resolvedIdea || !userId || isGenerating) return;
     if (!handleGenerateCourseRef.current) return;
+    // Don't auto-trigger if we already loaded an existing course
+    if (courseSpec) return;
     setHasAutoTriggered(true);
     localStorage.removeItem("builder-initial-idea");
     handleGenerateCourseRef.current({
@@ -200,7 +292,7 @@ const BuilderShell = ({
       includeAssignments: true,
       template: "creator",
     });
-  }, [userId, resolvedIdea, hasAutoTriggered, isGenerating]);
+  }, [userId, resolvedIdea, hasAutoTriggered, isGenerating, courseSpec]);
 
   // ── Warn before leaving with unsaved changes ──────────────
   useEffect(() => {
