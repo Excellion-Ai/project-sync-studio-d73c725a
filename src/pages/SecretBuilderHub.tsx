@@ -143,14 +143,14 @@ interface AttachmentItem {
 // ── Quick prompts ────────────────────────────────────────────
 
 const QUICK_PROMPTS = [
-  { label: "Beginner coding bootcamp", icon: GraduationCap },
-  { label: "Fitness coaching program", icon: Dumbbell },
-  { label: "Online cooking class", icon: ChefHat },
-  { label: "Language learning course", icon: Languages },
-  { label: "Business coaching program", icon: Briefcase },
-  { label: "Photography masterclass", icon: Camera },
-  { label: "Music production course", icon: Music },
-  { label: "Personal development", icon: Heart },
+  { label: "6-week fat loss program", icon: Dumbbell },
+  { label: "Home workout plan for beginners", icon: Heart },
+  { label: "Strength training fundamentals", icon: Dumbbell },
+  { label: "Yoga & mobility course", icon: Heart },
+  { label: "Nutrition & meal prep guide", icon: GraduationCap },
+  { label: "HIIT & cardio bootcamp", icon: Dumbbell },
+  { label: "Bodybuilding for beginners", icon: Dumbbell },
+  { label: "Mindset & fitness habits", icon: Heart },
 ];
 
 // ── Template cards ───────────────────────────────────────────
