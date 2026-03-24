@@ -1,8 +1,5 @@
 import { useState } from "react";
 
-// TODO: Re-enable when subscription system is built
-// import { supabase } from "@/integrations/supabase/client";
-
 interface SubscriptionState {
   subscribed: boolean;
   productId: string | null;
@@ -10,8 +7,12 @@ interface SubscriptionState {
   loading: boolean;
 }
 
+/**
+ * Stub hook — subscription infrastructure (table + edge function) not yet built.
+ * Returns subscribed: false and a no-op refresh.
+ * Replace with real logic once a subscriptions table + Stripe webhook exists.
+ */
 export function useSubscription() {
-  // TODO: Re-enable when subscription system is built
   const [state] = useState<SubscriptionState>({
     subscribed: false,
     productId: null,
@@ -20,8 +21,7 @@ export function useSubscription() {
   });
 
   const refresh = async () => {
-    // TODO: Re-enable when subscription system is built
-    // const { data, error } = await supabase.functions.invoke("check-subscription");
+    // No-op until subscription infrastructure is built
   };
 
   return { ...state, refresh };
