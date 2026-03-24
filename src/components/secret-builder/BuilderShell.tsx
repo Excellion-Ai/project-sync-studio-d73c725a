@@ -226,7 +226,7 @@ const BuilderShell = ({
         tagline: data.tagline || "",
         difficulty: meta.difficulty || "beginner",
         duration_weeks: meta.duration_weeks || 6,
-        layout_style: data.layout_template || "suspended",
+        layout_style: (data.layout_template || "creator") as ExtendedCourse["layout_style"],
         layout_template: data.layout_template || "suspended",
         learningOutcomes: [],
         modules: (modules as any[]).map((mod: any, i: number) => ({
