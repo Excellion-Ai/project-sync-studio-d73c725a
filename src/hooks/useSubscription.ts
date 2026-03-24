@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 
 interface SubscriptionState {
   subscribed: boolean;
@@ -20,9 +20,9 @@ export function useSubscription() {
     loading: false,
   });
 
-  const refresh = useCallback(async () => {
+  const refresh = async () => {
     // No-op until subscription infrastructure is built
-  }, []);
+  };
 
   return { ...state, refresh };
 }

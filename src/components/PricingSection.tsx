@@ -53,8 +53,8 @@ const PricingSection = () => {
           {/* Card */}
           <div className="premium-card p-8 text-center shadow-glow">
             <div className="mb-6">
-              <span className="text-4xl font-heading font-black text-gradient-gold">$19</span>
-              <span className="text-muted-foreground text-sm ml-2 font-body">first month</span>
+              <span className="text-4xl font-heading font-black text-gradient-gold">{yearly ? "$790" : "$19"}</span>
+              <span className="text-muted-foreground text-sm ml-2 font-body">{yearly ? "/year" : "first month"}</span>
             </div>
             <p className="text-muted-foreground text-sm mb-8 font-body">
               then {yearly ? "$790/year" : "$79/month"} · {yearly && "save $158 · "}Everything included. Cancel anytime.
