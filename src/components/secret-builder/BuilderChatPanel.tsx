@@ -230,6 +230,7 @@ interface BuildTabProps {
   steps: GenerationStep[];
   messages: Array<{ id: string; role: "user" | "assistant"; content: string }>;
   attachments: AttachmentItem[];
+  onAddAttachment: (item: AttachmentItem) => void;
   onRemoveAttachment: (id: string) => void;
   showOptions: boolean;
   setShowOptions: (v: boolean) => void;
