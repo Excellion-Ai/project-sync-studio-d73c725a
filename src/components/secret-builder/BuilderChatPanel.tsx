@@ -38,6 +38,7 @@ import {
   GenerationStep,
   AttachmentItem,
 } from "./CourseBuilderPanel";
+import AttachmentMenu from "./attachments/AttachmentMenu";
 
 // ── Types ─────────────────────────────────────────────────────
 
