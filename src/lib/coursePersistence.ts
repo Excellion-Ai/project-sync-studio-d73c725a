@@ -196,3 +196,116 @@ export async function ensureCourseExists(params: {
 
   return result?.id ?? null;
 }
+
+// ── Soft Delete ────────────────────────────────────────────
+
+export async function softDeleteCourse(courseId: string): Promise<boolean> {
+  // The BEFORE DELETE trigger converts this to a soft-delete automatically,
+  // but we can also do it explicitly for clarity and to avoid trigger reliance.
+  const { error } = await supabase
+    .from("courses")
+    .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() } as any)
+    .eq("id", courseId);
+
+  if (error) {
+    console.error("Failed to soft-delete course:", error);
+    toast.error(`Failed to delete course: ${error.message}`);
+    return false;
+  }
+  return true;
+}
+
+export async function restoreCourse(courseId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("courses")
+    .update({ deleted_at: null, updated_at: new Date().toISOString() } as any)
+    .eq("id", courseId);
+
+  if (error) {
+    console.error("Failed to restore course:", error);
+    toast.error(`Failed to restore course: ${error.message}`);
+    return false;
+  }
+  toast.success("Course restored successfully.");
+  return true;
+}
+
+// ── Version History ────────────────────────────────────────
+
+export interface CourseVersion {
+  id: string;
+  course_id: string;
+  version_number: number;
+  snapshot: Record<string, any>;
+  change_source: string;
+  created_at: string;
+}
+
+export async function getCourseVersions(
+  courseId: string
+): Promise<CourseVersion[]> {
+  const { data, error } = await supabase
+    .from("course_versions")
+    .select("*")
+    .eq("course_id", courseId)
+    .order("version_number", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error("Failed to fetch course versions:", error);
+    return [];
+  }
+  return (data ?? []) as unknown as CourseVersion[];
+}
+
+export async function restoreCourseVersion(
+  courseId: string,
+  versionId: string
+): Promise<boolean> {
+  // 1. Fetch the version snapshot
+  const { data: version, error: fetchError } = await supabase
+    .from("course_versions")
+    .select("snapshot")
+    .eq("id", versionId)
+    .eq("course_id", courseId)
+    .single();
+
+  if (fetchError || !version) {
+    console.error("Failed to fetch version:", fetchError);
+    toast.error("Could not find that version.");
+    return false;
+  }
+
+  const snapshot = version.snapshot as Record<string, any>;
+
+  // 2. Apply the snapshot back to the course (this will trigger a new version snapshot of current state first)
+  const { error: updateError } = await supabase
+    .from("courses")
+    .update({
+      title: snapshot.title,
+      description: snapshot.description,
+      tagline: snapshot.tagline,
+      curriculum: snapshot.curriculum,
+      design_config: snapshot.design_config,
+      layout_template: snapshot.layout_template,
+      section_order: snapshot.section_order,
+      page_sections: snapshot.page_sections,
+      meta: snapshot.meta,
+      status: snapshot.status,
+      price_cents: snapshot.price_cents,
+      branding: snapshot.branding,
+      hero_copy: snapshot.hero_copy,
+      thumbnail_url: snapshot.thumbnail_url,
+      updated_at: new Date().toISOString(),
+    } as any)
+    .eq("id", courseId);
+
+  if (updateError) {
+    console.error("Failed to restore version:", updateError);
+    toast.error(`Failed to restore version: ${updateError.message}`);
+    return false;
+  }
+
+  toast.success("Course restored to previous version.");
+  return true;
+}

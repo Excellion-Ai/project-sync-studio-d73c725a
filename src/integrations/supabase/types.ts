@@ -204,6 +204,44 @@ export type Database = {
           },
         ]
       }
+      course_versions: {
+        Row: {
+          change_source: string | null
+          course_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          snapshot: Json
+          version_number: number
+        }
+        Insert: {
+          change_source?: string | null
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          snapshot: Json
+          version_number?: number
+        }
+        Update: {
+          change_source?: string | null
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          snapshot?: Json
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_versions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_views: {
         Row: {
           course_id: string
