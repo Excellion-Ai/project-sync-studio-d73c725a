@@ -131,6 +131,8 @@ interface CourseItem {
   published_at: string | null;
   total_students: number | null;
   layout_template: string | null;
+  design_config: any;
+  tagline: string | null;
 }
 
 interface AttachmentItem {
