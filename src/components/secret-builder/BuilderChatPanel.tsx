@@ -38,6 +38,7 @@ import {
   GenerationStep,
   AttachmentItem,
 } from "./CourseBuilderPanel";
+import AttachmentMenu from "./attachments/AttachmentMenu";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -196,6 +197,7 @@ const BuilderChatPanel = ({
           steps={steps}
           messages={messages}
           attachments={attachments}
+          onAddAttachment={onAddAttachment}
           onRemoveAttachment={onRemoveAttachment}
           showOptions={showOptions}
           setShowOptions={setShowOptions}
@@ -229,6 +231,7 @@ interface BuildTabProps {
   steps: GenerationStep[];
   messages: Array<{ id: string; role: "user" | "assistant"; content: string }>;
   attachments: AttachmentItem[];
+  onAddAttachment: (item: AttachmentItem) => void;
   onRemoveAttachment: (id: string) => void;
   showOptions: boolean;
   setShowOptions: (v: boolean) => void;
@@ -240,7 +243,7 @@ interface BuildTabProps {
 
 const BuildTab = ({
   idea, onIdeaChange, onSubmit, isGenerating, isRefining, steps, messages,
-  attachments, onRemoveAttachment, showOptions, setShowOptions,
+  attachments, onAddAttachment, onRemoveAttachment, showOptions, setShowOptions,
   courseOptions, updateOption, messagesEndRef, hasCourse,
 }: BuildTabProps) => {
   const isBusy = isGenerating || !!isRefining;
@@ -482,7 +485,7 @@ const BuildTab = ({
             onChange={(e) => onIdeaChange(e.target.value)}
             placeholder={hasCourse ? "Tell me what to change…" : "Describe your course idea…"}
             rows={hasCourse ? 2 : 3}
-            className="resize-none text-sm pr-12 bg-background border-border focus:border-primary/50 focus:ring-primary/20"
+            className="resize-none text-sm pr-20 bg-background border-border focus:border-primary/50 focus:ring-primary/20"
             disabled={isBusy}
             onKeyDown={(e) => {
               if (e.key === "Enter" && (hasCourse ? !e.shiftKey : (e.metaKey || e.ctrlKey)) && idea.trim()) {
@@ -491,14 +494,17 @@ const BuildTab = ({
               }
             }}
           />
-          <Button
-            size="icon"
-            className="absolute bottom-2 right-2 h-7 w-7 bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow-sm"
-            onClick={onSubmit}
-            disabled={isBusy || !idea.trim()}
-          >
-            {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-          </Button>
+          <div className="absolute bottom-2 right-2 flex flex-col items-center gap-1">
+            <AttachmentMenu onAdd={onAddAttachment} disabled={isBusy} />
+            <Button
+              size="icon"
+              className="h-7 w-7 bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow-sm"
+              onClick={onSubmit}
+              disabled={isBusy || !idea.trim()}
+            >
+              {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
         </div>
         <p className="text-[10px] text-muted-foreground text-center">
           {hasCourse ? "Enter to send" : "⌘ + Enter to generate"}
