@@ -161,7 +161,7 @@ const QUICK_PROMPTS = [
 
 const NAV_ITEMS = [
   { title: "Excellion Homepage", icon: ExternalLink, path: "/" },
-  { title: "Expert Support", icon: Headphones, path: "/settings/support" },
+  { title: "Expert Support", icon: Headphones, path: "/contact" },
   { title: "Analytics", icon: BarChart3, path: "/dashboard/analytics" },
   { title: "Resources", icon: BookOpenCheck, path: "/courses" },
   { title: "Billing", icon: CreditCard, path: "/billing" },
