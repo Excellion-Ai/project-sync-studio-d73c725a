@@ -219,14 +219,16 @@ const BuilderShell = ({
   useEffect(() => {
     if (!projectId || !userId || courseSpec) return;
     const loadExisting = async () => {
-      const { data, error } = await supabase
+      const { data: rows, error } = await supabase
         .from("courses")
         .select("*")
         .eq("builder_project_id", projectId)
         .eq("user_id", userId)
         .is("deleted_at", null)
-        .maybeSingle();
+        .order("updated_at", { ascending: false })
+        .limit(1);
 
+      const data = rows?.[0] ?? null;
       if (error || !data) {
         console.log("📂 No existing course found for project:", projectId);
         return;

@@ -177,13 +177,15 @@ export async function ensureCourseExists(params: {
 }): Promise<string | null> {
   const { projectId, userId, title, modules } = params;
 
-  const { data: existing, error } = await supabase
+  const { data: rows, error } = await supabase
     .from("courses")
     .select("id")
     .eq("builder_project_id", projectId)
     .is("deleted_at", null)
-    .maybeSingle();
+    .order("updated_at", { ascending: false })
+    .limit(1);
 
+  const existing = rows?.[0] ?? null;
   if (!error && existing) {
     return existing.id;
   }
