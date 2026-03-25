@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useSubscription } from "@/hooks/useSubscription";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,27 +44,19 @@ const BillingSettings = () => {
     cancelAtPeriodEnd,
     loading,
     refresh,
+    openPortal,
   } = useSubscription();
   const { toast } = useToast();
   const [portalLoading, setPortalLoading] = useState(false);
 
-  const openPortal = async () => {
+  const handleOpenPortal = async () => {
     setPortalLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke(
-        "create-portal-session",
-        { body: { return_url: window.location.href } },
-      );
-      if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("No portal URL returned");
-      }
-    } catch (err: any) {
+      await openPortal();
+    } catch (err: unknown) {
       toast({
         title: "Could not open billing portal",
-        description: err.message ?? "Please try again.",
+        description: err instanceof Error ? err.message : "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -84,9 +75,7 @@ const BillingSettings = () => {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base font-medium">
-            Current Plan
-          </CardTitle>
+          <CardTitle className="text-base font-medium">Current Plan</CardTitle>
           <Button
             variant="ghost"
             size="icon"
@@ -122,7 +111,7 @@ const BillingSettings = () => {
 
               <Separator />
 
-              <Button onClick={openPortal} disabled={portalLoading}>
+              <Button onClick={handleOpenPortal} disabled={portalLoading}>
                 <CreditCard className="h-4 w-4 mr-2" />
                 {portalLoading ? "Opening…" : "Manage Subscription"}
                 <ExternalLink className="h-3 w-3 ml-2" />

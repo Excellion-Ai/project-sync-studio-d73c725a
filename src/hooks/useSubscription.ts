@@ -64,9 +64,22 @@ export function useSubscription() {
     });
   }, []);
 
+  const openPortal = useCallback(async () => {
+    const { data, error } = await supabase.functions.invoke(
+      "create-portal-session",
+      { body: { return_url: window.location.href } },
+    );
+    if (error) throw error;
+    if (data?.url) {
+      window.location.href = data.url;
+    } else {
+      throw new Error("No portal URL returned");
+    }
+  }, []);
+
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  return { ...state, refresh };
+  return { ...state, refresh, openPortal };
 }

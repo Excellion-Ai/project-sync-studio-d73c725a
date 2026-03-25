@@ -25,9 +25,10 @@ serve(async (req: Request) => {
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-  } catch (err) {
-    console.error("Webhook signature verification failed:", err.message);
-    return new Response(`Webhook Error: ${err.message}`, { status: 400, headers: corsHeaders });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Webhook signature verification failed:", msg);
+    return new Response(`Webhook Error: ${msg}`, { status: 400, headers: corsHeaders });
   }
 
   // Service role client to bypass RLS
@@ -86,8 +87,9 @@ serve(async (req: Request) => {
   }
 });
 
+// deno-lint-ignore no-explicit-any
 async function upsertSubscription(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   sub: Stripe.Subscription,
   userId?: string,
 ) {
