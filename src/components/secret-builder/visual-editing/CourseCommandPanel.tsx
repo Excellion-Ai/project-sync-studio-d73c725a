@@ -309,25 +309,20 @@ const CourseCommandPanel = ({
           className="resize-none text-sm mb-2"
           disabled={isLoading}
         />
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              multiple
-              onChange={handleFileSelect}
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Paperclip className="w-6 h-6" />
-            </button>
-            <button className="text-muted-foreground hover:text-foreground transition-colors">
-              <Image className="w-6 h-6" />
-            </button>
-          </div>
+        <div className="flex items-end justify-between gap-2">
+          <Textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              mode === "build"
+                ? "Describe a design change…"
+                : "Ask a question…"
+            }
+            rows={2}
+            className="resize-none text-sm flex-1"
+            disabled={isLoading}
+          />
           <div className="flex flex-col items-center gap-1.5">
             <button
               onClick={() => fileInputRef.current?.click()}
