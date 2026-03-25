@@ -189,6 +189,12 @@ const BuilderChatPanel = ({
               <Sparkles className="h-3.5 w-3.5" />
               Build
             </TabsTrigger>
+            {hasCourse && (
+              <TabsTrigger value="design" className="flex-1 gap-1.5 text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                <Palette className="h-3.5 w-3.5" />
+                Design
+              </TabsTrigger>
+            )}
             <TabsTrigger value="help" className="flex-1 gap-1.5 text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
               <HelpCircle className="h-3.5 w-3.5" />
               Help
@@ -216,6 +222,13 @@ const BuilderChatPanel = ({
           updateOption={updateOption}
           messagesEndRef={messagesEndRef}
           hasCourse={hasCourse}
+        />
+      )}
+
+      {activeTab === "design" && hasCourse && (
+        <DesignTab
+          config={currentDesignConfig ?? {}}
+          onUpdate={onDesignUpdate ?? (() => {})}
         />
       )}
 
