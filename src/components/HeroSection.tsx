@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Sparkles, Mic, ArrowRight } from "lucide-react";
+import { Sparkles, Mic, Paperclip, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import heroBg from "@/assets/hero-bg.jpg";
 
@@ -148,9 +148,14 @@ const HeroSection = () => {
                 <span className="inline-block w-[2px] h-[1.1em] bg-primary/70 ml-[1px] align-text-bottom animate-blink" />
               </span>
             )}
-            <button className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary hover:bg-primary/30 transition-colors">
-              <Mic className="w-4 h-4" />
-            </button>
+            <div className="absolute bottom-2 right-2 flex flex-col items-center gap-1.5">
+              <button className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary hover:bg-primary/30 transition-colors" title="Attach file">
+                <Paperclip className="w-4 h-4" />
+              </button>
+              <button className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary hover:bg-primary/30 transition-colors" title="Voice input">
+                <Mic className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
