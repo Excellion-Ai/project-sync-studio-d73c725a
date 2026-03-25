@@ -35,7 +35,7 @@ function generateSubdomain(title: string): string {
 
 export async function saveCourseToDatabase(
   params: SaveCourseParams
-): Promise<{ id: string; error?: string } | null> {
+): Promise<{ id: string; subdomain?: string; error?: string } | null> {
   console.log("💾 [saveCourse] START — params:", JSON.stringify({
     userId: params.userId,
     title: params.title,
@@ -141,12 +141,12 @@ export async function saveCourseToDatabase(
     const { data, error } = await supabase
       .from("courses")
       .insert(payload)
-      .select("id")
+      .select("id, subdomain")
       .single();
 
     if (!error && data) {
-      console.log("✅ [saveCourse] SUCCESS — course id:", data.id);
-      return { id: data.id };
+      console.log("✅ [saveCourse] SUCCESS — course id:", data.id, "subdomain:", data.subdomain);
+      return { id: data.id, subdomain: data.subdomain ?? undefined };
     }
 
     // Retry on slug/subdomain collision (code 23505)

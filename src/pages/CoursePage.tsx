@@ -3,136 +3,90 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet-async";
+import CourseLandingPreview from "@/components/secret-builder/CourseLandingPreview";
+import {
+  ExtendedCourse,
+  calculateModuleDuration,
+} from "@/types/course-pages";
 
-// ── Types (local, inline-style rendering — no Tailwind) ──────
+// ── Helpers ─────────────────────────────────────────────────
 
-interface DesignColors {
-  primary: string;
-  secondary: string;
-  accent: string;
-  background: string;
-  cardBackground: string;
-  text: string;
-  textMuted: string;
-}
-
-interface DesignFonts {
-  heading: string;
-  body: string;
-}
-
-interface DesignConfig {
-  colors?: Partial<DesignColors>;
-  fonts?: Partial<DesignFonts>;
-  backgrounds?: { hero?: string; curriculum?: string; cta?: string };
-  heroStyle?: string;
-  spacing?: string;
-  borderRadius?: string;
-}
-
-interface ModuleLesson {
-  id: string;
-  title: string;
-  duration?: string;
-  type?: string;
-}
-
-interface CourseModule {
-  id: string;
-  title: string;
-  description?: string;
-  lessons: ModuleLesson[];
-}
-
-interface CourseData {
-  id: string;
-  title: string;
-  description: string | null;
-  tagline: string | null;
-  hero_copy: string | null;
-  curriculum: any;
-  design_config: any;
-  section_order: any;
-  price_cents: number | null;
-  currency: string | null;
-  is_free: boolean | null;
-  status: string | null;
-  slug: string;
-  subdomain: string | null;
-  thumbnail_url: string | null;
-  instructor_name: string | null;
-  instructor_bio: string | null;
-  meta: any;
-  builder_project_id: string | null;
-  layout_template: string | null;
-}
-
-// ── Defaults ─────────────────────────────────────────────────
-
-const DEFAULT_COLORS: DesignColors = {
-  primary: "#d4a853",
-  secondary: "#1a1a1a",
-  accent: "#f59e0b",
-  background: "#0a0a0a",
-  cardBackground: "#111111",
-  text: "#ffffff",
-  textMuted: "#9ca3af",
-};
-
-const DEFAULT_FONTS: DesignFonts = {
-  heading: "Inter",
-  body: "Inter",
-};
-
-function resolveColors(dc?: DesignConfig): DesignColors {
-  return { ...DEFAULT_COLORS, ...(dc?.colors || {}) };
-}
-
-function resolveFonts(dc?: DesignConfig): DesignFonts {
-  return { ...DEFAULT_FONTS, ...(dc?.fonts || {}) };
-}
-
-function parseModules(curriculum: any): CourseModule[] {
-  if (!Array.isArray(curriculum)) return [];
-  return curriculum.map((mod: any, i: number) => ({
-    id: mod.id || `mod-${i}`,
-    title: mod.title || `Module ${i + 1}`,
-    description: mod.description || "",
-    lessons: Array.isArray(mod.lessons)
-      ? mod.lessons.map((l: any, j: number) => ({
-          id: l.id || `les-${i}-${j}`,
-          title: l.title || `Lesson ${j + 1}`,
-          duration: l.duration || "",
-          type: l.type || "text",
-        }))
-      : [],
-  }));
-}
-
-function totalLessons(modules: CourseModule[]): number {
-  return modules.reduce((s, m) => s + m.lessons.length, 0);
-}
-
-function totalDuration(modules: CourseModule[]): string {
-  let mins = 0;
-  for (const m of modules) {
-    for (const l of m.lessons) {
-      const d = l.duration?.trim() ?? "";
-      const h = d.match(/([\d.]+)\s*h/i);
-      const mi = d.match(/([\d.]+)\s*m/i);
-      if (h) mins += parseFloat(h[1]) * 60;
-      if (mi) mins += parseFloat(mi[1]);
-      if (!h && !mi) {
-        const n = parseFloat(d);
-        if (!isNaN(n)) mins += n;
-      }
+function hexToHSL(hex: string): string {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return "0 0% 50%";
+  let r = parseInt(result[1], 16) / 255;
+  let g = parseInt(result[2], 16) / 255;
+  let b = parseInt(result[3], 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) * 60; break;
+      case g: h = ((b - r) / d + 2) * 60; break;
+      case b: h = ((r - g) / d + 4) * 60; break;
     }
   }
-  const hours = Math.floor(mins / 60);
-  const remainder = Math.round(mins % 60);
-  if (hours > 0 && remainder > 0) return `${hours}h ${remainder}m`;
-  if (hours > 0) return `${hours}h`;
-  return `${Math.max(remainder, 1)}m`;
+  return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+function adjustHSLLightness(hsl: string, delta: number): string {
+  const m = hsl.match(/([\d.]+)\s+([\d.]+)%\s+([\d.]+)%/);
+  if (!m) return hsl;
+  const l = Math.max(0, Math.min(100, parseFloat(m[3]) + delta));
+  return `${Math.round(parseFloat(m[1]))} ${Math.round(parseFloat(m[2]))}% ${Math.round(l)}%`;
+}
+
+function buildThemeVars(colors: Record<string, string | undefined>): Record<string, string> {
+  const vars: Record<string, string> = {};
+  if (colors.primary) {
+    const hsl = hexToHSL(colors.primary);
+    vars["--primary"] = hsl;
+    vars["--accent"] = hsl;
+    vars["--ring"] = hsl;
+    vars["--gold"] = hsl;
+    vars["--gold-light"] = adjustHSLLightness(hsl, 12);
+    vars["--gold-dark"] = adjustHSLLightness(hsl, -12);
+    vars["--shadow-glow"] = `0 0 60px hsl(${hsl} / 0.12)`;
+    vars["--shadow-glow-sm"] = `0 0 20px hsl(${hsl} / 0.08)`;
+    vars["--shadow-glow-lg"] = `0 0 100px hsl(${hsl} / 0.1)`;
+  }
+  if (colors.background) vars["--background"] = hexToHSL(colors.background);
+  if (colors.cardBackground) {
+    const cardHSL = hexToHSL(colors.cardBackground);
+    vars["--card"] = cardHSL;
+    vars["--card-elevated"] = adjustHSLLightness(cardHSL, 3);
+    vars["--border"] = adjustHSLLightness(cardHSL, 8);
+    vars["--input"] = adjustHSLLightness(cardHSL, 5);
+    if (colors.text) vars["--card-foreground"] = hexToHSL(colors.text);
+  }
+  if (colors.text) {
+    vars["--foreground"] = hexToHSL(colors.text);
+    if (colors.background) {
+      vars["--primary-foreground"] = hexToHSL(colors.background);
+      vars["--accent-foreground"] = hexToHSL(colors.background);
+    }
+  }
+  if (colors.textMuted) vars["--muted-foreground"] = hexToHSL(colors.textMuted);
+  if (colors.secondary) {
+    const secHSL = hexToHSL(colors.secondary);
+    vars["--secondary"] = secHSL;
+    vars["--muted"] = secHSL;
+  }
+  return vars;
+}
+
+function loadGoogleFont(fontName: string) {
+  if (!fontName || fontName === "Inter" || fontName === "sans-serif") return;
+  const id = `gfont-${fontName.replace(/\s+/g, "-")}`;
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@400;500;600;700;800;900&display=swap`;
+  document.head.appendChild(link);
 }
 
 function formatPrice(cents: number | null, currency: string | null, isFree: boolean | null): string {
@@ -146,44 +100,16 @@ function formatPrice(cents: number | null, currency: string | null, isFree: bool
   }
 }
 
-// ── Google Fonts loader ──────────────────────────────────────
-
-function useGoogleFonts(fonts: DesignFonts) {
-  useEffect(() => {
-    const families = [fonts.heading, fonts.body].filter(
-      (f) => f && f !== "Inter" && f !== "sans-serif"
-    );
-    if (families.length === 0) return;
-
-    const id = "course-page-fonts";
-    let link = document.getElementById(id) as HTMLLinkElement | null;
-    const href = `https://fonts.googleapis.com/css2?${families
-      .map((f) => `family=${encodeURIComponent(f!)}:wght@400;500;600;700;800`)
-      .join("&")}&display=swap`;
-
-    if (!link) {
-      link = document.createElement("link");
-      link.id = id;
-      link.rel = "stylesheet";
-      document.head.appendChild(link);
-    }
-    link.href = href;
-
-    return () => {
-      link?.remove();
-    };
-  }, [fonts.heading, fonts.body]);
-}
-
 // ── Component ────────────────────────────────────────────────
 
 const CoursePage = () => {
   const { subdomain } = useParams<{ subdomain: string }>();
   const navigate = useNavigate();
-  const [course, setCourse] = useState<CourseData | null>(null);
+  const [course, setCourse] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [isOwnerPreview, setIsOwnerPreview] = useState(false);
 
   // ── Fetch course ───────────────────────────────────────────
 
@@ -195,7 +121,10 @@ const CoursePage = () => {
     }
 
     const fetchCourse = async () => {
-      // Try subdomain first
+      // Get current user for owner check
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Try subdomain lookup — published courses visible to all
       let { data, error } = await supabase
         .from("courses")
         .select("*")
@@ -204,79 +133,157 @@ const CoursePage = () => {
         .is("deleted_at", null)
         .maybeSingle();
 
+      // If not found as published, check if owner is viewing their own draft
+      if (!data && user) {
+        const { data: draft } = await supabase
+          .from("courses")
+          .select("*")
+          .eq("subdomain", subdomain)
+          .eq("user_id", user.id)
+          .is("deleted_at", null)
+          .maybeSingle();
+        if (draft) {
+          data = draft;
+          setIsOwnerPreview(true);
+        }
+      }
+
       // Fallback: try as UUID
       if (!data && subdomain.match(/^[0-9a-f-]{36}$/i)) {
-        const res = await supabase
+        const { data: byId } = await supabase
           .from("courses")
           .select("*")
           .eq("id", subdomain)
           .eq("status", "published")
           .is("deleted_at", null)
           .maybeSingle();
-        data = res.data;
-        error = res.error;
+        data = byId;
+
+        if (!data && user) {
+          const { data: draftById } = await supabase
+            .from("courses")
+            .select("*")
+            .eq("id", subdomain)
+            .eq("user_id", user.id)
+            .is("deleted_at", null)
+            .maybeSingle();
+          if (draftById) {
+            data = draftById;
+            setIsOwnerPreview(true);
+          }
+        }
       }
 
-      if (error || !data) {
+      if (!data) {
         setNotFound(true);
         setIsLoading(false);
         return;
       }
 
-      let courseData = data as CourseData;
-
-      // Fallback: if design_config is empty, pull from builder_projects spec
-      const dc = courseData.design_config;
+      // Fallback: if design_config is empty, pull from builder_projects
+      const dc = data.design_config;
       const hasDesign = dc && typeof dc === "object" && Object.keys(dc).length > 0;
-
-      if (!hasDesign && courseData.builder_project_id) {
+      if (!hasDesign && data.builder_project_id) {
         const { data: proj } = await supabase
           .from("builder_projects")
           .select("*")
-          .eq("id", courseData.builder_project_id)
+          .eq("id", data.builder_project_id)
           .maybeSingle();
-
         if (proj) {
           const spec = (proj as any).spec;
           if (spec?.courseSpec?.design_config) {
-            courseData = {
-              ...courseData,
-              design_config: spec.courseSpec.design_config,
-            };
+            data = { ...data, design_config: spec.courseSpec.design_config };
           }
         }
       }
 
-      // Track view
-      await supabase.from("course_views").insert({
-        course_id: courseData.id,
-        device_type: /Mobi/i.test(navigator.userAgent) ? "mobile" : "desktop",
-        referrer: document.referrer || null,
-      });
+      // Track view (skip for owner previews)
+      if (!isOwnerPreview) {
+        await supabase.from("course_views").insert({
+          course_id: data.id,
+          device_type: /Mobi/i.test(navigator.userAgent) ? "mobile" : "desktop",
+          referrer: document.referrer || null,
+        });
+      }
 
-      setCourse(courseData);
+      setCourse(data);
       setIsLoading(false);
     };
 
     fetchCourse();
   }, [subdomain]);
 
-  // ── Derived values ─────────────────────────────────────────
+  // ── Build ExtendedCourse for CourseLandingPreview ──────────
 
-  const dc: DesignConfig = (course?.design_config as DesignConfig) || {};
-  const colors = useMemo(() => resolveColors(dc), [dc]);
-  const fonts = useMemo(() => resolveFonts(dc), [dc]);
-  const modules = useMemo(() => parseModules(course?.curriculum), [course?.curriculum]);
-  const lessonCount = useMemo(() => totalLessons(modules), [modules]);
-  const duration = useMemo(() => totalDuration(modules), [modules]);
-  const priceLabel = useMemo(
-    () => formatPrice(course?.price_cents ?? null, course?.currency ?? null, course?.is_free ?? null),
-    [course?.price_cents, course?.currency, course?.is_free]
-  );
-  const heroImage = dc.backgrounds?.hero || course?.thumbnail_url;
-  const difficulty = (course?.meta as any)?.difficulty || "All Levels";
+  const extendedCourse: ExtendedCourse | null = useMemo(() => {
+    if (!course) return null;
+    const modules = Array.isArray(course.curriculum) ? course.curriculum : [];
+    const dc = (course.design_config as any) || {};
+    const pageSections = (course.page_sections as any) || {};
+    const meta = (course.meta as any) || {};
+    const sectionOrder = Array.isArray(course.section_order)
+      ? course.section_order
+      : pageSections?.landing_sections;
 
-  useGoogleFonts(fonts);
+    return {
+      id: course.id,
+      title: course.title,
+      description: course.description || "",
+      tagline: course.tagline || "",
+      difficulty: meta.difficulty || "beginner",
+      duration_weeks: meta.duration_weeks || 6,
+      layout_style: (course.layout_template || "creator") as any,
+      layout_template: course.layout_template || "creator",
+      learningOutcomes: pageSections?.outcomes ?? dc?.learningOutcomes ?? [],
+      modules: modules.map((mod: any, i: number) => ({
+        id: mod.id || `mod-${i}`,
+        title: mod.title || `Module ${i + 1}`,
+        description: mod.description || "",
+        is_first: i === 0,
+        is_last: i === modules.length - 1,
+        lessons: (mod.lessons || []).map((l: any, j: number) => ({
+          id: l.id || `mod-${i}-les-${j}`,
+          title: l.title || `Lesson ${j + 1}`,
+          duration: l.duration || "20m",
+          type: l.type || "text",
+          description: l.description || "",
+          content_markdown: l.content_markdown || "",
+          video_url: l.video_url,
+          quiz_questions: l.quiz_questions,
+          passing_score: l.passing_score,
+          assignment_brief: l.assignment_brief,
+        })),
+      })),
+      pages: {
+        ...pageSections,
+        landing_sections: sectionOrder,
+        pricing: course.price_cents
+          ? { price: course.price_cents / 100, original_price: null }
+          : undefined,
+        instructor: course.instructor_name
+          ? { name: course.instructor_name, bio: course.instructor_bio || "", avatar: "" }
+          : pageSections?.instructor,
+      },
+      section_order: sectionOrder,
+      design_config: dc,
+      thumbnail: course.thumbnail_url || "",
+    };
+  }, [course]);
+
+  // ── Theme CSS variables ────────────────────────────────────
+
+  const themeStyle = useMemo(() => {
+    if (!course?.design_config?.colors) return {};
+    const vars = buildThemeVars(course.design_config.colors);
+    return vars as React.CSSProperties;
+  }, [course?.design_config?.colors]);
+
+  // Load fonts
+  useEffect(() => {
+    const fonts = course?.design_config?.fonts;
+    if (fonts?.heading) loadGoogleFont(fonts.heading);
+    if (fonts?.body) loadGoogleFont(fonts.body);
+  }, [course?.design_config?.fonts]);
 
   // ── Enroll handler ─────────────────────────────────────────
 
@@ -284,17 +291,13 @@ const CoursePage = () => {
     if (enrolling || !course) return;
     setEnrolling(true);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       navigate("/auth", { state: { redirect: `/course/${subdomain}` } });
       setEnrolling(false);
       return;
     }
 
-    // Check existing enrollment
     const { data: existing } = await supabase
       .from("enrollments")
       .select("id")
@@ -309,7 +312,6 @@ const CoursePage = () => {
       return;
     }
 
-    // If paid course, redirect to checkout
     if (!course.is_free && course.price_cents && course.price_cents > 0) {
       navigate(`/checkout?course=${course.id}`);
       setEnrolling(false);
@@ -332,482 +334,74 @@ const CoursePage = () => {
     setEnrolling(false);
   };
 
-  // ── Loading state ──────────────────────────────────────────
+  // ── Loading ─────────────────────────────────────────────────
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: DEFAULT_COLORS.background,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            border: `3px solid ${DEFAULT_COLORS.primary}`,
-            borderTopColor: "transparent",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-          }}
-        />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  // ── Not found ──────────────────────────────────────────────
+  // ── Not found ───────────────────────────────────────────────
 
-  if (notFound || !course) {
+  if (notFound || !course || !extendedCourse) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: DEFAULT_COLORS.background,
-          color: DEFAULT_COLORS.text,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 16,
-          fontFamily: `"Inter", sans-serif`,
-        }}
-      >
-        <h1 style={{ fontSize: 36, fontWeight: 700 }}>Course Not Found</h1>
-        <p style={{ color: DEFAULT_COLORS.textMuted }}>
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center gap-4 font-sans">
+        <h1 className="text-4xl font-bold">Course Not Found</h1>
+        <p className="text-muted-foreground">
           This course doesn't exist or hasn't been published yet.
         </p>
-        <a
-          href="/"
-          style={{ color: DEFAULT_COLORS.primary, textDecoration: "underline" }}
-        >
-          Go Home
-        </a>
+        <a href="/" className="text-primary underline">Go Home</a>
       </div>
     );
   }
 
-  // ── Render ─────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────
 
-  const headingFont = `"${fonts.heading}", sans-serif`;
-  const bodyFont = `"${fonts.body}", sans-serif`;
+  const fontVars: React.CSSProperties = {};
+  const fonts = course.design_config?.fonts;
+  if (fonts?.heading) (fontVars as any)["--font-heading"] = `"${fonts.heading}", sans-serif`;
+  if (fonts?.body) (fontVars as any)["--font-body"] = `"${fonts.body}", sans-serif`;
 
   return (
     <>
       <Helmet>
-        <title>{course.title} | Excellion</title>
+        <title>{course.seo_title || course.title} | Excellion</title>
         <meta
           name="description"
-          content={course.description || course.tagline || "Online course on Excellion"}
+          content={course.seo_description || course.description || course.tagline || "Online course on Excellion"}
         />
-        {course.thumbnail_url && (
-          <meta property="og:image" content={course.thumbnail_url} />
+        {(course.social_image_url || course.thumbnail_url) && (
+          <meta property="og:image" content={course.social_image_url || course.thumbnail_url} />
         )}
+        <meta property="og:title" content={course.seo_title || course.title} />
+        <meta property="og:type" content="website" />
       </Helmet>
 
-      <div
-        style={{
-          minHeight: "100vh",
-          background: colors.background,
-          color: colors.text,
-          fontFamily: bodyFont,
-          lineHeight: 1.6,
-        }}
-      >
-        {/* ── Hero Section ──────────────────────────────────── */}
-        <section
-          style={{
-            position: "relative",
-            minHeight: 500,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-          }}
-        >
-          {/* Background image */}
-          {heroImage && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                backgroundImage: `url(${heroImage})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            />
-          )}
-
-          {/* Gradient overlay */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: heroImage
-                ? `linear-gradient(180deg, ${colors.background}CC 0%, ${colors.background}E6 50%, ${colors.background} 100%)`
-                : `linear-gradient(135deg, ${colors.background} 0%, ${colors.secondary} 50%, ${colors.background} 100%)`,
-            }}
-          />
-
-          {/* Hero content */}
-          <div
-            style={{
-              position: "relative",
-              zIndex: 1,
-              maxWidth: 800,
-              width: "100%",
-              padding: "80px 24px 60px",
-              textAlign: "center",
-            }}
-          >
-            {/* Difficulty badge */}
-            <div
-              style={{
-                display: "inline-block",
-                padding: "4px 14px",
-                borderRadius: 20,
-                background: `${colors.primary}22`,
-                border: `1px solid ${colors.primary}44`,
-                color: colors.primary,
-                fontSize: 12,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                marginBottom: 24,
-              }}
-            >
-              {difficulty}
-            </div>
-
-            {/* Title */}
-            <h1
-              style={{
-                fontFamily: headingFont,
-                fontSize: "clamp(32px, 5vw, 52px)",
-                fontWeight: 800,
-                lineHeight: 1.15,
-                color: colors.text,
-                margin: "0 0 16px",
-              }}
-            >
-              {course.title}
-            </h1>
-
-            {/* Tagline */}
-            {course.tagline && (
-              <p
-                style={{
-                  fontSize: "clamp(16px, 2.5vw, 20px)",
-                  color: colors.primary,
-                  fontWeight: 500,
-                  margin: "0 0 16px",
-                }}
-              >
-                {course.tagline}
-              </p>
-            )}
-
-            {/* Description */}
-            {course.description && (
-              <p
-                style={{
-                  fontSize: "clamp(14px, 2vw, 17px)",
-                  color: colors.textMuted,
-                  maxWidth: 600,
-                  margin: "0 auto 32px",
-                }}
-              >
-                {course.description}
-              </p>
-            )}
-
-            {/* Stats */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                gap: 32,
-                marginBottom: 36,
-                flexWrap: "wrap",
-              }}
-            >
-              {[
-                { label: "Modules", value: String(modules.length) },
-                { label: "Lessons", value: String(lessonCount) },
-                { label: "Duration", value: duration },
-              ].map((stat) => (
-                <div key={stat.label} style={{ textAlign: "center" }}>
-                  <div
-                    style={{
-                      fontSize: 28,
-                      fontWeight: 700,
-                      color: colors.text,
-                      fontFamily: headingFont,
-                    }}
-                  >
-                    {stat.value}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: colors.textMuted,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.08em",
-                    }}
-                  >
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Enroll button */}
-            <button
-              onClick={handleEnroll}
-              disabled={enrolling}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "14px 40px",
-                borderRadius: 8,
-                background: colors.primary,
-                color: colors.background,
-                fontSize: 16,
-                fontWeight: 700,
-                border: "none",
-                cursor: enrolling ? "wait" : "pointer",
-                opacity: enrolling ? 0.7 : 1,
-                transition: "opacity 0.2s, transform 0.2s",
-                fontFamily: headingFont,
-                letterSpacing: "0.02em",
-              }}
-              onMouseEnter={(e) => {
-                if (!enrolling) (e.currentTarget.style.opacity = "0.9");
-              }}
-              onMouseLeave={(e) => {
-                if (!enrolling) (e.currentTarget.style.opacity = "1");
-              }}
-            >
-              {enrolling ? (
-                "Enrolling..."
-              ) : (
-                <>
-                  {priceLabel === "Free" ? "Enroll for Free" : `Enroll — ${priceLabel}`}
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    style={{ marginLeft: 4 }}
-                  >
-                    <path
-                      d="M3 8h10m0 0L9 4m4 4L9 12"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </>
-              )}
-            </button>
-
-            {/* Instructor */}
-            {course.instructor_name && (
-              <p
-                style={{
-                  marginTop: 20,
-                  fontSize: 13,
-                  color: colors.textMuted,
-                }}
-              >
-                by{" "}
-                <span style={{ color: colors.text, fontWeight: 500 }}>
-                  {course.instructor_name}
-                </span>
-              </p>
-            )}
+      <div style={{ ...themeStyle, ...fontVars }}>
+        {/* Owner preview banner */}
+        {isOwnerPreview && (
+          <div className="bg-yellow-500/10 border-b border-yellow-500/30 text-yellow-400 text-center py-2 px-4 text-sm">
+            Preview mode — only you can see this. <button onClick={() => navigate(-1)} className="underline font-medium ml-1">Back to builder</button>
           </div>
-        </section>
-
-        {/* ── Curriculum Section ─────────────────────────────── */}
-        {modules.length > 0 && (
-          <section
-            style={{
-              maxWidth: 800,
-              margin: "0 auto",
-              padding: "64px 24px",
-            }}
-          >
-            <h2
-              style={{
-                fontFamily: headingFont,
-                fontSize: 28,
-                fontWeight: 700,
-                marginBottom: 8,
-                textAlign: "center",
-              }}
-            >
-              Course Curriculum
-            </h2>
-            <p
-              style={{
-                textAlign: "center",
-                color: colors.textMuted,
-                fontSize: 15,
-                marginBottom: 40,
-              }}
-            >
-              {modules.length} modules · {lessonCount} lessons · {duration} total
-            </p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {modules.map((mod, i) => (
-                <div
-                  key={mod.id}
-                  style={{
-                    background: colors.cardBackground,
-                    border: `1px solid ${colors.primary}15`,
-                    borderRadius: 12,
-                    padding: "20px 24px",
-                    transition: "border-color 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget.style.borderColor = `${colors.primary}40`);
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget.style.borderColor = `${colors.primary}15`);
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 16,
-                    }}
-                  >
-                    {/* Module number */}
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 10,
-                        background: `${colors.primary}18`,
-                        color: colors.primary,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: 700,
-                        fontSize: 16,
-                        fontFamily: headingFont,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {i + 1}
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <h3
-                        style={{
-                          fontFamily: headingFont,
-                          fontSize: 17,
-                          fontWeight: 600,
-                          margin: "0 0 4px",
-                          color: colors.text,
-                        }}
-                      >
-                        {mod.title}
-                      </h3>
-                      {mod.description && (
-                        <p
-                          style={{
-                            fontSize: 13,
-                            color: colors.textMuted,
-                            margin: "0 0 8px",
-                          }}
-                        >
-                          {mod.description}
-                        </p>
-                      )}
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: colors.textMuted,
-                          display: "flex",
-                          gap: 12,
-                        }}
-                      >
-                        <span>
-                          {mod.lessons.length}{" "}
-                          {mod.lessons.length === 1 ? "lesson" : "lessons"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Enroll CTA below curriculum */}
-            <div style={{ textAlign: "center", marginTop: 48 }}>
-              <button
-                onClick={handleEnroll}
-                disabled={enrolling}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "12px 36px",
-                  borderRadius: 8,
-                  background: colors.primary,
-                  color: colors.background,
-                  fontSize: 15,
-                  fontWeight: 700,
-                  border: "none",
-                  cursor: enrolling ? "wait" : "pointer",
-                  opacity: enrolling ? 0.7 : 1,
-                  fontFamily: headingFont,
-                }}
-              >
-                {enrolling
-                  ? "Enrolling..."
-                  : priceLabel === "Free"
-                  ? "Start Learning for Free"
-                  : `Get Access — ${priceLabel}`}
-              </button>
-            </div>
-          </section>
         )}
 
-        {/* ── Footer ─────────────────────────────────────────── */}
-        <footer
-          style={{
-            borderTop: `1px solid ${colors.primary}15`,
-            padding: "32px 24px",
-            textAlign: "center",
-          }}
-        >
-          <p
-            style={{
-              fontSize: 12,
-              color: colors.textMuted,
-            }}
-          >
+        <CourseLandingPreview
+          course={extendedCourse}
+          onEnrollClick={handleEnroll}
+        />
+
+        {/* Footer */}
+        <footer className="border-t border-border py-8 text-center">
+          <p className="text-xs text-muted-foreground">
             Powered by{" "}
             <a
-              href="https://excellioncourses.lovable.app"
+              href="https://excellioncourses.com"
               target="_blank"
               rel="noopener noreferrer"
-              style={{
-                color: colors.primary,
-                textDecoration: "none",
-                fontWeight: 600,
-              }}
+              className="text-primary font-semibold hover:underline"
             >
               Excellion
             </a>

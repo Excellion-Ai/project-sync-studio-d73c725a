@@ -237,7 +237,7 @@ const BuilderShell = ({
       console.log("📂 Loading saved course:", data.id, data.title);
       setCourseId(data.id);
       setIsPublished(data.status === "published");
-      if (data.published_at && data.subdomain) {
+      if (data.subdomain) {
         setCoursePublishedUrl(`${window.location.origin}/course/${data.subdomain}`);
       }
 
@@ -493,6 +493,9 @@ const BuilderShell = ({
         if (saved) {
           course.id = saved.id;
           setCourseId(saved.id);
+          if (saved.subdomain) {
+            setCoursePublishedUrl(`${window.location.origin}/course/${saved.subdomain}`);
+          }
           updateStep("save-outline", "complete");
         } else {
           updateStep("save-outline", "error");
@@ -796,6 +799,7 @@ const BuilderShell = ({
         isPublished={isPublished}
         isPublishing={isPublishing}
         isUnpublishing={false}
+        courseUrl={courseUrl}
         onPublish={handlePublishCourse}
         onUnpublish={handleUnpublish}
         onRefine={() => {}}
