@@ -32,7 +32,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { CourseLayoutStyle } from "@/types/course-pages";
+import { CourseLayoutStyle, DesignConfig } from "@/types/course-pages";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   CourseOptions,
   GenerationStep,
