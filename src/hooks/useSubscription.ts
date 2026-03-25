@@ -1,28 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SubscriptionState {
   subscribed: boolean;
-  productId: string | null;
-  subscriptionEnd: string | null;
+  status: string | null;
+  planName: string | null;
+  priceCents: number | null;
+  currency: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  stripeCustomerId: string | null;
   loading: boolean;
 }
 
-/**
- * Stub hook — subscription infrastructure (table + edge function) not yet built.
- * Returns subscribed: false and a no-op refresh.
- * Replace with real logic once a subscriptions table + Stripe webhook exists.
- */
 export function useSubscription() {
-  const [state] = useState<SubscriptionState>({
+  const [state, setState] = useState<SubscriptionState>({
     subscribed: false,
-    productId: null,
-    subscriptionEnd: null,
-    loading: false,
+    status: null,
+    planName: null,
+    priceCents: null,
+    currency: null,
+    currentPeriodEnd: null,
+    cancelAtPeriodEnd: false,
+    stripeCustomerId: null,
+    loading: true,
   });
 
-  const refresh = async () => {
-    // No-op until subscription infrastructure is built
-  };
+  const refresh = useCallback(async () => {
+    setState((s) => ({ ...s, loading: true }));
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setState((s) => ({ ...s, loading: false, subscribed: false }));
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      setState((s) => ({ ...s, loading: false, subscribed: false }));
+      return;
+    }
+
+    setState({
+      subscribed: data.status === "active" || data.status === "trialing",
+      status: data.status,
+      planName: data.plan_name,
+      priceCents: data.price_cents,
+      currency: data.currency,
+      currentPeriodEnd: data.current_period_end,
+      cancelAtPeriodEnd: data.cancel_at_period_end ?? false,
+      stripeCustomerId: data.stripe_customer_id,
+      loading: false,
+    });
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   return { ...state, refresh };
 }
