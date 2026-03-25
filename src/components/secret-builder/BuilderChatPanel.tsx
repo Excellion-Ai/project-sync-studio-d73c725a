@@ -538,6 +538,192 @@ const BuildTab = ({
   );
 };
 
+// ── Design Tab ────────────────────────────────────────────────
+
+const COLOR_FIELDS_DESIGN: { key: string; label: string }[] = [
+  { key: "primary", label: "Primary" },
+  { key: "secondary", label: "Secondary" },
+  { key: "accent", label: "Accent" },
+  { key: "background", label: "Background" },
+  { key: "cardBackground", label: "Card BG" },
+  { key: "text", label: "Text" },
+  { key: "textMuted", label: "Muted Text" },
+];
+
+const FONT_OPTIONS_DESIGN = [
+  "Inter", "DM Sans", "Playfair Display", "Poppins",
+  "Space Grotesk", "Montserrat", "Lora", "Merriweather",
+];
+
+const DEFAULT_COLORS: NonNullable<DesignConfig["colors"]> = {
+  primary: "#d4a853",
+  secondary: "#1a1a1a",
+  accent: "#f59e0b",
+  background: "#0a0a0a",
+  cardBackground: "#111111",
+  text: "#ffffff",
+  textMuted: "#9ca3af",
+};
+
+const DesignTab = ({
+  config,
+  onUpdate,
+}: {
+  config: DesignConfig;
+  onUpdate: (config: DesignConfig) => void;
+}) => {
+  const colors = { ...DEFAULT_COLORS, ...config.colors };
+  const fonts = { heading: "Inter", body: "Inter", ...config.fonts };
+
+  const updateColor = (key: string, value: string) => {
+    onUpdate({ ...config, colors: { ...colors, [key]: value } });
+  };
+
+  const updateFont = (field: "heading" | "body", value: string) => {
+    onUpdate({ ...config, fonts: { ...fonts, [field]: value } });
+  };
+
+  return (
+    <ScrollArea className="flex-1 px-4 py-3">
+      <div className="space-y-5">
+        {/* Colors */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Palette className="h-4 w-4 text-primary" />
+            <Label className="text-xs font-semibold text-foreground">Colors</Label>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {COLOR_FIELDS_DESIGN.map(({ key, label }) => (
+              <div key={key} className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={(colors as any)[key] || "#000000"}
+                  onChange={(e) => updateColor(key, e.target.value)}
+                  className="h-7 w-7 rounded border border-border cursor-pointer shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground">{label}</p>
+                  <p className="text-xs text-foreground font-mono">{(colors as any)[key]}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Typography */}
+        <div className="space-y-2">
+          <Label className="text-xs font-semibold text-foreground">Typography</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground">Heading</p>
+              <Select value={fonts.heading} onValueChange={(v) => updateFont("heading", v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>{FONT_OPTIONS_DESIGN.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground">Body</p>
+              <Select value={fonts.body} onValueChange={(v) => updateFont("body", v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>{FONT_OPTIONS_DESIGN.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Spacing & Radius */}
+        <div className="space-y-2">
+          <Label className="text-xs font-semibold text-foreground">Layout</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground">Spacing</p>
+              <Select
+                value={config.spacing || "normal"}
+                onValueChange={(v) => onUpdate({ ...config, spacing: v as DesignConfig["spacing"] })}
+              >
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="compact">Compact</SelectItem>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="spacious">Spacious</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] text-muted-foreground">Radius</p>
+              <Select
+                value={config.borderRadius || "medium"}
+                onValueChange={(v) => onUpdate({ ...config, borderRadius: v as DesignConfig["borderRadius"] })}
+              >
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="small">Small</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="large">Large</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Hero Style */}
+        <div className="space-y-1">
+          <p className="text-[10px] text-muted-foreground">Hero Style</p>
+          <Select
+            value={config.heroStyle || "gradient"}
+            onValueChange={(v) => onUpdate({ ...config, heroStyle: v })}
+          >
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gradient">Gradient</SelectItem>
+              <SelectItem value="image">Image</SelectItem>
+              <SelectItem value="minimal">Minimal</SelectItem>
+              <SelectItem value="split">Split</SelectItem>
+              <SelectItem value="centered">Centered</SelectItem>
+              <SelectItem value="video">Video</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Template Quick Switch */}
+        <div className="space-y-2">
+          <Label className="text-xs font-semibold text-foreground">Template Presets</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {TEMPLATES.map(({ value, label, desc, icon: Icon, color }) => (
+              <button
+                key={value}
+                onClick={() => {
+                  const presets: Record<CourseLayoutStyle, Partial<NonNullable<DesignConfig["colors"]>>> = {
+                    creator: { primary: "#d4a853", accent: "#f59e0b" },
+                    technical: { primary: "#10b981", accent: "#06b6d4" },
+                    academic: { primary: "#3b82f6", accent: "#6366f1" },
+                    visual: { primary: "#8b5cf6", accent: "#ec4899" },
+                  };
+                  onUpdate({
+                    ...config,
+                    colors: { ...colors, ...presets[value] },
+                  });
+                }}
+                className={cn(
+                  "flex items-start gap-2 p-2.5 rounded-lg border text-left transition-all",
+                  "border-border hover:border-primary/30 hover:bg-primary/5"
+                )}
+              >
+                <Icon className={cn("h-4 w-4 mt-0.5 shrink-0", color)} />
+                <div>
+                  <p className="text-xs font-medium text-foreground">{label}</p>
+                  <p className="text-[10px] text-muted-foreground">{desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </ScrollArea>
+  );
+};
+
 // ── Help Tab ──────────────────────────────────────────────────
 
 const HelpTab = ({
