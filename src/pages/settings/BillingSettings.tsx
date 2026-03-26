@@ -7,15 +7,6 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, ExternalLink, RefreshCw } from "lucide-react";
 
-function formatPrice(cents: number | null, currency: string | null) {
-  if (cents == null) return "—";
-  const amt = cents / 100;
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency ?? "usd",
-  }).format(amt);
-}
-
 function statusBadge(status: string | null, cancelAtPeriodEnd: boolean) {
   if (!status) return <Badge variant="secondary">No plan</Badge>;
   if (cancelAtPeriodEnd) return <Badge variant="destructive">Canceling</Badge>;
@@ -37,10 +28,8 @@ const BillingSettings = () => {
   const {
     subscribed,
     status,
-    planName,
-    priceCents,
-    currency,
-    currentPeriodEnd,
+    priceId,
+    subscriptionEnd,
     cancelAtPeriodEnd,
     loading,
     refresh,
@@ -48,6 +37,13 @@ const BillingSettings = () => {
   } = useSubscription();
   const { toast } = useToast();
   const [portalLoading, setPortalLoading] = useState(false);
+
+  const getPlanLabel = () => {
+    if (!priceId) return "Excellion Plan";
+    if (priceId === "price_1T1YjxPCTHzXvqDg3Plq3gtT") return "Annual";
+    if (priceId === "price_1TF4uLPCTHzXvqDgXzsHLUoV") return "Pro (Waitlist)";
+    return "Pro";
+  };
 
   const handleOpenPortal = async () => {
     setPortalLoading(true);
@@ -93,19 +89,14 @@ const BillingSettings = () => {
             <>
               <div className="flex items-center gap-3">
                 {statusBadge(status, cancelAtPeriodEnd)}
-                <span className="font-medium">
-                  {planName ?? "Excellion Plan"}
-                </span>
-                <span className="text-muted-foreground text-sm">
-                  {formatPrice(priceCents, currency)}/mo
-                </span>
+                <span className="font-medium">{getPlanLabel()}</span>
               </div>
 
-              {currentPeriodEnd && (
+              {subscriptionEnd && (
                 <p className="text-sm text-muted-foreground">
                   {cancelAtPeriodEnd
-                    ? `Access until ${new Date(currentPeriodEnd).toLocaleDateString()}`
-                    : `Renews ${new Date(currentPeriodEnd).toLocaleDateString()}`}
+                    ? `Access until ${new Date(subscriptionEnd).toLocaleDateString()}`
+                    : `Renews ${new Date(subscriptionEnd).toLocaleDateString()}`}
                 </p>
               )}
 

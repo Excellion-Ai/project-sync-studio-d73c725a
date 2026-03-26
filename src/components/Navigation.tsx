@@ -22,6 +22,7 @@ const Navigation = () => {
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { subscribed, startCheckout } = useSubscription();
 
   const handleSignOut = async () => {
     try {
