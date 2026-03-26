@@ -561,11 +561,23 @@ const BuilderShell = ({
 
     setIsPublishing(true);
     try {
-      const subdomain = `${courseSpec.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "")
-        .slice(0, 40)}-${Date.now().toString(36)}`;
+      // Fetch existing subdomain — reuse it if already set (from course creation)
+      let subdomain: string | null = null;
+      const { data: existing } = await supabase
+        .from("courses")
+        .select("subdomain")
+        .eq("id", courseId)
+        .single();
+      subdomain = existing?.subdomain || null;
+
+      // Generate new subdomain only if none exists
+      if (!subdomain) {
+        subdomain = `${courseSpec.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")
+          .slice(0, 40)}-${Date.now().toString(36)}`;
+      }
 
       const publishedUrl = `${window.location.origin}/course/${subdomain}`;
 

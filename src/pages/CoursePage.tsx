@@ -1,13 +1,34 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Component, type ReactNode, type ErrorInfo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet-async";
 import CourseLandingPreview from "@/components/secret-builder/CourseLandingPreview";
-import {
-  ExtendedCourse,
-  calculateModuleDuration,
-} from "@/types/course-pages";
+import { ExtendedCourse } from "@/types/course-pages";
+
+// ── Error Boundary ──────────────────────────────────────────
+
+class CourseErrorBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  state = { hasError: false, error: undefined as Error | undefined };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("CoursePage render error:", error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
 
 // ── Helpers ─────────────────────────────────────────────────
 
@@ -121,64 +142,55 @@ const CoursePage = () => {
     }
 
     const fetchCourse = async () => {
-      // Get current user for owner check
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Try subdomain lookup — published courses visible to all
-      let { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .eq("subdomain", subdomain)
-        .eq("status", "published")
-        .is("deleted_at", null)
-        .maybeSingle();
+      // Helper: run query and return first row or null
+      const findOne = async (q: any) => {
+        const { data: rows } = await q;
+        return rows?.[0] ?? null;
+      };
 
-      // If not found as published, check if owner is viewing their own draft
-      if (!data && user) {
-        const { data: draft } = await supabase
-          .from("courses")
-          .select("*")
-          .eq("subdomain", subdomain)
-          .eq("user_id", user.id)
-          .is("deleted_at", null)
-          .maybeSingle();
-        if (draft) {
-          data = draft;
-          setIsOwnerPreview(true);
+      let courseRow: any = null;
+      let ownerPreview = false;
+
+      // 1. Published by subdomain (public)
+      courseRow = await findOne(
+        supabase.from("courses").select("*")
+          .eq("subdomain", subdomain).eq("status", "published").is("deleted_at", null).limit(1)
+      );
+
+      // 2. Owner draft by subdomain
+      if (!courseRow && user) {
+        courseRow = await findOne(
+          supabase.from("courses").select("*")
+            .eq("subdomain", subdomain).eq("user_id", user.id).is("deleted_at", null).limit(1)
+        );
+        if (courseRow) ownerPreview = true;
+      }
+
+      // 3. Published by UUID
+      if (!courseRow && subdomain.match(/^[0-9a-f-]{36}$/i)) {
+        courseRow = await findOne(
+          supabase.from("courses").select("*")
+            .eq("id", subdomain).eq("status", "published").is("deleted_at", null).limit(1)
+        );
+        if (!courseRow && user) {
+          courseRow = await findOne(
+            supabase.from("courses").select("*")
+              .eq("id", subdomain).eq("user_id", user.id).is("deleted_at", null).limit(1)
+          );
+          if (courseRow) ownerPreview = true;
         }
       }
 
-      // Fallback: try as UUID
-      if (!data && subdomain.match(/^[0-9a-f-]{36}$/i)) {
-        const { data: byId } = await supabase
-          .from("courses")
-          .select("*")
-          .eq("id", subdomain)
-          .eq("status", "published")
-          .is("deleted_at", null)
-          .maybeSingle();
-        data = byId;
-
-        if (!data && user) {
-          const { data: draftById } = await supabase
-            .from("courses")
-            .select("*")
-            .eq("id", subdomain)
-            .eq("user_id", user.id)
-            .is("deleted_at", null)
-            .maybeSingle();
-          if (draftById) {
-            data = draftById;
-            setIsOwnerPreview(true);
-          }
-        }
-      }
-
-      if (!data) {
+      if (!courseRow) {
         setNotFound(true);
         setIsLoading(false);
         return;
       }
+
+      setIsOwnerPreview(ownerPreview);
+      let data = courseRow;
 
       // Fallback: if design_config is empty, pull from builder_projects
       const dc = data.design_config;
@@ -188,7 +200,7 @@ const CoursePage = () => {
           .from("builder_projects")
           .select("*")
           .eq("id", data.builder_project_id)
-          .maybeSingle();
+          .limit(1);
         if (proj) {
           const spec = (proj as any).spec;
           if (spec?.courseSpec?.design_config) {
@@ -388,10 +400,24 @@ const CoursePage = () => {
           </div>
         )}
 
-        <CourseLandingPreview
-          course={extendedCourse}
-          onEnrollClick={handleEnroll}
-        />
+        <CourseErrorBoundary
+          fallback={
+            <div className="min-h-screen flex items-center justify-center" style={{ background: course.design_config?.colors?.background || "#0a0a0a", color: course.design_config?.colors?.text || "#fff" }}>
+              <div style={{ textAlign: "center", maxWidth: 600, padding: "40px 24px" }}>
+                <h1 style={{ fontSize: 36, fontWeight: 700, marginBottom: 16 }}>{course.title}</h1>
+                {course.description && <p style={{ color: course.design_config?.colors?.textMuted || "#9ca3af", marginBottom: 24 }}>{course.description}</p>}
+                <button onClick={handleEnroll} style={{ padding: "12px 32px", borderRadius: 8, background: course.design_config?.colors?.primary || "#d4a853", color: course.design_config?.colors?.background || "#0a0a0a", fontWeight: 700, border: "none", cursor: "pointer" }}>
+                  Enroll Now
+                </button>
+              </div>
+            </div>
+          }
+        >
+          <CourseLandingPreview
+            course={extendedCourse}
+            onEnrollClick={handleEnroll}
+          />
+        </CourseErrorBoundary>
 
         {/* Footer */}
         <footer className="border-t border-border py-8 text-center">
