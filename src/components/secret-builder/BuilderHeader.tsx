@@ -15,6 +15,10 @@ import {
   ExternalLink,
   Copy,
   Check,
+  Flame,
+  Code2,
+  GraduationCap,
+  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +45,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import EditableText from "./EditableText";
 import { DesignConfig, CourseLayoutStyle } from "@/types/course-pages";
@@ -122,6 +125,19 @@ const BuilderHeader = ({
 }: BuilderHeaderProps) => {
   const navigate = useNavigate();
   const [linkCopied, setLinkCopied] = useState(false);
+  const [refineOpen, setRefineOpen] = useState(false);
+
+  const config: DesignConfig = currentDesignConfig || {};
+  const colors = { ...DEFAULT_COLORS, ...config.colors };
+  const fonts = { heading: "Playfair Display", body: "DM Sans", ...config.fonts };
+
+  const updateColor = (key: string, value: string) => {
+    onDesignUpdate?.({ ...config, colors: { ...colors, [key]: value } });
+  };
+
+  const updateFont = (key: "heading" | "body", value: string) => {
+    onDesignUpdate?.({ ...config, fonts: { ...fonts, [key]: value } });
+  };
 
   return (
     <>
@@ -166,114 +182,56 @@ const BuilderHeader = ({
           </Badge>
         </div>
 
-        <Badge
-          variant="outline"
-          className={cn(
-            "text-[10px] uppercase tracking-wider font-medium",
-            saveStatus === "saved" && "text-emerald-400 border-emerald-500/30",
-            saveStatus === "saving" && "text-amber-400 border-amber-500/30",
-            saveStatus === "unsaved" && "text-muted-foreground border-border"
-          )}
-        >
-          {saveStatus === "saving" ? (
-            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-          ) : saveStatus === "saved" ? (
-            <Cloud className="mr-1 h-3 w-3" />
-          ) : (
-            <CloudOff className="mr-1 h-3 w-3" />
-          )}
-          {saveStatus}
-        </Badge>
-      </div>
-
-      {/* Center — Preview mode toggle */}
-      <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-0.5">
-        {([
-          { mode: "desktop" as const, icon: Monitor },
-          { mode: "tablet" as const, icon: Tablet },
-          { mode: "mobile" as const, icon: Smartphone },
-        ]).map(({ mode, icon: Icon }) => (
-          <Button
-            key={mode}
-            size="icon"
-            variant={previewMode === mode ? "secondary" : "ghost"}
-            className={cn(
-              "h-7 w-7 transition-colors",
-              previewMode === mode && "bg-primary/10 text-primary"
-            )}
-            onClick={() => onPreviewModeChange(mode)}
-          >
-            <Icon className="h-3.5 w-3.5" />
-          </Button>
-        ))}
-      </div>
-
-      {/* Right */}
-      <div className="flex items-center gap-2">
-        {hasCourse && courseUrl && (
-          <div className="flex items-center gap-1">
+        {/* Center — Preview mode toggle */}
+        <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-0.5">
+          {([
+            { mode: "desktop" as const, icon: Monitor },
+            { mode: "tablet" as const, icon: Tablet },
+            { mode: "mobile" as const, icon: Smartphone },
+          ]).map(({ mode, icon: Icon }) => (
             <Button
-              size="sm"
-              variant="ghost"
-              className="text-muted-foreground hover:text-foreground text-xs gap-1.5"
-              onClick={() => window.open(courseUrl, "_blank")}
-            >
-              <ExternalLink className="h-3 w-3" />
-              Preview
-            </Button>
-            <Button
+              key={mode}
               size="icon"
-              variant="ghost"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-              onClick={() => {
-                navigator.clipboard.writeText(courseUrl);
-                setLinkCopied(true);
-                setTimeout(() => setLinkCopied(false), 2000);
-              }}
+              variant={previewMode === mode ? "secondary" : "ghost"}
+              className={cn(
+                "h-7 w-7 transition-colors",
+                previewMode === mode && "bg-primary/10 text-primary"
+              )}
+              onClick={() => onPreviewModeChange(mode)}
             >
-              {linkCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-            </Button>
-          </div>
-        )}
-
-        {hasCourse && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-primary/30 text-primary hover:bg-primary/10"
-            onClick={onRefine}
-          >
-            <Wand2 className="mr-1.5 h-3.5 w-3.5" />
-            Refine
-          </Button>
-        )}
-
-        {hasCourse && (
-          <Button
-            size="sm"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow-sm"
-            disabled={isPublishing || isUnpublishing}
-            onClick={isPublished ? onUnpublish : onPublish}
-          >
-            {isPublishing || isUnpublishing ? (
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Rocket className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            {isPublished ? "Unpublish" : "Publish"}
-          </Button>
-        )}
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground">
-              <MoreVertical className="h-4 w-4" />
+              <Icon className="h-3.5 w-3.5" />
             </Button>
           ))}
         </div>
 
         {/* Right */}
         <div className="flex items-center gap-2">
+          {hasCourse && courseUrl && (
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground text-xs gap-1.5"
+                onClick={() => window.open(courseUrl, "_blank")}
+              >
+                <ExternalLink className="h-3 w-3" />
+                Preview
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  navigator.clipboard.writeText(courseUrl);
+                  setLinkCopied(true);
+                  setTimeout(() => setLinkCopied(false), 2000);
+                }}
+              >
+                {linkCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+              </Button>
+            </div>
+          )}
+
           {hasCourse && (
             <Button
               size="sm"
