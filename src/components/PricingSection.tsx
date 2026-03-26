@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Check, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
+import { toast } from "sonner";
 
 const features = [
   "Unlimited courses",
@@ -14,6 +17,25 @@ const features = [
 
 const PricingSection = () => {
   const [yearly, setYearly] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { startCheckout } = useSubscription();
+
+  const handleSubscribe = async () => {
+    if (!user) {
+      navigate("/auth?redirect=/pricing");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await startCheckout(yearly ? "annual" : "monthly");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start checkout");
+      setLoading(false);
+    }
+  };
 
   return (
     <section id="pricing" className="py-[60px] bg-background relative radial-glow">
@@ -69,12 +91,17 @@ const PricingSection = () => {
               ))}
             </ul>
 
-            <Link
-              to="/auth"
-              className="w-full px-6 py-3 rounded-[10px] btn-primary text-sm flex items-center justify-center font-body"
+            <button
+              onClick={handleSubscribe}
+              disabled={loading}
+              className="w-full px-6 py-3 rounded-[10px] btn-primary text-sm flex items-center justify-center font-body disabled:opacity-50"
             >
-              Start for $29
-            </Link>
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                `Start for ${yearly ? "$790/yr" : "$29"}`
+              )}
+            </button>
 
             <p className="text-xs text-muted-foreground mt-4 font-body">No hidden fees. Just build and sell your course.</p>
           </div>

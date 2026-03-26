@@ -7,6 +7,7 @@ import { Menu, Shield, LogOut, User } from "lucide-react";
 import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import WaitlistModal from "@/components/WaitlistModal";
 import {

@@ -1,28 +1,26 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SubscriptionState {
   subscribed: boolean;
   status: string | null;
-  planName: string | null;
-  priceCents: number | null;
-  currency: string | null;
-  currentPeriodEnd: string | null;
+  productId: string | null;
+  priceId: string | null;
+  subscriptionEnd: string | null;
   cancelAtPeriodEnd: boolean;
-  stripeCustomerId: string | null;
   loading: boolean;
 }
 
 export function useSubscription() {
+  const { user } = useAuth();
   const [state, setState] = useState<SubscriptionState>({
     subscribed: false,
     status: null,
-    planName: null,
-    priceCents: null,
-    currency: null,
-    currentPeriodEnd: null,
+    productId: null,
+    priceId: null,
+    subscriptionEnd: null,
     cancelAtPeriodEnd: false,
-    stripeCustomerId: null,
     loading: true,
   });
 
@@ -30,44 +28,41 @@ export function useSubscription() {
     setState((s) => ({ ...s, loading: true }));
 
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    if (!user) {
+    if (!session) {
       setState((s) => ({ ...s, loading: false, subscribed: false }));
       return;
     }
 
-    const { data, error } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase.functions.invoke("check-subscription");
 
-    if (error || !data) {
+      if (error) {
+        console.error("check-subscription error:", error);
+        setState((s) => ({ ...s, loading: false, subscribed: false }));
+        return;
+      }
+
+      setState({
+        subscribed: data?.subscribed ?? false,
+        status: data?.status ?? null,
+        productId: data?.product_id ?? null,
+        priceId: data?.price_id ?? null,
+        subscriptionEnd: data?.subscription_end ?? null,
+        cancelAtPeriodEnd: data?.cancel_at_period_end ?? false,
+        loading: false,
+      });
+    } catch {
       setState((s) => ({ ...s, loading: false, subscribed: false }));
-      return;
     }
-
-    setState({
-      subscribed: data.status === "active" || data.status === "trialing",
-      status: data.status,
-      planName: data.plan_name,
-      priceCents: data.price_cents,
-      currency: data.currency,
-      currentPeriodEnd: data.current_period_end,
-      cancelAtPeriodEnd: data.cancel_at_period_end ?? false,
-      stripeCustomerId: data.stripe_customer_id,
-      loading: false,
-    });
   }, []);
 
   const openPortal = useCallback(async () => {
     const { data, error } = await supabase.functions.invoke(
       "create-portal-session",
-      { body: { return_url: window.location.href } },
+      { body: { return_url: window.location.href } }
     );
     if (error) throw error;
     if (data?.url) {
@@ -77,9 +72,27 @@ export function useSubscription() {
     }
   }, []);
 
+  const startCheckout = useCallback(async (plan: "monthly" | "annual" = "monthly") => {
+    const { data, error } = await supabase.functions.invoke("create-checkout", {
+      body: { plan },
+    });
+    if (error) throw error;
+    if (data?.url) {
+      window.location.href = data.url;
+    } else {
+      throw new Error("No checkout URL returned");
+    }
+  }, []);
+
   useEffect(() => {
     refresh();
+  }, [refresh, user]);
+
+  // Auto-refresh every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(refresh, 60000);
+    return () => clearInterval(interval);
   }, [refresh]);
 
-  return { ...state, refresh, openPortal };
+  return { ...state, refresh, openPortal, startCheckout };
 }

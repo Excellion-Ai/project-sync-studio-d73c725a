@@ -24,5 +24,11 @@ verify_jwt = false
 [functions.help-chat]
 verify_jwt = false
 
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
+
 [functions.waitlist-welcome]
 verify_jwt = false
