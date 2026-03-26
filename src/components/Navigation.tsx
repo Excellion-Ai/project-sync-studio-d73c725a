@@ -37,9 +37,16 @@ const Navigation = () => {
   const ALLOWED_EMAIL = "excellionai@gmail.com";
   const [waitlistOpen, setWaitlistOpen] = useState(false);
 
-  const handleStartBuilding = () => {
-    if (user && user.email === ALLOWED_EMAIL) {
+  const handleStartBuilding = async () => {
+    if (user && (user.email === ALLOWED_EMAIL || subscribed)) {
       navigate("/secret-builder-hub");
+    } else if (user) {
+      // Logged in but not subscribed — go to checkout
+      try {
+        await startCheckout("monthly");
+      } catch {
+        setWaitlistOpen(true);
+      }
     } else {
       setWaitlistOpen(true);
     }
