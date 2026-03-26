@@ -53,8 +53,8 @@ const PricingSection = () => {
           {/* Card */}
           <div className="premium-card p-8 text-center shadow-glow">
             <div className="mb-6">
-              <span className="text-4xl font-heading font-black text-gradient-gold">{yearly ? "$790" : "$19"}</span>
-              <span className="text-muted-foreground text-sm ml-2 font-body">{yearly ? "/year" : "first month"}</span>
+              <span className="text-4xl font-heading font-black text-gradient-gold">{yearly ? "$790" : "$29"}</span>
+              <span className="text-muted-foreground text-sm ml-2 font-body">{yearly ? "/year" : "/first month"}</span>
             </div>
             <p className="text-muted-foreground text-sm mb-8 font-body">
               then {yearly ? "$790/year" : "$79/month"} · {yearly && "save $158 · "}Everything included. Cancel anytime.
@@ -73,7 +73,7 @@ const PricingSection = () => {
               to="/auth"
               className="w-full px-6 py-3 rounded-[10px] btn-primary text-sm flex items-center justify-center font-body"
             >
-              Start for $19
+              Start for $29
             </Link>
 
             <p className="text-xs text-muted-foreground mt-4 font-body">No hidden fees. Just build and sell your course.</p>
