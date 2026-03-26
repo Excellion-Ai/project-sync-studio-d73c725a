@@ -807,7 +807,10 @@ const BuilderShell = ({
         onOpenPublishSettings={() => setShowPublishSettings(true)}
         onDesignUpdate={(config) => {
           if (courseSpec) {
-            setCourseSpec({ ...courseSpec, design_config: config });
+            const updated = { ...courseSpec, design_config: config };
+            setCourseSpec(updated);
+            setIsDirty(true);
+            setSaveStatus("unsaved");
           }
         }}
         currentDesignConfig={courseSpec?.design_config}
