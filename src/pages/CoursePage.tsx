@@ -284,11 +284,20 @@ const CoursePage = () => {
 
   // ── Theme CSS variables ────────────────────────────────────
 
-  const themeStyle = useMemo(() => {
-    if (!course?.design_config?.colors) return {};
-    const vars = buildThemeVars(course.design_config.colors);
-    return vars as React.CSSProperties;
-  }, [course?.design_config?.colors]);
+  // Build a <style> tag that overrides :root CSS variables for this page.
+  // This is more reliable than inline style props for CSS custom properties.
+  const themeStyleTag = useMemo(() => {
+    const colors = course?.design_config?.colors;
+    const fonts = course?.design_config?.fonts;
+    if (!colors && !fonts) return null;
+
+    const vars = buildThemeVars(colors || {});
+    if (fonts?.heading) vars["--font-heading"] = `"${fonts.heading}", sans-serif`;
+    if (fonts?.body) vars["--font-body"] = `"${fonts.body}", sans-serif`;
+
+    const entries = Object.entries(vars).map(([k, v]) => `${k}: ${v};`).join("\n    ");
+    return `#course-page-root, #course-page-root * { ${entries} }`;
+  }, [course?.design_config]);
 
   // Load fonts
   useEffect(() => {
@@ -372,11 +381,6 @@ const CoursePage = () => {
 
   // ── Render ──────────────────────────────────────────────────
 
-  const fontVars: React.CSSProperties = {};
-  const fonts = course.design_config?.fonts;
-  if (fonts?.heading) (fontVars as any)["--font-heading"] = `"${fonts.heading}", sans-serif`;
-  if (fonts?.body) (fontVars as any)["--font-body"] = `"${fonts.body}", sans-serif`;
-
   return (
     <>
       <Helmet>
@@ -392,7 +396,10 @@ const CoursePage = () => {
         <meta property="og:type" content="website" />
       </Helmet>
 
-      <div style={{ ...themeStyle, ...fontVars }}>
+      {/* Inject theme CSS variables via a style tag for reliable override */}
+      {themeStyleTag && <style dangerouslySetInnerHTML={{ __html: themeStyleTag }} />}
+
+      <div id="course-page-root">
         {/* Owner preview banner */}
         {isOwnerPreview && (
           <div className="bg-yellow-500/10 border-b border-yellow-500/30 text-yellow-400 text-center py-2 px-4 text-sm">
