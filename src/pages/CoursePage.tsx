@@ -196,13 +196,11 @@ const CoursePage = () => {
       const dc = data.design_config;
       const hasDesign = dc && typeof dc === "object" && Object.keys(dc).length > 0;
       if (!hasDesign && data.builder_project_id) {
-        const { data: proj } = await supabase
-          .from("builder_projects")
-          .select("*")
-          .eq("id", data.builder_project_id)
-          .limit(1);
-        if (proj) {
-          const spec = (proj as any).spec;
+        const projRow = await findOne(
+          supabase.from("builder_projects").select("*").eq("id", data.builder_project_id).limit(1)
+        );
+        if (projRow) {
+          const spec = (projRow as any).spec;
           if (spec?.courseSpec?.design_config) {
             data = { ...data, design_config: spec.courseSpec.design_config };
           }
@@ -210,7 +208,7 @@ const CoursePage = () => {
       }
 
       // Track view (skip for owner previews)
-      if (!isOwnerPreview) {
+      if (!ownerPreview) {
         await supabase.from("course_views").insert({
           course_id: data.id,
           device_type: /Mobi/i.test(navigator.userAgent) ? "mobile" : "desktop",
@@ -295,8 +293,8 @@ const CoursePage = () => {
     if (fonts?.heading) vars["--font-heading"] = `"${fonts.heading}", sans-serif`;
     if (fonts?.body) vars["--font-body"] = `"${fonts.body}", sans-serif`;
 
-    const entries = Object.entries(vars).map(([k, v]) => `${k}: ${v};`).join("\n    ");
-    return `#course-page-root, #course-page-root * { ${entries} }`;
+    const entries = Object.entries(vars).map(([k, v]) => `${k}: ${v} !important;`).join("\n    ");
+    return `:root { ${entries} }`;
   }, [course?.design_config]);
 
   // Load fonts
@@ -359,8 +357,9 @@ const CoursePage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+      <div style={{ minHeight: "100vh", background: "#0a0a0a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 32, height: 32, border: "3px solid #d4a853", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -369,12 +368,10 @@ const CoursePage = () => {
 
   if (notFound || !course || !extendedCourse) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center gap-4 font-sans">
-        <h1 className="text-4xl font-bold">Course Not Found</h1>
-        <p className="text-muted-foreground">
-          This course doesn't exist or hasn't been published yet.
-        </p>
-        <a href="/" className="text-primary underline">Go Home</a>
+      <div style={{ minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, fontFamily: '"Inter", sans-serif' }}>
+        <h1 style={{ fontSize: 36, fontWeight: 700 }}>Course Not Found</h1>
+        <p style={{ color: "#9ca3af" }}>This course doesn't exist or hasn't been published yet.</p>
+        <a href="/" style={{ color: "#d4a853", textDecoration: "underline" }}>Go Home</a>
       </div>
     );
   }
@@ -399,7 +396,7 @@ const CoursePage = () => {
       {/* Inject theme CSS variables via a style tag for reliable override */}
       {themeStyleTag && <style dangerouslySetInnerHTML={{ __html: themeStyleTag }} />}
 
-      <div id="course-page-root">
+      <div>
         {/* Owner preview banner */}
         {isOwnerPreview && (
           <div className="bg-yellow-500/10 border-b border-yellow-500/30 text-yellow-400 text-center py-2 px-4 text-sm">
