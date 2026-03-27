@@ -33,7 +33,7 @@ const CoursePublishDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md text-center bg-background border-border">
+      <DialogContent className="max-w-md text-center border-border" style={{ backgroundColor: 'hsl(var(--background))', zIndex: 100 }}>
         <DialogDescription className="sr-only">
           Your course has been published successfully.
         </DialogDescription>
