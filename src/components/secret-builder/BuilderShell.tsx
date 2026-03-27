@@ -340,7 +340,7 @@ const BuilderShell = ({
   // ── Auto-save (1.5s debounce) ─────────────────────────────
 
   useEffect(() => {
-    if (!isDirty || !userId) return;
+    if (!isDirty || !userId || isPublishing) return;
     setSaveStatus("unsaved");
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
@@ -399,7 +399,7 @@ const BuilderShell = ({
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
-  }, [isDirty, courseSpec, siteSpec, courseId, projectId, userId, projectName]);
+  }, [isDirty, courseSpec, siteSpec, courseId, projectId, userId, projectName, isPublishing]);
 
   // Mark dirty when specs change (skip initial mount)
   const hasInitializedRef = useRef(false);
