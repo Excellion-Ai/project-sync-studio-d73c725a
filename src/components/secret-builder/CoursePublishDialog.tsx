@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,10 @@ const CoursePublishDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md text-center">
+      <DialogContent className="max-w-md text-center bg-background border-border">
+        <DialogDescription className="sr-only">
+          Your course has been published successfully.
+        </DialogDescription>
         <div className="flex flex-col items-center gap-4 py-4">
           <PartyPopper className="h-12 w-12 text-primary" />
           <DialogHeader>

@@ -585,7 +585,7 @@ const BuilderShell = ({
           .slice(0, 40)}-${Date.now().toString(36)}`;
       }
 
-      const publishedUrl = `${window.location.origin}/course/${subdomain}`;
+      const publishedUrl = `https://excellioncourses.lovable.app/course/${subdomain}`;
 
       const { error } = await supabase
         .from("courses")
