@@ -5,7 +5,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PartyPopper, Copy, Check, ExternalLink } from "lucide-react";
@@ -33,28 +32,21 @@ const CoursePublishDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-md text-center border-border sm:rounded-lg"
-        style={{
-          backgroundColor: '#09090b',
-          color: '#fafafa',
-          zIndex: 100,
-        }}
-      >
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden border-border bg-card p-0 text-center text-card-foreground shadow-lg sm:rounded-lg">
         <DialogDescription className="sr-only">
           Your course has been published successfully.
         </DialogDescription>
-        <div className="flex flex-col items-center gap-4 py-4">
+        <div className="flex w-full flex-col items-center gap-4 px-6 pb-6 pt-10">
           <PartyPopper className="h-12 w-12 text-primary" />
-          <DialogHeader>
-            <DialogTitle className="text-2xl" style={{ color: '#fafafa' }}>
+          <DialogHeader className="w-full items-center text-center">
+            <DialogTitle className="text-safe text-2xl text-card-foreground">
               Your course is live!
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm" style={{ color: '#a1a1aa' }}>{courseTitle}</p>
+          <p className="text-safe w-full text-sm text-muted-foreground">{courseTitle}</p>
 
-          <div className="w-full flex items-center gap-2 rounded-md px-3 py-2" style={{ border: '1px solid #27272a', backgroundColor: 'rgba(39,39,42,0.3)' }}>
-            <span className="flex-1 text-sm truncate text-left" style={{ color: '#fafafa' }}>
+          <div className="flex w-full max-w-full items-center gap-2 rounded-md border border-border bg-secondary/40 px-3 py-2">
+            <span className="min-w-0 flex-1 truncate text-left text-sm text-card-foreground">
               {courseUrl}
             </span>
             <Button size="icon" variant="ghost" className="shrink-0" onClick={handleCopy}>
@@ -62,14 +54,14 @@ const CoursePublishDialog = ({
             </Button>
           </div>
 
-          <div className="flex gap-3 w-full">
+          <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
             <Button
-              className="flex-1"
+              className="min-w-0 w-full"
               onClick={() => window.open(courseUrl, "_blank")}
             >
               <ExternalLink className="h-4 w-4 mr-1" /> View Live Page
             </Button>
-            <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" className="min-w-0 w-full" onClick={() => onOpenChange(false)}>
               Done
             </Button>
           </div>
