@@ -122,6 +122,9 @@ const CoursePage = () => {
 
   // ── Fetch ────────────────────────────────────────────────
 
+  // Non-sensitive columns for public course reads
+  const PUBLIC_COURSE_COLUMNS = "id,title,description,tagline,slug,subdomain,curriculum,design_config,layout_template,section_order,section_config,page_sections,meta,status,is_free,price_cents,currency,thumbnail_url,hero_copy,instructor_name,instructor_bio,seo_title,seo_description,social_image_url,type,total_students,branding,created_at,updated_at,published_at,deleted_at,has_video_content,is_featured,custom_domain,domain_verified,original_prompt,builder_project_id";
+
   useEffect(() => {
     if (!subdomain) { setNotFound(true); setIsLoading(false); return; }
 
@@ -133,19 +136,19 @@ const CoursePage = () => {
       let ownerPreview = false;
 
       // Published by subdomain
-      row = await findOne(supabase.from("courses").select("*").eq("subdomain", subdomain).eq("status", "published").is("deleted_at", null).limit(1));
+      row = await findOne(supabase.from("courses").select(PUBLIC_COURSE_COLUMNS).eq("subdomain", subdomain).eq("status", "published").is("deleted_at", null).limit(1));
 
       // Owner draft by subdomain
       if (!row && user) {
-        row = await findOne(supabase.from("courses").select("*").eq("subdomain", subdomain).eq("user_id", user.id).is("deleted_at", null).limit(1));
+        row = await findOne(supabase.from("courses").select(PUBLIC_COURSE_COLUMNS).eq("subdomain", subdomain).eq("user_id", user.id).is("deleted_at", null).limit(1));
         if (row) ownerPreview = true;
       }
 
       // UUID fallback
       if (!row && subdomain.match(/^[0-9a-f-]{36}$/i)) {
-        row = await findOne(supabase.from("courses").select("*").eq("id", subdomain).eq("status", "published").is("deleted_at", null).limit(1));
+        row = await findOne(supabase.from("courses").select(PUBLIC_COURSE_COLUMNS).eq("id", subdomain).eq("status", "published").is("deleted_at", null).limit(1));
         if (!row && user) {
-          row = await findOne(supabase.from("courses").select("*").eq("id", subdomain).eq("user_id", user.id).is("deleted_at", null).limit(1));
+          row = await findOne(supabase.from("courses").select(PUBLIC_COURSE_COLUMNS).eq("id", subdomain).eq("user_id", user.id).is("deleted_at", null).limit(1));
           if (row) ownerPreview = true;
         }
       }
