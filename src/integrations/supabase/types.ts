@@ -288,6 +288,7 @@ export type Database = {
           deleted_at: string | null
           description: string | null
           design_config: Json | null
+          domain_verification_token: string | null
           domain_verified: boolean | null
           has_video_content: boolean | null
           hero_copy: string | null
@@ -331,6 +332,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           design_config?: Json | null
+          domain_verification_token?: string | null
           domain_verified?: boolean | null
           has_video_content?: boolean | null
           hero_copy?: string | null
@@ -374,6 +376,7 @@ export type Database = {
           deleted_at?: string | null
           description?: string | null
           design_config?: Json | null
+          domain_verification_token?: string | null
           domain_verified?: boolean | null
           has_video_content?: boolean | null
           hero_copy?: string | null
@@ -1029,7 +1032,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_clean_slug: {
+        Args: { course_id?: string; title: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
