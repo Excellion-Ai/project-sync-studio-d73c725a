@@ -32,37 +32,40 @@ const CoursePublishDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100vw-3rem)] max-w-sm overflow-hidden border-border bg-card p-0 text-center text-card-foreground shadow-lg sm:rounded-lg">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-lg overflow-hidden border-border bg-card p-0 text-center text-card-foreground shadow-lg sm:rounded-lg">
         <DialogDescription className="sr-only">
           Your course has been published successfully.
         </DialogDescription>
-        <div className="flex w-full flex-col items-center gap-4 px-5 pb-6 pt-10">
+        <div className="flex w-full flex-col items-center gap-4 px-6 pb-6 pt-10">
           <PartyPopper className="h-12 w-12 text-primary" />
           <DialogHeader className="w-full items-center text-center">
             <DialogTitle className="text-2xl text-card-foreground">
               Your course is live!
             </DialogTitle>
           </DialogHeader>
-          <p className="w-full text-sm text-muted-foreground truncate">{courseTitle}</p>
+          <p className="w-full max-w-[28rem] break-words text-sm leading-relaxed text-muted-foreground">
+            {courseTitle}
+          </p>
 
-          <div className="flex w-full items-center gap-2 rounded-md border border-border bg-secondary/40 px-3 py-2 overflow-hidden">
-            <span className="flex-1 truncate text-left text-xs text-card-foreground">
+          <div className="flex w-full flex-col items-center gap-3 rounded-md border border-border bg-secondary/40 px-4 py-3 text-center">
+            <span className="w-full break-all text-xs leading-relaxed text-card-foreground">
               {courseUrl}
             </span>
-            <Button size="icon" variant="ghost" className="shrink-0 h-8 w-8" onClick={handleCopy}>
+            <Button size="sm" variant="ghost" className="h-9 gap-2 px-3" onClick={handleCopy}>
               {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+              <span>{copied ? "Copied" : "Copy Link"}</span>
             </Button>
           </div>
 
-          <div className="flex w-full gap-3">
+          <div className="flex w-full flex-col items-center gap-3 sm:flex-row">
             <Button
-              className="flex-1 min-w-0"
+              className="w-full sm:flex-1"
               onClick={() => window.open(courseUrl, "_blank")}
             >
-              <ExternalLink className="h-4 w-4 mr-1 shrink-0" />
-              <span className="truncate">View Live Page</span>
+              <ExternalLink className="h-4 w-4 shrink-0" />
+              <span>View Live Page</span>
             </Button>
-            <Button variant="outline" className="flex-1 min-w-0" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" className="w-full sm:flex-1" onClick={() => onOpenChange(false)}>
               Done
             </Button>
           </div>
