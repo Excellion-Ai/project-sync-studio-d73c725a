@@ -7,8 +7,8 @@ const corsHeaders = {
 };
 
 const MODEL = "claude-sonnet-4-20250514";
-const REQUEST_TIMEOUT_MS = 50000;
-const MAX_TOKENS = 3000;
+const REQUEST_TIMEOUT_MS = 20000;
+const MAX_TOKENS = 1500;
 
 const SYSTEM_PROMPT = `You are an expert course creator and web designer. Generate a course OUTLINE with a UNIQUE visual design as compact valid JSON.
 

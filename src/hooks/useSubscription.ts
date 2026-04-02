@@ -88,10 +88,11 @@ export function useSubscription() {
     refresh();
   }, [refresh, user]);
 
-  // Auto-refresh every 60 seconds
+  // Refresh on window focus (not polling — avoids 404 spam)
   useEffect(() => {
-    const interval = setInterval(refresh, 60000);
-    return () => clearInterval(interval);
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, [refresh]);
 
   return { ...state, refresh, openPortal, startCheckout };
