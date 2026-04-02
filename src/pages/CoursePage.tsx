@@ -144,8 +144,6 @@ const CoursePage = () => {
   // ── Fetch ────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!identifier) { setNotFound(true); setIsLoading(false); return; }
-
     const fetchCourse = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       const findOne = async (q: any) => { const { data: rows } = await q; return rows?.[0] ?? null; };
@@ -154,28 +152,52 @@ const CoursePage = () => {
       let row: any = null;
       let ownerPreview = false;
 
+      // 0. Check if hostname is a verified custom domain
+      const hostname = window.location.hostname;
+      const isCustomDomain = hostname !== "localhost"
+        && !hostname.includes("excellioncourses")
+        && !hostname.includes("lovable")
+        && !hostname.includes("lovableproject");
+
+      if (isCustomDomain) {
+        row = await findOne(
+          supabase.from("courses").select(sel)
+            .eq("custom_domain", hostname).eq("domain_verified", true)
+            .eq("status", "published").is("deleted_at", null).limit(1)
+        );
+      }
+
       // 1. Published by slug (primary — clean URL)
-      row = await findOne(supabase.from("courses").select(sel).eq("slug", identifier).eq("status", "published").is("deleted_at", null).limit(1));
+      if (!row && identifier) {
+        row = await findOne(supabase.from("courses").select(sel).eq("slug", identifier).eq("status", "published").is("deleted_at", null).limit(1));
+      }
 
       // 2. Published by subdomain (backwards compat)
-      if (!row) {
+      if (!row && identifier) {
         row = await findOne(supabase.from("courses").select(sel).eq("subdomain", identifier).eq("status", "published").is("deleted_at", null).limit(1));
       }
 
       // 3. Owner draft by slug or subdomain
-      if (!row && user) {
+      if (!row && identifier && user) {
         row = await findOne(supabase.from("courses").select(sel).eq("slug", identifier).eq("user_id", user.id).is("deleted_at", null).limit(1));
         if (!row) row = await findOne(supabase.from("courses").select(sel).eq("subdomain", identifier).eq("user_id", user.id).is("deleted_at", null).limit(1));
         if (row) ownerPreview = true;
       }
 
       // 4. UUID fallback
-      if (!row && identifier.match(/^[0-9a-f-]{36}$/i)) {
+      if (!row && identifier && identifier.match(/^[0-9a-f-]{36}$/i)) {
         row = await findOne(supabase.from("courses").select(sel).eq("id", identifier).eq("status", "published").is("deleted_at", null).limit(1));
         if (!row && user) {
           row = await findOne(supabase.from("courses").select(sel).eq("id", identifier).eq("user_id", user.id).is("deleted_at", null).limit(1));
           if (row) ownerPreview = true;
         }
+      }
+
+      if (!row && !identifier) {
+        // No slug in URL and no custom domain match
+        setNotFound(true);
+        setIsLoading(false);
+        return;
       }
 
       if (!row) { setNotFound(true); setIsLoading(false); return; }

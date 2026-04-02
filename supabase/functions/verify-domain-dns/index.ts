@@ -97,7 +97,11 @@ serve(async (req: Request) => {
     if (verified) {
       await serviceClient
         .from("courses")
-        .update({ domain_verified: true, updated_at: new Date().toISOString() })
+        .update({
+          domain_verified: true,
+          domain_verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", courseId);
     }
 
