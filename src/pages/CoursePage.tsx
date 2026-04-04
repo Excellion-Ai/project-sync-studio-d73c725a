@@ -280,6 +280,47 @@ const CoursePage = () => {
         </div>
       )}
 
+      {/* ── Course site navigation header ─────────────────── */}
+      <nav className="flex items-center h-16 border-b border-border px-6 shrink-0 bg-background sticky top-0 z-50">
+        {/* Left — Course title as logo */}
+        <div className="flex items-center gap-3 shrink-0">
+          {course.thumbnail_url ? (
+            <img src={course.thumbnail_url} alt="" className="w-10 h-10 rounded-lg object-cover" />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+              {course.title?.[0] || "C"}
+            </div>
+          )}
+          <span className="text-sm font-semibold text-foreground hidden sm:block truncate max-w-[200px]">
+            {course.title}
+          </span>
+        </div>
+
+        {/* Center — Navigation links */}
+        <div className="hidden md:flex items-center justify-center gap-1 flex-1">
+          {["Landing", "Curriculum"].map((label) => (
+            <a
+              key={label}
+              href={`#${label.toLowerCase()}`}
+              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+
+        {/* Right — Enroll CTA */}
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
+          <button
+            onClick={handleEnroll}
+            disabled={enrolling}
+            className="px-5 py-2 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+          >
+            {enrolling ? "Enrolling..." : "Enroll Now"}
+          </button>
+        </div>
+      </nav>
+
       <DynamicCoursePreview
         course={mappedCourse}
         onEnrollClick={handleEnroll}
