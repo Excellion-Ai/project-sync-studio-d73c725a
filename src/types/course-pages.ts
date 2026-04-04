@@ -103,6 +103,7 @@ export interface DesignConfig {
   heroLayout?: HeroLayout;
   heroImage?: string;
   backgrounds?: { hero?: string; curriculum?: string; cta?: string };
+  logoUrl?: string;
 }
 
 export interface ExtendedCourse {

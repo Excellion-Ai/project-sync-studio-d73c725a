@@ -16,6 +16,8 @@ interface BuilderPreviewAreaProps {
   onRefine: () => void;
   onOpenSettings: () => void;
   onOpenPublishSettings: () => void;
+  logoUrl?: string;
+  onUpdateLogo?: (url: string | undefined) => void;
 }
 
 const BuilderPreviewArea = ({
@@ -29,6 +31,8 @@ const BuilderPreviewArea = ({
   onRefine,
   onOpenSettings,
   onOpenPublishSettings,
+  logoUrl,
+  onUpdateLogo,
 }: BuilderPreviewAreaProps) => {
   const previewClass =
     previewMode === "tablet"
@@ -74,6 +78,8 @@ const BuilderPreviewArea = ({
           isPublished={isPublished}
           isVisualEditMode={true}
           isCreatorView={true}
+          logoUrl={logoUrl}
+          onUpdateLogo={onUpdateLogo}
         />
       </div>
     </div>

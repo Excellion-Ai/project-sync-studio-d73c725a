@@ -290,6 +290,7 @@ export type Database = {
           design_config: Json | null
           domain_verification_token: string | null
           domain_verified: boolean | null
+          domain_verified_at: string | null
           has_video_content: boolean | null
           hero_copy: string | null
           id: string
@@ -334,6 +335,7 @@ export type Database = {
           design_config?: Json | null
           domain_verification_token?: string | null
           domain_verified?: boolean | null
+          domain_verified_at?: string | null
           has_video_content?: boolean | null
           hero_copy?: string | null
           id?: string
@@ -378,6 +380,7 @@ export type Database = {
           design_config?: Json | null
           domain_verification_token?: string | null
           domain_verified?: boolean | null
+          domain_verified_at?: string | null
           has_video_content?: boolean | null
           hero_copy?: string | null
           id?: string
@@ -729,6 +732,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          creator_subdomain: string | null
           email: string | null
           full_name: string | null
           id: string
@@ -740,6 +744,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          creator_subdomain?: string | null
           email?: string | null
           full_name?: string | null
           id: string
@@ -751,6 +756,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          creator_subdomain?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
