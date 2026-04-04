@@ -277,16 +277,26 @@ const CoursePreviewTabs = ({
   const addSection = (s: LandingSectionType) => { if (!landingSections.includes(s)) setLandingSections((prev) => [...prev, s]); };
   const markComplete = (lessonId: string) => setCompletedLessons((prev) => new Set(prev).add(lessonId));
 
-  // Logo upload
+  // Logo upload — uses course-thumbnails bucket (public)
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !onUpdateLogo) return;
+    if (!file) return;
     setIsUploadingLogo(true);
-    const path = `logos/${course.id ?? "temp"}/${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("builder-images").upload(path, file, { upsert: true });
+    const ext = file.name.split(".").pop() ?? "png";
+    const path = `logos/${course.id ?? "temp"}/logo.${ext}`;
+    const { error } = await supabase.storage.from("course-thumbnails").upload(path, file, { upsert: true });
     if (error) { toast.error("Logo upload failed"); setIsUploadingLogo(false); return; }
-    const { data: { publicUrl } } = supabase.storage.from("builder-images").getPublicUrl(path);
-    onUpdateLogo(publicUrl);
+    const { data: { publicUrl } } = supabase.storage.from("course-thumbnails").getPublicUrl(path);
+    // Store logo in design_config and call onUpdateLogo if provided
+    if (onUpdateLogo) onUpdateLogo(publicUrl);
+    // Also update course directly via onUpdate so it persists through auto-save
+    if (onUpdate) {
+      onUpdate({
+        ...course,
+        design_config: { ...course.design_config, logoUrl: publicUrl },
+      });
+    }
+    toast.success("Logo uploaded");
     setIsUploadingLogo(false);
   };
 
@@ -750,8 +760,14 @@ const CoursePreviewTabs = ({
       <nav className="flex items-center h-20 border-b border-border px-6 shrink-0">
         {/* Left — Logo */}
         <div className="flex items-center gap-3 shrink-0">
-          {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className="w-14 h-14 rounded-lg object-cover" />
+          {(logoUrl || course.design_config?.logoUrl) ? (
+            <img
+              src={logoUrl || course.design_config?.logoUrl}
+              alt="Logo"
+              className="w-14 h-14 rounded-lg object-cover cursor-pointer"
+              onClick={() => logoInputRef.current?.click()}
+              title="Click to change logo"
+            />
           ) : (
             <button
               onClick={() => logoInputRef.current?.click()}
