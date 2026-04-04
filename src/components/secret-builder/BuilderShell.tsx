@@ -901,6 +901,15 @@ const BuilderShell = ({
               onRefine={() => {}}
               onOpenSettings={() => setShowCourseSettings(true)}
               onOpenPublishSettings={() => setShowPublishSettings(true)}
+              logoUrl={courseSpec?.design_config?.logoUrl}
+              onUpdateLogo={(url) => {
+                if (!courseSpec) return;
+                const updated = {
+                  ...courseSpec,
+                  design_config: { ...courseSpec.design_config, logoUrl: url },
+                };
+                handleCourseUpdate(updated);
+              }}
             />
           </ResizablePanel>
         </ResizablePanelGroup>
