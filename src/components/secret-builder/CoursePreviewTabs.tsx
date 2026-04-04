@@ -283,9 +283,9 @@ const CoursePreviewTabs = ({
     if (!file || !onUpdateLogo) return;
     setIsUploadingLogo(true);
     const path = `logos/${course.id ?? "temp"}/${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("builder-images").upload(path, file, { upsert: true });
+    const { error } = await supabase.storage.from("course-thumbnails").upload(path, file, { upsert: true });
     if (error) { toast.error("Logo upload failed"); setIsUploadingLogo(false); return; }
-    const { data: { publicUrl } } = supabase.storage.from("builder-images").getPublicUrl(path);
+    const { data: { publicUrl } } = supabase.storage.from("course-thumbnails").getPublicUrl(path);
     onUpdateLogo(publicUrl);
     setIsUploadingLogo(false);
   };
