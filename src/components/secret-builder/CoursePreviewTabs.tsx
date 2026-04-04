@@ -814,19 +814,6 @@ const CoursePreviewTabs = ({
           {/* ═══ LANDING ═══ */}
           {activeTab === "landing" && (
             <div className="space-y-0">
-              {isCreatorView && (
-                <div className="flex items-center gap-2 mb-6">
-                  <Button size="sm" variant={isEditMode ? "default" : "outline"} className="text-xs h-7" onClick={() => setIsEditMode(!isEditMode)}>
-                    {isEditMode ? "Done Editing" : "Edit Layout"}
-                  </Button>
-                  {isEditMode && (
-                    <Button size="sm" variant="outline" className="text-xs h-7" onClick={saveLayout} disabled={isSavingLayout}>
-                      {isSavingLayout ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
-                      Save Layout
-                    </Button>
-                  )}
-                </div>
-              )}
 
               {isEditMode ? (
                 <div className="space-y-2">
