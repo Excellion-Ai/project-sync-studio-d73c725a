@@ -42,9 +42,42 @@ serve(async (req: Request) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.mode === "subscription" && session.subscription && session.client_reference_id) {
-          // Fetch the full subscription from Stripe
           const sub = await stripe.subscriptions.retrieve(session.subscription as string);
           await upsertSubscription(supabase, sub, session.client_reference_id);
+        }
+        // Handle course purchases (one-time payments)
+        if (session.mode === "payment" && session.metadata?.type === "course_purchase" && session.payment_status === "paid") {
+          const userId = session.client_reference_id || session.metadata?.user_id;
+          const courseId = session.metadata?.course_id;
+          if (userId && courseId) {
+            // Insert purchase (idempotent — skip if already exists)
+            const { data: existingPurchase } = await supabase
+              .from("purchases")
+              .select("id")
+              .eq("stripe_checkout_session_id", session.id)
+              .maybeSingle();
+
+            if (!existingPurchase) {
+              await supabase.from("purchases").insert({
+                user_id: userId,
+                course_id: courseId,
+                amount_cents: session.amount_total ?? 0,
+                currency: session.currency || "usd",
+                stripe_checkout_session_id: session.id,
+                stripe_payment_intent_id: session.payment_intent as string,
+                status: "paid",
+              });
+            }
+
+            // Create enrollment (idempotent)
+            const { error: enrollErr } = await supabase
+              .from("enrollments")
+              .insert({ course_id: courseId, user_id: userId });
+            if (enrollErr && enrollErr.code !== "23505") {
+              console.error("Webhook: enrollment insert failed", enrollErr);
+            }
+            console.log(`[WEBHOOK] Course purchase fulfilled: user=${userId} course=${courseId}`);
+          }
         }
         break;
       }

@@ -32,3 +32,15 @@ verify_jwt = false
 
 [functions.waitlist-welcome]
 verify_jwt = false
+
+[functions.create-connect-account]
+verify_jwt = false
+
+[functions.connect-account-callback]
+verify_jwt = false
+
+[functions.create-course-checkout]
+verify_jwt = false
+
+[functions.verify-course-purchase]
+verify_jwt = false
