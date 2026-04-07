@@ -1227,42 +1227,80 @@ function HubContent() {
             </p>
           </div>
 
-          {/* ── Guided Input Card ─────────────────────────── */}
+          {/* ── Input Card ─────────────────────────────── */}
           <Card className="border-border/60 bg-card">
-            <CardContent className="p-5 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">What's your course about?</label>
-                <Input
-                  placeholder="e.g. 6-week fat loss program, booty building, macro tracking"
-                  value={guidedQ1}
-                  onChange={(e) => setGuidedQ1(e.target.value)}
-                  className="bg-transparent"
-                />
+            <CardContent className="p-0">
+              {/* Guided mode toggle */}
+              <div className="px-5 pt-4 pb-2">
+                <button
+                  onClick={() => setGuidedMode(!guidedMode)}
+                  className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 font-medium"
+                >
+                  <Lightbulb className="h-3.5 w-3.5" />
+                  {guidedMode ? "Switch to freeform" : "Need help? Use guided mode"}
+                </button>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Who is it for?</label>
-                <Input
-                  placeholder="e.g. busy moms, beginners, women over 40"
-                  value={guidedQ2}
-                  onChange={(e) => setGuidedQ2(e.target.value)}
-                  className="bg-transparent"
-                />
+              {/* Guided questions */}
+              <div
+                className="overflow-hidden transition-all duration-300 ease-in-out"
+                style={{
+                  maxHeight: guidedMode ? "300px" : "0px",
+                  opacity: guidedMode ? 1 : 0,
+                }}
+              >
+                <div className="px-5 pb-3 space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">What's your course about?</label>
+                    <Input
+                      placeholder="e.g. 6-week fat loss program, booty building, macro tracking"
+                      value={guidedQ1}
+                      onChange={(e) => updateGuided(1, e.target.value)}
+                      className="bg-muted/30 h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Who is it for?</label>
+                    <Input
+                      placeholder="e.g. busy moms, beginners, women over 40"
+                      value={guidedQ2}
+                      onChange={(e) => updateGuided(2, e.target.value)}
+                      className="bg-muted/30 h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">What's the #1 transformation they'll experience?</label>
+                    <Input
+                      placeholder="e.g. lose 10 pounds, build a home workout habit, understand their macros"
+                      value={guidedQ3}
+                      onChange={(e) => updateGuided(3, e.target.value)}
+                      className="bg-muted/30 h-9 text-sm"
+                    />
+                  </div>
+                  <Separator />
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">What result will they get?</label>
-                <Input
-                  placeholder="e.g. lose 10 pounds, build a home workout habit, understand their macros"
-                  value={guidedQ3}
-                  onChange={(e) => setGuidedQ3(e.target.value)}
-                  className="bg-transparent"
-                />
-              </div>
+              {/* Main textarea */}
+              <Textarea
+                placeholder="Describe your course idea in detail..."
+                className="min-h-[120px] resize-none border-0 bg-transparent px-5 pt-3 pb-3 text-sm focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/60"
+                value={idea}
+                onChange={(e) => {
+                  setIdea(e.target.value);
+                  if (guidedMode) {
+                    setGuidedQ1("");
+                    setGuidedQ2("");
+                    setGuidedQ3("");
+                    setGuidedMode(false);
+                  }
+                }}
+                onKeyDown={handleKeyDown}
+              />
 
               {/* Attachments */}
               {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 px-5 pb-2">
                   {attachments.map((a) => (
                     <Badge
                       key={a.id}
@@ -1284,7 +1322,8 @@ function HubContent() {
 
               <Separator />
 
-              <div className="flex items-center justify-between">
+              {/* Bottom toolbar */}
+              <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-1">
                   <input
                     ref={fileInputRef}
@@ -1312,8 +1351,8 @@ function HubContent() {
                 </div>
 
                 <Button
-                  disabled={!guidedHasContent || isGenerating}
-                  onClick={handleGuidedGenerate}
+                  disabled={!idea.trim() || isGenerating}
+                  onClick={() => handleGenerate()}
                   className="h-9 px-5 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
                 >
                   {isGenerating ? (
@@ -1327,7 +1366,7 @@ function HubContent() {
                 </Button>
               </div>
 
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-xs text-muted-foreground text-center pb-4">
                 The more specific you are, the better your course will be.
               </p>
             </CardContent>
