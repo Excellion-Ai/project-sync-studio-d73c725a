@@ -58,8 +58,8 @@ const QuickstartSection = () => {
               ))}
             </ul>
 
-            <button
-              onClick={() => setOpen(true)}
+            <a
+              href="/auth"
               className="mt-6 w-full px-6 py-3 rounded-[10px] btn-primary text-sm flex items-center justify-center gap-2 font-body"
             >
               Access the Quickstart Course
