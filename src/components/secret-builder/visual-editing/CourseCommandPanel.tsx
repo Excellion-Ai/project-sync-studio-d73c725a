@@ -29,6 +29,7 @@ interface AttachmentPreview {
   name: string;
   type: string;
   url?: string;
+  content?: string;
 }
 
 interface CourseCommandPanelProps {
@@ -108,11 +109,20 @@ const CourseCommandPanel = ({
 
     try {
       if (mode === "build") {
+        // Include attachment content in the command
+        const attachmentText = attachments
+          .filter((a) => a.content)
+          .map((a) => `[Attached: ${a.name}]\n${a.content}`)
+          .join("\n\n");
+        const fullCommand = attachmentText
+          ? `${text}\n\nReference material:\n${attachmentText}`
+          : text;
+
         const { data, error } = await supabase.functions.invoke(
           "interpret-course-command",
           {
             body: {
-              command: text,
+              command: fullCommand,
               currentCourse: {
                 title: course.title,
                 modules: course.modules,
@@ -179,15 +189,25 @@ const CourseCommandPanel = ({
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const newAttachments = files.map((f) => ({
-      id: crypto.randomUUID(),
-      name: f.name,
-      type: f.type,
-      url: URL.createObjectURL(f),
-    }));
-    setAttachments((prev) => [...prev, ...newAttachments]);
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const content = await file.text();
+      setAttachments((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        name: file.name,
+        type: file.type,
+        url: URL.createObjectURL(file),
+        content: content.slice(0, 12000),
+      }]);
+    } catch {
+      setAttachments((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        name: file.name,
+        type: file.type,
+      }]);
+    }
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 

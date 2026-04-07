@@ -443,6 +443,12 @@ const BuilderShell = ({
       ]);
 
       try {
+        // Collect text content from all attachments
+        const attachmentContent = attachments
+          .filter((a) => a.content)
+          .map((a) => `--- Attached: ${a.name} ---\n${a.content}`)
+          .join("\n\n");
+
         // Step 1: Generate outline
         updateStep("analyze", "in_progress");
 
@@ -452,7 +458,7 @@ const BuilderShell = ({
           includeQuizzes: options.includeQuizzes,
           includeAssignments: options.includeAssignments,
           template: options.template,
-        })) as Record<string, any>;
+        }, attachmentContent || undefined)) as Record<string, any>;
 
         updateStep("analyze", "complete");
         updateStep("structure", "in_progress");

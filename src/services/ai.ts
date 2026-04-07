@@ -19,9 +19,9 @@ function unwrap(fnName: string, data: unknown, error: unknown) {
 }
 
 export const AI = {
-  async generateCourse(prompt: string, options?: Record<string, unknown>) {
+  async generateCourse(prompt: string, options?: Record<string, unknown>, attachmentContent?: string) {
     const { data, error } = await supabase.functions.invoke("generate-course", {
-      body: { prompt, options },
+      body: { prompt, options, attachmentContent },
     });
     return unwrap("generateCourse", data, error);
   },

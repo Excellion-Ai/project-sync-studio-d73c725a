@@ -148,13 +148,18 @@ serve(async (req) => {
       throw new Error("ANTHROPIC_API_KEY is not configured");
     }
 
-    const { prompt, options } = await req.json();
+    const { prompt, options, attachmentContent } = await req.json();
     if (!prompt || typeof prompt !== "string") throw new Error("prompt is required");
 
     // Generate a random seed to encourage variety
     const designSeed = Math.random().toString(36).slice(2, 6);
 
-    const userMessage = `Create a course OUTLINE with UNIQUE visual design about: ${prompt}
+    // Build context from attached files
+    const attachmentContext = attachmentContent
+      ? `\n\nThe creator has attached reference material. Use this to inform the course structure, topics, and organization:\n\n${attachmentContent.slice(0, 12000)}\n\nIMPORTANT: Structure the course modules and lessons based on the content above. Extract key topics, organize them into a logical learning progression, and use the creator's own terminology where appropriate.`
+      : "";
+
+    const userMessage = `Create a course OUTLINE with UNIQUE visual design about: ${prompt}${attachmentContext}
 
 Requirements:
 - Difficulty level: ${options?.difficulty || "beginner"}
