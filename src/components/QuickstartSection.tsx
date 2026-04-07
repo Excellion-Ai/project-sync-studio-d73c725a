@@ -1,7 +1,5 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { Play, CheckCircle } from "lucide-react";
-import WaitlistModal from "@/components/WaitlistModal";
 
 const QuickstartSection = () => {
   const [open, setOpen] = useState(false);
