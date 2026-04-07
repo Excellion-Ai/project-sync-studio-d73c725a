@@ -804,6 +804,8 @@ function HubContent() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [showBuildAssist, setShowBuildAssist] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [publishedCourse, setPublishedCourse] = useState<CourseItem | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
