@@ -49,6 +49,10 @@ export interface AttachmentItem {
   id: string;
   name: string;
   type: string;
+  content?: string;
+  url?: string;
+  mimeType?: string;
+  size?: number;
 }
 
 interface CourseBuilderPanelProps {

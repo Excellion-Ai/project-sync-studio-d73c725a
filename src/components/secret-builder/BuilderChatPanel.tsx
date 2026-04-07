@@ -462,7 +462,7 @@ const BuildTab = ({
 
       {/* Input area */}
       <div className="px-4 pb-3 pt-2 border-t border-border space-y-2">
-        {!hasCourse && attachments.length > 0 && (
+        {attachments.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {attachments.map((a) => (
               <Badge key={a.id} variant="secondary" className="gap-1 text-xs pr-1">
