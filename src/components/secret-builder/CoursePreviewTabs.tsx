@@ -281,23 +281,48 @@ const CoursePreviewTabs = ({
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     setIsUploadingLogo(true);
-    const ext = file.name.split(".").pop() ?? "png";
-    const path = `logos/${course.id ?? "temp"}/logo.${ext}`;
-    const { error } = await supabase.storage.from("course-thumbnails").upload(path, file, { upsert: true });
-    if (error) { toast.error("Logo upload failed"); setIsUploadingLogo(false); return; }
-    const { data: { publicUrl } } = supabase.storage.from("course-thumbnails").getPublicUrl(path);
-    // Store logo in design_config and call onUpdateLogo if provided
-    if (onUpdateLogo) onUpdateLogo(publicUrl);
-    // Also update course directly via onUpdate so it persists through auto-save
-    if (onUpdate) {
-      onUpdate({
-        ...course,
-        design_config: { ...course.design_config, logoUrl: publicUrl },
-      });
+
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+
+      if (sessionError || !userId) {
+        throw new Error("You must be signed in to upload a logo");
+      }
+
+      const ext = file.name.split(".").pop() ?? "png";
+      const courseFolder = course.id ?? "temp";
+      const path = `${userId}/${courseFolder}/logo.${ext}`;
+
+      const { error } = await supabase.storage
+        .from("course-thumbnails")
+        .upload(path, file, { upsert: true });
+
+      if (error) throw error;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("course-thumbnails").getPublicUrl(path);
+
+      if (onUpdateLogo) onUpdateLogo(publicUrl);
+
+      if (onUpdate) {
+        onUpdate({
+          ...course,
+          design_config: { ...course.design_config, logoUrl: publicUrl },
+        });
+      }
+
+      toast.success("Logo uploaded");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Logo upload failed";
+      toast.error(message);
+    } finally {
+      setIsUploadingLogo(false);
+      e.target.value = "";
     }
-    toast.success("Logo uploaded");
-    setIsUploadingLogo(false);
   };
 
   // Build Tailwind theme overrides from design_config so ALL utility classes
