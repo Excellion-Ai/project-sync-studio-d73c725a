@@ -421,11 +421,7 @@ function SidebarInner({
             <div className="flex items-center gap-2.5">
               <Trash2 className="h-4 w-4" />
               <span>Trash</span>
-              {trashedCourses.length > 0 && (
-                <span className="ml-1 rounded-full bg-destructive/20 text-destructive px-1.5 py-0.5 text-[10px] font-medium">
-                  {trashedCourses.length}
-                </span>
-              )}
+            </div>
             </div>
             <ChevronDown
               className={cn(
