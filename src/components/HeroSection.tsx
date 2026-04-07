@@ -173,15 +173,70 @@ const HeroSection = () => {
           className="premium-card p-6 space-y-4"
         >
           <div className="relative rounded-xl border border-primary/20 bg-black/40 backdrop-blur-sm p-3">
+            {/* Toggle link */}
+            <div className="mb-2">
+              <button
+                onClick={() => {
+                  setGuidedMode(!guidedMode);
+                  if (guidedMode) { setGQ1(""); setGQ2(""); setGQ3(""); }
+                }}
+                className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 font-medium font-body"
+              >
+                <Sparkles className="w-3 h-3" />
+                {guidedMode ? "Back to simple mode" : "Need help? Use guided mode"}
+              </button>
+            </div>
+
+            {/* Guided fields */}
+            <div
+              className="overflow-hidden transition-all duration-300 ease-in-out"
+              style={{ maxHeight: guidedMode ? "260px" : "0px", opacity: guidedMode ? 1 : 0 }}
+            >
+              <div className="space-y-2.5 pb-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-medium text-muted-foreground font-body">What's your course about?</label>
+                  <input
+                    placeholder="e.g. 6-week fat loss program, booty building, macro tracking"
+                    value={gQ1}
+                    onChange={(e) => updateGuided(1, e.target.value)}
+                    className="w-full bg-muted/20 border border-primary/10 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary/30 transition-colors font-body"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-medium text-muted-foreground font-body">Who is it for?</label>
+                  <input
+                    placeholder="e.g. busy moms, beginners, women over 40"
+                    value={gQ2}
+                    onChange={(e) => updateGuided(2, e.target.value)}
+                    className="w-full bg-muted/20 border border-primary/10 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary/30 transition-colors font-body"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-medium text-muted-foreground font-body">What's the #1 transformation they'll experience?</label>
+                  <input
+                    placeholder="e.g. lose 10 pounds, build a home workout habit, understand their macros"
+                    value={gQ3}
+                    onChange={(e) => updateGuided(3, e.target.value)}
+                    className="w-full bg-muted/20 border border-primary/10 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary/30 transition-colors font-body"
+                  />
+                </div>
+                <div className="border-t border-primary/10" />
+              </div>
+            </div>
+
+            {/* Main textarea */}
             <textarea
               value={prompt}
-              onChange={handlePromptChange}
+              onChange={(e) => {
+                handlePromptChange(e);
+                if (guidedMode) { setGuidedMode(false); setGQ1(""); setGQ2(""); setGQ3(""); }
+              }}
               placeholder={!userHasTyped && !prompt ? "" : "Help [AUDIENCE] achieve [RESULT] in [TIMEFRAME]"}
               className="w-full bg-transparent text-foreground placeholder:text-muted-foreground resize-none border-none outline-none text-base min-h-[60px] font-body"
               rows={2}
             />
-            {!prompt && !userHasTyped && (
-              <span className="absolute top-3 left-3 text-base text-muted-foreground pointer-events-none font-body">
+            {!prompt && !userHasTyped && !guidedMode && (
+              <span className="absolute top-[calc(2rem+24px)] left-3 text-base text-muted-foreground pointer-events-none font-body">
                 {animatedText}
                 <span className="inline-block w-[2px] h-[1.1em] bg-primary/70 ml-[1px] align-text-bottom animate-blink" />
               </span>
