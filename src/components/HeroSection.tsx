@@ -88,7 +88,7 @@ const HeroSection = () => {
   };
 
   const handleGenerate = () => {
-    document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleHowItWorks = () => {
