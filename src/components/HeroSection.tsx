@@ -70,6 +70,10 @@ const HeroSection = () => {
   const [prompt, setPrompt] = useState("");
   const [userHasTyped, setUserHasTyped] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
+  const [guidedMode, setGuidedMode] = useState(false);
+  const [gQ1, setGQ1] = useState("");
+  const [gQ2, setGQ2] = useState("");
+  const [gQ3, setGQ3] = useState("");
 
   const handleAddAttachment = (item: AttachmentItem) => {
     setAttachments((prev) => [...prev, item]);
