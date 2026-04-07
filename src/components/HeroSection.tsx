@@ -194,9 +194,22 @@ const HeroSection = () => {
               onClick={handleGenerate}
               className="flex-1 px-6 py-3 rounded-[10px] btn-primary text-sm flex items-center justify-center gap-2 font-body"
             >
-              Join the Waitlist
+              Start Building Free
               <ArrowRight className="w-4 h-4" />
             </button>
+          </div>
+
+          <p className="text-xs text-muted-foreground font-body">No credit card required.</p>
+
+          <div className="flex flex-wrap gap-2 justify-center pt-2">
+            {["Generated in 60 seconds", "Published on your domain", "Keep 100% of revenue"].map((stat) => (
+              <span
+                key={stat}
+                className="px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-xs text-primary/90 font-body font-medium"
+              >
+                {stat}
+              </span>
+            ))}
           </div>
 
           <div className="flex flex-wrap gap-2 justify-center pt-2">

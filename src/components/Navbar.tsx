@@ -59,7 +59,7 @@ const Navbar = () => {
           <button onClick={() => scrollTo("how-it-works")} className="block text-muted-foreground hover:text-foreground text-sm w-full text-left py-2 font-body">How it Works</button>
           <button onClick={() => scrollTo("pricing")} className="block text-muted-foreground hover:text-foreground text-sm w-full text-left py-2 font-body">Pricing</button>
           <button onClick={() => scrollTo("faq")} className="block text-muted-foreground hover:text-foreground text-sm w-full text-left py-2 font-body">FAQ</button>
-          <button onClick={() => scrollTo("waitlist")} className="block px-4 py-2 rounded-[10px] btn-primary text-center text-sm font-body w-full">Start Building</button>
+          <button onClick={() => scrollTo("how-it-works")} className="block px-4 py-2 rounded-[10px] btn-primary text-center text-sm font-body w-full">Start Building</button>
         </div>
       )}
     </nav>
