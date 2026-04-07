@@ -791,6 +791,9 @@ function HubContent() {
   const [idea, setIdea] = useState(
     () => localStorage.getItem("builder-initial-idea") || ""
   );
+  const [guidedQ1, setGuidedQ1] = useState("");
+  const [guidedQ2, setGuidedQ2] = useState("");
+  const [guidedQ3, setGuidedQ3] = useState("");
   const [autoTriggered, setAutoTriggered] = useState(false);
   const [projects, setProjects] = useState<BuilderProject[]>([]);
   const [courses, setCourses] = useState<CourseItem[]>([]);
@@ -865,8 +868,9 @@ function HubContent() {
 
   // ── Handlers ───────────────────────────────────────────────
 
-  const handleGenerate = useCallback(async () => {
-    if (!idea.trim() || !userId) return;
+  const handleGenerate = useCallback(async (overrideIdea?: string) => {
+    const prompt = overrideIdea || idea;
+    if (!prompt.trim() || !userId) return;
     setIsGenerating(true);
     try {
       const {
@@ -880,14 +884,14 @@ function HubContent() {
 
       const { data: proj, error } = await supabase
         .from("builder_projects")
-        .insert({ name: idea.slice(0, 80), user_id: session.user.id })
+        .insert({ name: prompt.slice(0, 80), user_id: session.user.id })
         .select("id")
         .single();
       if (error || !proj) throw error;
 
-      localStorage.setItem("builder-initial-idea", idea);
+      localStorage.setItem("builder-initial-idea", prompt);
       localStorage.setItem("last-project-id", proj.id);
-      navigate(`/studio/${proj.id}`, { state: { initialIdea: idea } });
+      navigate(`/studio/${proj.id}`, { state: { initialIdea: prompt } });
     } catch (err) {
       console.error("handleGenerate error:", err);
       toast.error("Failed to create project.");
@@ -1124,6 +1128,19 @@ function HubContent() {
     }
   };
 
+  const guidedHasContent = guidedQ1.trim() || guidedQ2.trim() || guidedQ3.trim();
+
+  const handleGuidedGenerate = () => {
+    const combined = [
+      guidedQ1.trim() && `Course about: ${guidedQ1.trim()}`,
+      guidedQ2.trim() && `Target audience: ${guidedQ2.trim()}`,
+      guidedQ3.trim() && `Result: ${guidedQ3.trim()}`,
+    ].filter(Boolean).join(". ");
+    if (!combined) return;
+    setIdea(combined);
+    handleGenerate(combined);
+  };
+
   const visibleCourses = showAllCourses ? courses : courses.slice(0, 6);
 
   const sidebarProps: SidebarContentProps = {
@@ -1202,20 +1219,42 @@ function HubContent() {
             </p>
           </div>
 
-          {/* ── Input Card ────────────────────────────────── */}
+          {/* ── Guided Input Card ─────────────────────────── */}
           <Card className="border-border/60 bg-card">
-            <CardContent className="p-0">
-              <Textarea
-                placeholder="Describe your course idea in detail..."
-                className="min-h-[140px] resize-none border-0 bg-transparent px-5 pt-5 pb-3 text-sm focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/60"
-                value={idea}
-                onChange={(e) => setIdea(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
+            <CardContent className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">What's your course about?</label>
+                <Input
+                  placeholder="e.g. 6-week fat loss program, booty building, macro tracking"
+                  value={guidedQ1}
+                  onChange={(e) => setGuidedQ1(e.target.value)}
+                  className="bg-transparent"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Who is it for?</label>
+                <Input
+                  placeholder="e.g. busy moms, beginners, women over 40"
+                  value={guidedQ2}
+                  onChange={(e) => setGuidedQ2(e.target.value)}
+                  className="bg-transparent"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">What result will they get?</label>
+                <Input
+                  placeholder="e.g. lose 10 pounds, build a home workout habit, understand their macros"
+                  value={guidedQ3}
+                  onChange={(e) => setGuidedQ3(e.target.value)}
+                  className="bg-transparent"
+                />
+              </div>
 
               {/* Attachments */}
               {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 px-5 pb-2">
+                <div className="flex flex-wrap gap-1.5">
                   {attachments.map((a) => (
                     <Badge
                       key={a.id}
@@ -1237,8 +1276,7 @@ function HubContent() {
 
               <Separator />
 
-              {/* Bottom toolbar */}
-              <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <input
                     ref={fileInputRef}
@@ -1263,21 +1301,11 @@ function HubContent() {
                       <TooltipContent>Attach files</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-muted-foreground hover:text-foreground gap-1.5"
-                    onClick={() => setShowBuildAssist(true)}
-                  >
-                    <Zap className="h-4 w-4" />
-                    <span className="text-sm">Build Assist</span>
-                  </Button>
                 </div>
 
                 <Button
-                  disabled={!idea.trim() || isGenerating}
-                  onClick={handleGenerate}
+                  disabled={!guidedHasContent || isGenerating}
+                  onClick={handleGuidedGenerate}
                   className="h-9 px-5 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
                 >
                   {isGenerating ? (
@@ -1290,6 +1318,10 @@ function HubContent() {
                   )}
                 </Button>
               </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                The more specific you are, the better your course will be.
+              </p>
             </CardContent>
           </Card>
 
