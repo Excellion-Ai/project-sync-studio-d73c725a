@@ -1306,6 +1306,18 @@ function HubContent() {
                   Your Courses
                 </h2>
                 <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    className="h-8 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full text-xs"
+                    onClick={() => {
+                      const textarea = document.querySelector('textarea');
+                      textarea?.focus();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    New Course
+                  </Button>
                   {courses.length > 6 && (
                     <Button
                       variant="ghost"
