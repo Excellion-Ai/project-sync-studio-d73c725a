@@ -736,16 +736,34 @@ function CourseCard({
         )}
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            {course.total_students ?? 0} students enrolled
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span>{moduleCount} modules</span>
           <span className="text-border">·</span>
           <span>{lessonCount} lessons</span>
-          {(course.total_students ?? 0) > 0 && (
-            <>
-              <span className="text-border">·</span>
-              <span>{course.total_students} students</span>
-            </>
-          )}
         </div>
+
+        {isPublished && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-full text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation();
+              const url = `${window.location.origin}/course/${course.slug}`;
+              navigator.clipboard.writeText(url);
+              toast.success("Link copied!");
+            }}
+          >
+            <Link className="h-3 w-3" />
+            Copy Link
+          </Button>
+        )}
 
         {course.updated_at && (
           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
