@@ -1627,7 +1627,7 @@ const SecretBuilderHub = () => {
   }
 
   if (!user || user.email !== ALLOWED_EMAIL) {
-    return <Navigate to="/#waitlist" replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   return <HubContent />;

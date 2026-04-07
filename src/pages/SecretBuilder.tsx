@@ -29,7 +29,7 @@ const SecretBuilder = () => {
   }
 
   if (!isAuthenticated || !isAllowed) {
-    return <Navigate to="/#waitlist" replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   // Extract navigation state passed from SecretBuilderHub
