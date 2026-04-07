@@ -70,7 +70,7 @@ const QuickstartSection = () => {
         </div>
       </div>
 
-      <WaitlistModal open={open} onClose={() => setOpen(false)} />
+      
     </section>
   );
 };
