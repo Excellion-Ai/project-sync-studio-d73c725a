@@ -147,7 +147,7 @@ const CoursePage = () => {
     const fetchCourse = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       const findOne = async (q: any) => { const { data: rows } = await q; return rows?.[0] ?? null; };
-      const sel = "*";
+      const sel = "id,user_id,slug,subdomain,title,description,tagline,hero_copy,curriculum,branding,status,published_at,created_at,updated_at,thumbnail_url,price_cents,currency,instructor_name,instructor_bio,total_students,is_featured,builder_project_id,page_sections,custom_domain,domain_verified,seo_title,seo_description,social_image_url,has_video_content,type,meta,layout_template,design_config,section_order,section_config,deleted_at,is_free";
 
       let row: any = null;
       let ownerPreview = false;
