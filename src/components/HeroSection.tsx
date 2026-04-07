@@ -78,7 +78,6 @@ const HeroSection = () => {
   const handleRemoveAttachment = (id: string) => {
     setAttachments((prev) => prev.filter((a) => a.id !== id));
   };
-  const [userHasTyped, setUserHasTyped] = useState(false);
 
   const animatedText = useTypingAnimation(TYPING_PHRASES, !userHasTyped && !prompt);
 
