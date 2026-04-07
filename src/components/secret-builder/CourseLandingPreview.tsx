@@ -975,12 +975,13 @@ const CourseLandingPreview = ({
         const Renderer = SECTION_RENDERERS[sectionType];
         if (!Renderer) return null;
         return (
-          <Renderer
-            key={sectionType}
-            course={course}
-            onEnrollClick={onEnrollClick}
-            style={style}
-          />
+          <div key={sectionType} id={`section-${sectionType}`}>
+            <Renderer
+              course={course}
+              onEnrollClick={onEnrollClick}
+              style={style}
+            />
+          </div>
         );
       })}
 

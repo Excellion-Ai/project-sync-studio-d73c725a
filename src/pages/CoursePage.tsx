@@ -296,16 +296,21 @@ const CoursePage = () => {
           </span>
         </div>
 
-        {/* Center — Navigation links */}
+        {/* Center — Navigation links that scroll to page sections */}
         <div className="hidden md:flex items-center justify-center gap-1 flex-1">
-          {["Landing", "Curriculum", "Lesson", "Dashboard", "Pricing"].map((label) => (
-            <a
+          {[
+            { label: "Home", target: "section-hero" },
+            { label: "Curriculum", target: "section-curriculum" },
+            { label: "Pricing", target: "section-pricing" },
+            { label: "FAQ", target: "section-faq" },
+          ].map(({ label, target }) => (
+            <button
               key={label}
-              href={`#${label.toLowerCase()}`}
-              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth" })}
+              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer bg-transparent border-none"
             >
               {label}
-            </a>
+            </button>
           ))}
         </div>
 
