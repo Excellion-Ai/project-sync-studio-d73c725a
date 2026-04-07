@@ -1129,17 +1129,24 @@ function HubContent() {
     }
   };
 
-  const guidedHasContent = guidedQ1.trim() || guidedQ2.trim() || guidedQ3.trim();
-
-  const handleGuidedGenerate = () => {
-    const combined = [
-      guidedQ1.trim() && `Course about: ${guidedQ1.trim()}`,
-      guidedQ2.trim() && `Target audience: ${guidedQ2.trim()}`,
-      guidedQ3.trim() && `Result: ${guidedQ3.trim()}`,
+  // Sync guided fields into the main idea box in real time
+  const buildGuidedPrompt = useCallback((q1: string, q2: string, q3: string) => {
+    const parts = [
+      q1.trim() && `Course about: ${q1.trim()}`,
+      q2.trim() && `Target audience: ${q2.trim()}`,
+      q3.trim() && `Transformation: ${q3.trim()}`,
     ].filter(Boolean).join(". ");
-    if (!combined) return;
-    setIdea(combined);
-    handleGenerate(combined);
+    setIdea(parts);
+  }, []);
+
+  const updateGuided = (field: 1 | 2 | 3, value: string) => {
+    const next1 = field === 1 ? value : guidedQ1;
+    const next2 = field === 2 ? value : guidedQ2;
+    const next3 = field === 3 ? value : guidedQ3;
+    if (field === 1) setGuidedQ1(value);
+    if (field === 2) setGuidedQ2(value);
+    if (field === 3) setGuidedQ3(value);
+    buildGuidedPrompt(next1, next2, next3);
   };
 
   const visibleCourses = showAllCourses ? courses : courses.slice(0, 6);
