@@ -137,7 +137,15 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    const stopReason = data.stop_reason;
     const text = data.content?.[0]?.text || "";
+
+    console.log("generate-course stop_reason:", stopReason, "text length:", text.length);
+
+    if (stopReason === "max_tokens") {
+      console.warn("generate-course: output was truncated by max_tokens");
+    }
+
     const course = parseCourseJson(text);
 
     if (!course?.title || !Array.isArray(course?.modules) || course.modules.length === 0) {
