@@ -7,89 +7,17 @@ const corsHeaders = {
 };
 
 const MODEL = "claude-sonnet-4-20250514";
-const REQUEST_TIMEOUT_MS = 55000;
-const MAX_TOKENS = 1500;
+const REQUEST_TIMEOUT_MS = 24000;
+const MAX_TOKENS = 1200;
 
-const SYSTEM_PROMPT = `You are an expert course creator and web designer. Generate a course OUTLINE with a UNIQUE visual design as compact valid JSON.
+const SYSTEM_PROMPT = `Generate a course outline as compact JSON. No markdown fences.
 
-RULES:
-- Return exactly 5 modules unless the user explicitly asks for a different size
-- Return exactly 3 lessons per module
-- Each lesson gets a title and a 1-sentence description ONLY — no full content
-- The subtitle must be a concrete benefit statement and must not repeat the title
-- Module and lesson titles must be specific, not generic placeholders
-- Include exactly 6 measurable learning outcomes
-- Generate a UNIQUE design_config for every course — never reuse the same palette
-- Generate 3-4 relevant FAQ questions and answers specific to this course topic
-- Generate a target_audience description (1-2 sentences about who this is for)
-- Choose a section_order that suits the course topic (vary it between courses)
-- Return ONLY the requested JSON keys
+RULES: 5 modules, 3 lessons each. Lesson = title + 1-sentence description only. 6 learning outcomes. 3 FAQ. Target audience (1-2 sentences). Subtitle must NOT repeat title.
 
-DESIGN RULES — every course MUST look different:
-- Pick a color palette that matches the course topic/mood (e.g. fitness=energetic, coding=cool/techy, business=professional, wellness=calm)
-- Choose from these font pairings (pick ONE pairing, vary between courses):
-  * "Playfair Display" + "DM Sans" (elegant/editorial)
-  * "Space Grotesk" + "Inter" (modern/tech)
-  * "Poppins" + "Inter" (clean/friendly)
-  * "Montserrat" + "DM Sans" (bold/professional)
-  * "Lora" + "Inter" (warm/academic)
-  * "DM Sans" + "Inter" (minimal/sleek)
-  * "Merriweather" + "DM Sans" (classic/authoritative)
-- Pick heroStyle from: "gradient", "minimal", "split", "centered", "image"
-- Pick heroLayout from: "left", "centered", "split", "image_background"
-  * "left": text left-aligned, classic layout (default)
-  * "centered": text and CTA centered
-  * "split": text left, image right in a 50/50 grid
-  * "image_background": full-bleed background image with text overlay
-- Vary heroLayout between courses — don't always use "left"
-- Pick spacing from: "compact", "normal", "spacious"
-- Pick borderRadius from: "none", "small", "medium", "large"
-- Default to dark backgrounds (#0a-#15 range) with light text for premium feel, BUT if the user explicitly requests light/white backgrounds, honor their request
-- primary color must be a VIBRANT accent/brand color (NOT the same as background or text). It's used for buttons, icons, and highlights — it MUST contrast against both background and text
-- accent should complement primary but be distinct
-- cardBackground should be slightly lighter than background (for dark themes) or slightly darker (for light themes)
-- NEVER set primary to the same color as background or text — that makes UI elements invisible
+DESIGN: Pick colors matching course mood. Dark bg (#0a-#15), light text, vibrant primary for buttons. Pick fonts from: "Playfair Display"+"DM Sans", "Space Grotesk"+"Inter", "Poppins"+"Inter", "Montserrat"+"DM Sans", "Lora"+"Inter". Vary heroLayout: "left"|"centered"|"split". Spacing: "compact"|"normal"|"spacious". BorderRadius: "none"|"small"|"medium"|"large".
 
-OUTPUT FORMAT:
-{
-  "title": "string",
-  "subtitle": "string",
-  "description": "string (2-3 sentences for the sales page)",
-  "learningOutcomes": ["string","string","string","string","string","string"],
-  "modules": [
-    {
-      "title": "string",
-      "description": "string (1 sentence)",
-      "lessons": [
-        { "title": "string", "description": "string (1 sentence)" }
-      ]
-    }
-  ],
-  "design_config": {
-    "colors": {
-      "primary": "#hex",
-      "secondary": "#hex",
-      "accent": "#hex",
-      "background": "#hex",
-      "cardBackground": "#hex",
-      "text": "#hex",
-      "textMuted": "#hex"
-    },
-    "fonts": { "heading": "string", "body": "string" },
-    "spacing": "compact|normal|spacious",
-    "borderRadius": "none|small|medium|large",
-    "heroStyle": "gradient|minimal|split|centered|image",
-    "heroLayout": "left|centered|split|image_background"
-  },
-  "target_audience": "string (1-2 sentences)",
-  "faq": [
-    { "question": "string", "answer": "string" }
-  ],
-  "section_order": ["hero", "outcomes", "who_is_for", "curriculum", "course_includes", "testimonials", "pricing", "guarantee", "faq"]
-}
-
-SECTION OPTIONS (pick 7-10 in a logical order, always start with "hero"):
-hero, outcomes, who_is_for, curriculum, course_includes, instructor, testimonials, pricing, guarantee, faq, bonuses, community, certificate`;
+JSON FORMAT:
+{"title":"","subtitle":"","description":"","learningOutcomes":["","","","","",""],"modules":[{"title":"","description":"","lessons":[{"title":"","description":""}]}],"design_config":{"colors":{"primary":"#hex","secondary":"#hex","accent":"#hex","background":"#hex","cardBackground":"#hex","text":"#hex","textMuted":"#hex"},"fonts":{"heading":"","body":""},"spacing":"","borderRadius":"","heroStyle":"gradient|minimal|centered","heroLayout":"left|centered|split"},"target_audience":"","faq":[{"question":"","answer":""}],"section_order":["hero","outcomes","who_is_for","curriculum","course_includes","testimonials","pricing","guarantee","faq"]}`;
 
 function parseCourseJson(text: string) {
   try {
@@ -156,27 +84,10 @@ serve(async (req) => {
 
     // Build context from attached files
     const attachmentContext = attachmentContent
-      ? `\n\nThe creator has attached reference material. Use this to inform the course structure, topics, and organization:\n\n${attachmentContent.slice(0, 12000)}\n\nIMPORTANT: Structure the course modules and lessons based on the content above. Extract key topics, organize them into a logical learning progression, and use the creator's own terminology where appropriate.`
+      ? `\n\nReference material from creator:\n${attachmentContent.slice(0, 8000)}\n\nStructure the course based on this content.`
       : "";
 
-    const userMessage = `Create a course OUTLINE with UNIQUE visual design about: ${prompt}${attachmentContext}
-
-Requirements:
-- Difficulty level: ${options?.difficulty || "beginner"}
-- Target duration: ${options?.duration_weeks || 6} weeks
-${options?.template ? `- Layout style preference: ${options.template}` : ""}
-
-Important:
-- Default to exactly 5 modules with exactly 3 lessons each
-- Only return titles for lessons — NO content or assignments
-- Subtitle must describe the transformation, not repeat the title
-- Learning outcomes must be unique to this topic
-- Design must be UNIQUE — use design seed "${designSeed}" to inspire a distinct palette
-- Pick colors that match the course topic mood (DO NOT default to gold/amber)
-- Include 3-4 topic-specific FAQ entries
-- Include a target_audience description
-- Vary the section_order — don't always use the same arrangement
-- Return ONLY valid JSON`;
+    const userMessage = `Course about: ${prompt}${attachmentContext}\n\nDifficulty: ${options?.difficulty || "beginner"}, Duration: ${options?.duration_weeks || 6} weeks${options?.template ? `, Style: ${options.template}` : ""}\nDesign seed: ${designSeed}\nReturn ONLY valid JSON.`;
 
     console.log("generate-course requesting Anthropic outline with model:", MODEL);
 
@@ -202,7 +113,10 @@ Important:
     if (!response.ok) {
       const errText = await response.text();
       console.error("Anthropic API error:", response.status, errText);
-      throw new Error(`Anthropic API error: ${response.status} - ${errText}`);
+      if (response.status === 429) {
+        throw new Error("Rate limited by AI provider. Please wait a moment and try again.");
+      }
+      throw new Error(`AI generation failed (${response.status}). Please try again.`);
     }
 
     const data = await response.json();
@@ -224,7 +138,7 @@ Important:
 
     const status = isTimeoutError(e) ? 504 : 500;
     const message = isTimeoutError(e)
-      ? "Course outline generation timed out. Please try again."
+      ? "Course generation timed out. Please try again — it usually works on the second attempt."
       : e instanceof Error
         ? e.message
         : "Unknown error";
