@@ -4,6 +4,7 @@ import AttachmentMenu from "@/components/secret-builder/attachments/AttachmentMe
 import type { AttachmentItem } from "@/components/secret-builder/attachments/types";
 import { motion } from "framer-motion";
 import heroBg from "@/assets/hero-bg.jpg";
+import GuidedModeFields, { type GuidedState, EMPTY_GUIDED, buildPromptFromGuided } from "@/components/guided-mode/GuidedModeFields";
 
 const suggestions = [
   "6-week fat loss course",
@@ -71,9 +72,7 @@ const HeroSection = () => {
   const [userHasTyped, setUserHasTyped] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
   const [guidedMode, setGuidedMode] = useState(false);
-  const [gQ1, setGQ1] = useState("");
-  const [gQ2, setGQ2] = useState("");
-  const [gQ3, setGQ3] = useState("");
+  const [guided, setGuided] = useState<GuidedState>(EMPTY_GUIDED);
 
   const handleAddAttachment = (item: AttachmentItem) => {
     setAttachments((prev) => [...prev, item]);
@@ -91,25 +90,12 @@ const HeroSection = () => {
     if (userHasTyped && !e.target.value) setUserHasTyped(false);
   };
 
-  const buildGuidedPrompt = (q1: string, q2: string, q3: string) => {
-    const parts = [
-      q1.trim() && `Course about: ${q1.trim()}`,
-      q2.trim() && `Target audience: ${q2.trim()}`,
-      q3.trim() && `Transformation: ${q3.trim()}`,
-    ].filter(Boolean).join(". ");
-    setPrompt(parts);
-    if (parts && !userHasTyped) setUserHasTyped(true);
-    if (!parts) setUserHasTyped(false);
-  };
-
-  const updateGuided = (field: 1 | 2 | 3, value: string) => {
-    const n1 = field === 1 ? value : gQ1;
-    const n2 = field === 2 ? value : gQ2;
-    const n3 = field === 3 ? value : gQ3;
-    if (field === 1) setGQ1(value);
-    if (field === 2) setGQ2(value);
-    if (field === 3) setGQ3(value);
-    buildGuidedPrompt(n1, n2, n3);
+  const handleGuidedChange = (next: GuidedState) => {
+    setGuided(next);
+    const built = buildPromptFromGuided(next);
+    setPrompt(built);
+    if (built && !userHasTyped) setUserHasTyped(true);
+    if (!built) setUserHasTyped(false);
   };
 
   const handleGenerate = () => {
