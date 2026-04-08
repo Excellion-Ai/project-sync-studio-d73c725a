@@ -1229,39 +1229,12 @@ function HubContent() {
               <div
                 className="overflow-hidden transition-all duration-300 ease-in-out"
                 style={{
-                  maxHeight: guidedMode ? "300px" : "0px",
+                  maxHeight: guidedMode ? "800px" : "0px",
                   opacity: guidedMode ? 1 : 0,
                 }}
               >
-                <div className="px-5 pb-3 space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">What's your course about?</label>
-                    <Input
-                      placeholder="e.g. 6-week fat loss program, booty building, macro tracking"
-                      value={guidedQ1}
-                      onChange={(e) => updateGuided(1, e.target.value)}
-                      className="bg-muted/30 h-9 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Who is it for?</label>
-                    <Input
-                      placeholder="e.g. busy moms, beginners, women over 40"
-                      value={guidedQ2}
-                      onChange={(e) => updateGuided(2, e.target.value)}
-                      className="bg-muted/30 h-9 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">What's the #1 transformation they'll experience?</label>
-                    <Input
-                      placeholder="e.g. lose 10 pounds, build a home workout habit, understand their macros"
-                      value={guidedQ3}
-                      onChange={(e) => updateGuided(3, e.target.value)}
-                      className="bg-muted/30 h-9 text-sm"
-                    />
-                  </div>
-                  <Separator />
+                <div className="px-5 pb-3 max-h-[50vh] overflow-y-auto">
+                  <GuidedModeFields state={guided} onChange={handleGuidedChange} variant="card" />
                 </div>
               </div>
 
@@ -1273,9 +1246,7 @@ function HubContent() {
                 onChange={(e) => {
                   setIdea(e.target.value);
                   if (guidedMode) {
-                    setGuidedQ1("");
-                    setGuidedQ2("");
-                    setGuidedQ3("");
+                    setGuided(EMPTY_GUIDED);
                     setGuidedMode(false);
                   }
                 }}
