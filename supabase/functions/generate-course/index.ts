@@ -7,8 +7,8 @@ const corsHeaders = {
 };
 
 const MODEL = "claude-sonnet-4-20250514";
-const REQUEST_TIMEOUT_MS = 24000;
-const MAX_TOKENS = 1200;
+const REQUEST_TIMEOUT_MS = 55000;
+const MAX_TOKENS = 4000;
 
 const SYSTEM_PROMPT = `Generate a course outline as compact JSON. No markdown fences.
 
@@ -20,12 +20,29 @@ JSON FORMAT:
 {"title":"","subtitle":"","description":"","learningOutcomes":["","","","","",""],"modules":[{"title":"","description":"","lessons":[{"title":"","description":""}]}],"design_config":{"colors":{"primary":"#hex","secondary":"#hex","accent":"#hex","background":"#hex","cardBackground":"#hex","text":"#hex","textMuted":"#hex"},"fonts":{"heading":"","body":""},"spacing":"","borderRadius":"","heroStyle":"gradient|minimal|centered","heroLayout":"left|centered|split"},"target_audience":"","faq":[{"question":"","answer":""}],"section_order":["hero","outcomes","who_is_for","curriculum","course_includes","testimonials","pricing","guarantee","faq"]}`;
 
 function parseCourseJson(text: string) {
+  // Strip markdown fences
+  let cleaned = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+
+  // Find JSON boundaries
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("No JSON object found in AI response");
+  cleaned = cleaned.substring(start, end + 1);
+
   try {
-    return JSON.parse(text);
+    return JSON.parse(cleaned);
   } catch {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Failed to parse course JSON from AI response");
-    return JSON.parse(jsonMatch[0]);
+    // Attempt repair: trailing commas, control chars
+    cleaned = cleaned
+      .replace(/,\s*}/g, "}")
+      .replace(/,\s*]/g, "]")
+      .replace(/[\x00-\x1F\x7F]/g, " ");
+    try {
+      return JSON.parse(cleaned);
+    } catch (e2) {
+      console.error("JSON repair failed, raw length:", cleaned.length, "error:", e2);
+      throw new Error("Failed to parse course JSON from AI response");
+    }
   }
 }
 
