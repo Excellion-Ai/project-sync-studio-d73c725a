@@ -10,14 +10,34 @@ const MODEL = "claude-sonnet-4-20250514";
 const REQUEST_TIMEOUT_MS = 55000;
 const MAX_TOKENS = 4000;
 
-const SYSTEM_PROMPT = `Generate a course outline as compact JSON. No markdown fences.
+// Fitness-only topic validation
+const FITNESS_KEYWORDS = /fitness|workout|training|exercise|gym|strength|cardio|hiit|yoga|pilates|mobility|flexibility|nutrition|diet|meal|protein|fat loss|weight loss|muscle|bodybuilding|calisthenics|crossfit|running|marathon|cycling|swimming|boxing|martial arts|mma|kickboxing|health|wellness|coaching|personal trainer|sports|athletic|recovery|stretching|posture|body|physique|transformation|bootcamp|endurance|conditioning|metabol|supplement|macro|keto|vegan|paleo|intermittent fasting|mindset|motivation|accountability|lifestyle|habit|sleep|stress|mental health|meditation|breathwork|holistic|functional|rehab|injury|prehab/i;
 
-RULES: 5 modules, 3 lessons each. Lesson = title + 1-sentence description only. 6 learning outcomes. 3 FAQ. Target audience (1-2 sentences). Subtitle must NOT repeat title.
+const SYSTEM_PROMPT = `You are Excellion's AI course builder for FITNESS, HEALTH, and WELLNESS creators ONLY.
 
-DESIGN: Pick colors matching course mood. Dark bg (#0a-#15), light text, vibrant primary for buttons. Pick fonts from: "Playfair Display"+"DM Sans", "Space Grotesk"+"Inter", "Poppins"+"Inter", "Montserrat"+"DM Sans", "Lora"+"Inter". Vary heroLayout: "left"|"centered"|"split". Spacing: "compact"|"normal"|"spacious". BorderRadius: "none"|"small"|"medium"|"large".
+STRICT RULE: You ONLY generate courses about fitness, health, nutrition, wellness, coaching, athletic training, and related topics. If the topic is not fitness/health related, respond with this exact JSON:
+{"error":"fitness_only","message":"Excellion is built for fitness and health creators. Try describing your fitness program, nutrition plan, or wellness coaching instead."}
 
-JSON FORMAT:
-{"title":"","subtitle":"","description":"","learningOutcomes":["","","","","",""],"modules":[{"title":"","description":"","lessons":[{"title":"","description":""}]}],"design_config":{"colors":{"primary":"#hex","secondary":"#hex","accent":"#hex","background":"#hex","cardBackground":"#hex","text":"#hex","textMuted":"#hex"},"fonts":{"heading":"","body":""},"spacing":"","borderRadius":"","heroStyle":"gradient|minimal|centered","heroLayout":"left|centered|split"},"target_audience":"","faq":[{"question":"","answer":""}],"section_order":["hero","outcomes","who_is_for","curriculum","course_includes","testimonials","pricing","guarantee","faq"]}`;
+WHEN REFERENCE MATERIAL IS PROVIDED:
+This is the #1 priority. The creator attached their own content (PDF, doc, notes). You MUST:
+- Read EVERY word of the provided material
+- Extract their exact topics, section names, frameworks, and terminology
+- Use THEIR words as module and lesson titles — do NOT rephrase or make up alternatives
+- Follow THEIR content structure and teaching order
+- The generated course must feel like it was written BY this creator, not by AI
+- If the material has 7 sections, make 7 modules (not always 5)
+- If the material uses specific brand names or program names, keep them
+
+WHEN NO REFERENCE MATERIAL:
+Generate a course outline from scratch based on the topic. Use 5 modules, 3 lessons each.
+
+OUTPUT: Compact JSON, no markdown fences.
+- title, subtitle (NOT repeating title), description (2-3 sentences)
+- learningOutcomes: 6 items
+- modules: [{title, description, lessons: [{title, description}]}]
+- design_config: {colors: {primary, secondary, accent, background, cardBackground, text, textMuted}, fonts: {heading, body}, spacing, borderRadius, heroStyle, heroLayout}
+- target_audience, faq: [{question, answer}], section_order
+- DESIGN: Dark bg (#0a-#15), light text, vibrant primary. Fonts from: "Playfair Display"+"DM Sans", "Space Grotesk"+"Inter", "Poppins"+"Inter", "Montserrat"+"DM Sans", "Lora"+"Inter"`;
 
 function parseCourseJson(text: string) {
   // Strip markdown fences
@@ -60,8 +80,6 @@ serve(async (req) => {
   }
 
   try {
-    console.log("generate-course invoked (outline + design)");
-
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -78,23 +96,30 @@ serve(async (req) => {
 
     const { data: authData, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !authData?.user) {
-      console.error("generate-course auth failed", authError);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log("generate-course auth ok", authData.user.id);
-
     const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY") || Deno.env.get("ANTHROPIC_KEY");
-    if (!anthropicApiKey) {
-      console.error("ANTHROPIC_API_KEY not found in env");
-      throw new Error("ANTHROPIC_API_KEY is not configured");
-    }
+    if (!anthropicApiKey) throw new Error("ANTHROPIC_API_KEY is not configured");
 
     const { prompt, options, attachmentContent } = await req.json();
     if (!prompt || typeof prompt !== "string") throw new Error("prompt is required");
+
+    // ── FITNESS TOPIC GATE ──────────────────────────────────
+    // Check if the prompt is fitness-related (attachment content can supplement any topic
+    // since it's the creator's own material about their fitness program)
+    const combinedText = `${prompt} ${attachmentContent || ""}`;
+    if (!FITNESS_KEYWORDS.test(combinedText)) {
+      return new Response(JSON.stringify({
+        error: "Excellion is built for fitness and health creators. Try describing your fitness program, nutrition plan, or wellness coaching instead.",
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const designSeed = Math.random().toString(36).slice(2, 6);
     const difficulty = options?.difficulty || "beginner";
@@ -103,54 +128,35 @@ serve(async (req) => {
     const lessonFormat = options?.lessonFormat || "mixed";
     const painPoint = options?.audiencePainPoint || "";
 
-    // Tone detection: analyze the user's writing style
-    const isAllCaps = (prompt.match(/[A-Z]/g)?.length || 0) > prompt.length * 0.4;
-    const hasEmoji = /[\u{1F300}-\u{1FAFF}]/u.test(prompt);
+    // Tone detection
     const hasSlang = /gonna|wanna|gotta|bro|dude|lol|tbh|fr|ngl/i.test(prompt);
     const isFormal = /comprehensive|methodology|framework|professional|certification/i.test(prompt);
     const tone = isFormal ? "professional and authoritative"
-      : (hasSlang || hasEmoji || isAllCaps) ? "energetic, casual, and motivating"
+      : hasSlang ? "energetic, casual, and motivating"
       : "friendly and approachable";
 
-    // Build attachment context
-    const attachmentContext = attachmentContent
-      ? `\n\nCREATOR'S REFERENCE MATERIAL:\n${attachmentContent.slice(0, 8000)}\n\nCRITICAL: Extract the creator's actual topics, frameworks, terminology, and teaching points from this material. Use THEIR words and concepts in module/lesson titles — do NOT make up generic content. The course should feel like it came from this creator, not a template.`
-      : "";
+    // ── BUILD USER MESSAGE ───────────────────────────────────
+    const parts: string[] = [];
 
-    // Build structured context from all guided mode fields
-    const durationContext = durationWeeks <= 2 ? "This is a SHORT intensive — fewer modules, dense content"
-      : durationWeeks <= 4 ? "This is a medium-length program — balanced pace"
-      : durationWeeks <= 8 ? "This is a comprehensive program — room for depth"
-      : "This is an extended program — include foundational and advanced content";
+    // If there's attachment content, make it the PRIMARY input
+    if (attachmentContent) {
+      parts.push(`CREATOR'S DOCUMENT (USE THIS AS THE PRIMARY SOURCE):\n\n${attachmentContent.slice(0, 10000)}`);
+      parts.push(`\nCreator's description: "${prompt}"`);
+      parts.push(`\nINSTRUCTION: Build the course DIRECTLY from the document above. Use the creator's exact headings, topics, and terminology as module/lesson titles. Do NOT make up generic fitness content — extract it from their material.`);
+    } else {
+      parts.push(`Create a fitness course about: ${prompt}`);
+    }
 
-    const formatContext = lessonFormat === "video" ? "Lessons should be structured for VIDEO delivery — short, action-oriented titles. Each lesson = one concept or demonstration."
-      : lessonFormat === "written" ? "Lessons should be structured for WRITTEN/TEXT delivery — detailed, tutorial-style titles. Each lesson = one complete written guide."
-      : "Lessons can mix video and written content — vary the structure.";
+    // Context
+    const durationCtx = durationWeeks <= 2 ? "SHORT intensive" : durationWeeks <= 4 ? "medium program" : "comprehensive program";
+    const formatCtx = lessonFormat === "video" ? "VIDEO lessons" : lessonFormat === "written" ? "WRITTEN lessons" : "mixed format";
+    const toneMap: Record<string, string> = { creator: "warm, personal", technical: "structured, systematic", academic: "formal, evidence-based", visual: "concise, creative" };
+    const painCtx = painPoint ? ` Students tried "${painPoint}" and it didn't work — position as the solution.` : "";
 
-    const painPointContext = painPoint
-      ? `\nAUDIENCE PAIN POINT: Students have already tried "${painPoint}" and it didn't work. Position this course as the solution — acknowledge what failed and show why this approach is different.`
-      : "";
+    parts.push(`\nSettings: ${difficulty}, ${durationWeeks}wk (${durationCtx}), ${formatCtx}, ${toneMap[template] || "friendly"} style, ${tone} tone.${painCtx} Seed: ${designSeed}`);
+    parts.push(`Return ONLY valid JSON.`);
 
-    const templateTone: Record<string, string> = {
-      creator: "warm, personal, story-driven",
-      technical: "structured, systematic, step-by-step",
-      academic: "formal, evidence-based, comprehensive",
-      visual: "concise, image-focused, creative",
-    };
-
-    const userMessage = `Course about: ${prompt}${attachmentContext}
-
-CREATOR CONTEXT:
-- Difficulty: ${difficulty}
-- Duration: ${durationWeeks} weeks. ${durationContext}
-- Lesson format: ${lessonFormat}. ${formatContext}
-- Template style: ${template} (${templateTone[template] || "friendly"})
-- Writing tone: ${tone}${painPointContext}
-- Design seed: ${designSeed}
-
-Return ONLY valid JSON. Match the tone to "${tone}".`;
-
-    console.log("generate-course requesting Anthropic outline with model:", MODEL);
+    const userMessage = parts.join("\n");
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -162,21 +168,17 @@ Return ONLY valid JSON. Match the tone to "${tone}".`;
       body: JSON.stringify({
         model: MODEL,
         max_tokens: MAX_TOKENS,
-        temperature: 0.8,
+        temperature: 0.7,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: userMessage }],
       }),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
 
-    console.log("generate-course Anthropic status", response.status);
-
     if (!response.ok) {
       const errText = await response.text();
       console.error("Anthropic API error:", response.status, errText);
-      if (response.status === 429) {
-        throw new Error("Rate limited by AI provider. Please wait a moment and try again.");
-      }
+      if (response.status === 429) throw new Error("Rate limited. Please wait and try again.");
       throw new Error(`AI generation failed (${response.status}). Please try again.`);
     }
 
@@ -192,26 +194,29 @@ Return ONLY valid JSON. Match the tone to "${tone}".`;
 
     const course = parseCourseJson(text);
 
+    // Check if AI returned the fitness-only error
+    if (course?.error === "fitness_only") {
+      return new Response(JSON.stringify({ error: course.message }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (!course?.title || !Array.isArray(course?.modules) || course.modules.length === 0) {
       throw new Error("AI response missing required course fields");
     }
 
-    console.log("generate-course outline success:", course.title, course.modules.length, "modules",
-      course.design_config ? "with design" : "no design");
+    console.log("generate-course success:", course.title, course.modules.length, "modules");
 
     return new Response(JSON.stringify(course), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("generate-course error:", e);
-
     const status = isTimeoutError(e) ? 504 : 500;
     const message = isTimeoutError(e)
-      ? "Course generation timed out. Please try again — it usually works on the second attempt."
-      : e instanceof Error
-        ? e.message
-        : "Unknown error";
-
+      ? "Course generation timed out. Please try again."
+      : e instanceof Error ? e.message : "Unknown error";
     return new Response(JSON.stringify({ error: message }), {
       status,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
