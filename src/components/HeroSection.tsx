@@ -164,7 +164,7 @@ const HeroSection = () => {
               <button
                 onClick={() => {
                   setGuidedMode(!guidedMode);
-                  if (guidedMode) { setGQ1(""); setGQ2(""); setGQ3(""); }
+                  if (guidedMode) setGuided(EMPTY_GUIDED);
                 }}
                 className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 font-medium font-body"
               >
@@ -176,37 +176,10 @@ const HeroSection = () => {
             {/* Guided fields */}
             <div
               className="overflow-hidden transition-all duration-300 ease-in-out"
-              style={{ maxHeight: guidedMode ? "260px" : "0px", opacity: guidedMode ? 1 : 0 }}
+              style={{ maxHeight: guidedMode ? "800px" : "0px", opacity: guidedMode ? 1 : 0 }}
             >
-              <div className="space-y-2.5 pb-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-muted-foreground font-body">What's your course about?</label>
-                  <input
-                    placeholder="e.g. 6-week fat loss program, booty building, macro tracking"
-                    value={gQ1}
-                    onChange={(e) => updateGuided(1, e.target.value)}
-                    className="w-full bg-muted/20 border border-primary/10 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary/30 transition-colors font-body"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-muted-foreground font-body">Who is it for?</label>
-                  <input
-                    placeholder="e.g. busy moms, beginners, women over 40"
-                    value={gQ2}
-                    onChange={(e) => updateGuided(2, e.target.value)}
-                    className="w-full bg-muted/20 border border-primary/10 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary/30 transition-colors font-body"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-muted-foreground font-body">What's the #1 transformation they'll experience?</label>
-                  <input
-                    placeholder="e.g. lose 10 pounds, build a home workout habit, understand their macros"
-                    value={gQ3}
-                    onChange={(e) => updateGuided(3, e.target.value)}
-                    className="w-full bg-muted/20 border border-primary/10 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary/30 transition-colors font-body"
-                  />
-                </div>
-                <div className="border-t border-primary/10" />
+              <div className="pb-3 max-h-[50vh] overflow-y-auto pr-1">
+                <GuidedModeFields state={guided} onChange={handleGuidedChange} variant="hero" />
               </div>
             </div>
 
