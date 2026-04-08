@@ -188,7 +188,7 @@ const HeroSection = () => {
               value={prompt}
               onChange={(e) => {
                 handlePromptChange(e);
-                if (guidedMode) { setGuidedMode(false); setGQ1(""); setGQ2(""); setGQ3(""); }
+                if (guidedMode) { setGuidedMode(false); setGuided(EMPTY_GUIDED); }
               }}
               placeholder={!userHasTyped && !prompt ? "" : "Help [AUDIENCE] achieve [RESULT] in [TIMEFRAME]"}
               className="w-full bg-transparent text-foreground placeholder:text-muted-foreground resize-none border-none outline-none text-base min-h-[60px] font-body"
