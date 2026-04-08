@@ -4,6 +4,7 @@ import AttachmentMenu from "@/components/secret-builder/attachments/AttachmentMe
 import type { AttachmentItem } from "@/components/secret-builder/attachments/types";
 import { motion } from "framer-motion";
 import heroBg from "@/assets/hero-bg.jpg";
+import GuidedModeFields, { type GuidedState, EMPTY_GUIDED, buildPromptFromGuided } from "@/components/guided-mode/GuidedModeFields";
 
 const suggestions = [
   "6-week fat loss course",
@@ -71,9 +72,7 @@ const HeroSection = () => {
   const [userHasTyped, setUserHasTyped] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
   const [guidedMode, setGuidedMode] = useState(false);
-  const [gQ1, setGQ1] = useState("");
-  const [gQ2, setGQ2] = useState("");
-  const [gQ3, setGQ3] = useState("");
+  const [guided, setGuided] = useState<GuidedState>(EMPTY_GUIDED);
 
   const handleAddAttachment = (item: AttachmentItem) => {
     setAttachments((prev) => [...prev, item]);
@@ -91,25 +90,12 @@ const HeroSection = () => {
     if (userHasTyped && !e.target.value) setUserHasTyped(false);
   };
 
-  const buildGuidedPrompt = (q1: string, q2: string, q3: string) => {
-    const parts = [
-      q1.trim() && `Course about: ${q1.trim()}`,
-      q2.trim() && `Target audience: ${q2.trim()}`,
-      q3.trim() && `Transformation: ${q3.trim()}`,
-    ].filter(Boolean).join(". ");
-    setPrompt(parts);
-    if (parts && !userHasTyped) setUserHasTyped(true);
-    if (!parts) setUserHasTyped(false);
-  };
-
-  const updateGuided = (field: 1 | 2 | 3, value: string) => {
-    const n1 = field === 1 ? value : gQ1;
-    const n2 = field === 2 ? value : gQ2;
-    const n3 = field === 3 ? value : gQ3;
-    if (field === 1) setGQ1(value);
-    if (field === 2) setGQ2(value);
-    if (field === 3) setGQ3(value);
-    buildGuidedPrompt(n1, n2, n3);
+  const handleGuidedChange = (next: GuidedState) => {
+    setGuided(next);
+    const built = buildPromptFromGuided(next);
+    setPrompt(built);
+    if (built && !userHasTyped) setUserHasTyped(true);
+    if (!built) setUserHasTyped(false);
   };
 
   const handleGenerate = () => {
@@ -178,7 +164,7 @@ const HeroSection = () => {
               <button
                 onClick={() => {
                   setGuidedMode(!guidedMode);
-                  if (guidedMode) { setGQ1(""); setGQ2(""); setGQ3(""); }
+                  if (guidedMode) setGuided(EMPTY_GUIDED);
                 }}
                 className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 font-medium font-body"
               >
@@ -190,37 +176,10 @@ const HeroSection = () => {
             {/* Guided fields */}
             <div
               className="overflow-hidden transition-all duration-300 ease-in-out"
-              style={{ maxHeight: guidedMode ? "260px" : "0px", opacity: guidedMode ? 1 : 0 }}
+              style={{ maxHeight: guidedMode ? "800px" : "0px", opacity: guidedMode ? 1 : 0 }}
             >
-              <div className="space-y-2.5 pb-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-muted-foreground font-body">What's your course about?</label>
-                  <input
-                    placeholder="e.g. 6-week fat loss program, booty building, macro tracking"
-                    value={gQ1}
-                    onChange={(e) => updateGuided(1, e.target.value)}
-                    className="w-full bg-muted/20 border border-primary/10 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary/30 transition-colors font-body"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-muted-foreground font-body">Who is it for?</label>
-                  <input
-                    placeholder="e.g. busy moms, beginners, women over 40"
-                    value={gQ2}
-                    onChange={(e) => updateGuided(2, e.target.value)}
-                    className="w-full bg-muted/20 border border-primary/10 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary/30 transition-colors font-body"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-muted-foreground font-body">What's the #1 transformation they'll experience?</label>
-                  <input
-                    placeholder="e.g. lose 10 pounds, build a home workout habit, understand their macros"
-                    value={gQ3}
-                    onChange={(e) => updateGuided(3, e.target.value)}
-                    className="w-full bg-muted/20 border border-primary/10 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary/30 transition-colors font-body"
-                  />
-                </div>
-                <div className="border-t border-primary/10" />
+              <div className="pb-3 max-h-[50vh] overflow-y-auto pr-1">
+                <GuidedModeFields state={guided} onChange={handleGuidedChange} variant="hero" />
               </div>
             </div>
 
@@ -229,7 +188,7 @@ const HeroSection = () => {
               value={prompt}
               onChange={(e) => {
                 handlePromptChange(e);
-                if (guidedMode) { setGuidedMode(false); setGQ1(""); setGQ2(""); setGQ3(""); }
+                if (guidedMode) { setGuidedMode(false); setGuided(EMPTY_GUIDED); }
               }}
               placeholder={!userHasTyped && !prompt ? "" : "Help [AUDIENCE] achieve [RESULT] in [TIMEFRAME]"}
               className="w-full bg-transparent text-foreground placeholder:text-muted-foreground resize-none border-none outline-none text-base min-h-[60px] font-body"

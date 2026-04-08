@@ -110,6 +110,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { AI } from "@/services/ai";
+import GuidedModeFields, { type GuidedState, EMPTY_GUIDED, buildPromptFromGuided } from "@/components/guided-mode/GuidedModeFields";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -792,9 +793,7 @@ function HubContent() {
     () => localStorage.getItem("builder-initial-idea") || ""
   );
   const [guidedMode, setGuidedMode] = useState(false);
-  const [guidedQ1, setGuidedQ1] = useState("");
-  const [guidedQ2, setGuidedQ2] = useState("");
-  const [guidedQ3, setGuidedQ3] = useState("");
+  const [guided, setGuided] = useState<GuidedState>(EMPTY_GUIDED);
   const [autoTriggered, setAutoTriggered] = useState(false);
   const [projects, setProjects] = useState<BuilderProject[]>([]);
   const [courses, setCourses] = useState<CourseItem[]>([]);
@@ -1129,24 +1128,9 @@ function HubContent() {
     }
   };
 
-  // Sync guided fields into the main idea box in real time
-  const buildGuidedPrompt = useCallback((q1: string, q2: string, q3: string) => {
-    const parts = [
-      q1.trim() && `Course about: ${q1.trim()}`,
-      q2.trim() && `Target audience: ${q2.trim()}`,
-      q3.trim() && `Transformation: ${q3.trim()}`,
-    ].filter(Boolean).join(". ");
-    setIdea(parts);
-  }, []);
-
-  const updateGuided = (field: 1 | 2 | 3, value: string) => {
-    const next1 = field === 1 ? value : guidedQ1;
-    const next2 = field === 2 ? value : guidedQ2;
-    const next3 = field === 3 ? value : guidedQ3;
-    if (field === 1) setGuidedQ1(value);
-    if (field === 2) setGuidedQ2(value);
-    if (field === 3) setGuidedQ3(value);
-    buildGuidedPrompt(next1, next2, next3);
+  const handleGuidedChange = (next: GuidedState) => {
+    setGuided(next);
+    setIdea(buildPromptFromGuided(next));
   };
 
   const visibleCourses = showAllCourses ? courses : courses.slice(0, 6);
@@ -1245,39 +1229,12 @@ function HubContent() {
               <div
                 className="overflow-hidden transition-all duration-300 ease-in-out"
                 style={{
-                  maxHeight: guidedMode ? "300px" : "0px",
+                  maxHeight: guidedMode ? "800px" : "0px",
                   opacity: guidedMode ? 1 : 0,
                 }}
               >
-                <div className="px-5 pb-3 space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">What's your course about?</label>
-                    <Input
-                      placeholder="e.g. 6-week fat loss program, booty building, macro tracking"
-                      value={guidedQ1}
-                      onChange={(e) => updateGuided(1, e.target.value)}
-                      className="bg-muted/30 h-9 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Who is it for?</label>
-                    <Input
-                      placeholder="e.g. busy moms, beginners, women over 40"
-                      value={guidedQ2}
-                      onChange={(e) => updateGuided(2, e.target.value)}
-                      className="bg-muted/30 h-9 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">What's the #1 transformation they'll experience?</label>
-                    <Input
-                      placeholder="e.g. lose 10 pounds, build a home workout habit, understand their macros"
-                      value={guidedQ3}
-                      onChange={(e) => updateGuided(3, e.target.value)}
-                      className="bg-muted/30 h-9 text-sm"
-                    />
-                  </div>
-                  <Separator />
+                <div className="px-5 pb-3 max-h-[50vh] overflow-y-auto">
+                  <GuidedModeFields state={guided} onChange={handleGuidedChange} variant="card" />
                 </div>
               </div>
 
@@ -1289,9 +1246,7 @@ function HubContent() {
                 onChange={(e) => {
                   setIdea(e.target.value);
                   if (guidedMode) {
-                    setGuidedQ1("");
-                    setGuidedQ2("");
-                    setGuidedQ3("");
+                    setGuided(EMPTY_GUIDED);
                     setGuidedMode(false);
                   }
                 }}
