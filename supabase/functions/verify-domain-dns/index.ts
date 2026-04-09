@@ -1,17 +1,33 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Dynamic CORS — allow production + Lovable preview domains
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowed = ["https://excellioncourses.com", "https://www.excellioncourses.com"];
+  const isAllowed = allowed.includes(origin) || origin.endsWith(".lovable.app") || origin.endsWith(".lovableproject.com");
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : allowed[0],
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   try {
+    // Payload size limit: 100KB
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > 102400) {
+      return new Response(
+        JSON.stringify({ error: "Request too large. Maximum payload size is 100KB." }),
+        { status: 413, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+
+
     // Authenticate user
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -23,7 +39,7 @@ serve(async (req: Request) => {
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -31,7 +47,7 @@ serve(async (req: Request) => {
     if (!domain || !courseId) {
       return new Response(JSON.stringify({ error: "domain and courseId are required" }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -50,7 +66,7 @@ serve(async (req: Request) => {
     if (!course || course.user_id !== user.id) {
       return new Response(JSON.stringify({ error: "Course not found or not owned by you" }), {
         status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -115,14 +131,14 @@ serve(async (req: Request) => {
       }),
       {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       },
     );
   } catch (err) {
     console.error("verify-domain-dns error:", err);
     return new Response(
       JSON.stringify({ error: "Verification failed" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } },
     );
   }
 });

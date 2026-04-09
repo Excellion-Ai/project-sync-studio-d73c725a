@@ -2,17 +2,33 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.14.0?target=deno";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Dynamic CORS — allow production + Lovable preview domains
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowed = ["https://excellioncourses.com", "https://www.excellioncourses.com"];
+  const isAllowed = allowed.includes(origin) || origin.endsWith(".lovable.app") || origin.endsWith(".lovableproject.com");
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : allowed[0],
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   try {
+    // Payload size limit: 100KB
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > 102400) {
+      return new Response(
+        JSON.stringify({ error: "Request too large. Maximum payload size is 100KB." }),
+        { status: 413, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+
+
     // Get user from JWT
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -24,7 +40,7 @@ serve(async (req: Request) => {
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -45,7 +61,7 @@ serve(async (req: Request) => {
     if (subError || !sub?.stripe_customer_id) {
       return new Response(
         JSON.stringify({ error: "No subscription found. Please subscribe to a plan first." }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 404, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } },
       );
     }
 
@@ -65,13 +81,13 @@ serve(async (req: Request) => {
 
     return new Response(JSON.stringify({ url: session.url }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("Portal session error:", err);
     return new Response(JSON.stringify({ error: "Failed to create portal session" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

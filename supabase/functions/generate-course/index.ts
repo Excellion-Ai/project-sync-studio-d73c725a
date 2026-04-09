@@ -1,10 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+// Dynamic CORS — allow production + Lovable preview domains
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowed = ["https://excellioncourses.com", "https://www.excellioncourses.com"];
+  const isAllowed = allowed.includes(origin) || origin.endsWith(".lovable.app") || origin.endsWith(".lovableproject.com");
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : allowed[0],
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+}
 
 const MODEL = "claude-sonnet-4-20250514";
 const REQUEST_TIMEOUT_MS = 55000;
@@ -76,15 +82,25 @@ function isTimeoutError(error: unknown) {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   try {
+    // Payload size limit: 100KB
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > 102400) {
+      return new Response(
+        JSON.stringify({ error: "Request too large. Maximum payload size is 100KB." }),
+        { status: 413, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -98,12 +114,43 @@ serve(async (req) => {
     if (authError || !authData?.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
     const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY") || Deno.env.get("ANTHROPIC_KEY");
     if (!anthropicApiKey) throw new Error("ANTHROPIC_API_KEY is not configured");
+
+    // ── RATE LIMITING: 10 generations per hour per user ─────
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    // Cleanup old entries first (lightweight)
+    await adminClient.rpc("cleanup_old_rate_limits").catch(() => {});
+
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await adminClient
+      .from("rate_limits")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", authData.user.id)
+      .eq("endpoint", "generate-course")
+      .gte("called_at", oneHourAgo);
+
+    if ((count ?? 0) >= 10) {
+      return new Response(JSON.stringify({
+        error: "You've reached the limit of 10 course generations per hour. Please try again later.",
+      }), {
+        status: 429,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
+    // Log this call
+    await adminClient.from("rate_limits").insert({
+      user_id: authData.user.id,
+      endpoint: "generate-course",
+    });
 
     const { prompt, options, attachmentContent } = await req.json();
     if (!prompt || typeof prompt !== "string") throw new Error("prompt is required");
@@ -117,7 +164,7 @@ serve(async (req) => {
         error: "Excellion is built for fitness and health creators. Try describing your fitness program, nutrition plan, or wellness coaching instead.",
       }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -198,7 +245,7 @@ serve(async (req) => {
     if (course?.error === "fitness_only") {
       return new Response(JSON.stringify({ error: course.message }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -209,7 +256,7 @@ serve(async (req) => {
     console.log("generate-course success:", course.title, course.modules.length, "modules");
 
     return new Response(JSON.stringify(course), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("generate-course error:", e);
@@ -219,7 +266,7 @@ serve(async (req) => {
       : e instanceof Error ? e.message : "Unknown error";
     return new Response(JSON.stringify({ error: message }), {
       status,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });
