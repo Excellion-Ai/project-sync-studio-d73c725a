@@ -164,18 +164,8 @@ serve(async (req) => {
       });
     }
 
-    // ── FITNESS TOPIC GATE ──────────────────────────────────
-    // Check if the prompt is fitness-related (attachment content can supplement any topic
-    // since it's the creator's own material about their fitness program)
-    const combinedText = `${prompt} ${attachmentContent || ""}`;
-    if (!FITNESS_KEYWORDS.test(combinedText)) {
-      return new Response(JSON.stringify({
-        error: "Excellion is built for fitness and health creators. Try describing your fitness program, nutrition plan, or wellness coaching instead.",
-      }), {
-        status: 400,
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
+    // Fitness topic validation is handled by the AI system prompt itself.
+    // The AI will return a fitness_only error JSON if the topic is off-limits.
 
     const designSeed = Math.random().toString(36).slice(2, 6);
     const difficulty = options?.difficulty || "beginner";
