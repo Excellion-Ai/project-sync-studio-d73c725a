@@ -127,7 +127,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
     // Cleanup old entries first (lightweight)
-    await adminClient.rpc("cleanup_old_rate_limits").catch(() => {});
+    try { await adminClient.rpc("cleanup_old_rate_limits"); } catch { /* ignore */ }
 
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count } = await adminClient

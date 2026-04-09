@@ -925,6 +925,27 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          called_at: string | null
+          endpoint: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          called_at?: string | null
+          endpoint: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          called_at?: string | null
+          endpoint?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       "stripe-connect": {
         Row: {
           created_at: string
@@ -1038,6 +1059,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
       generate_clean_slug: {
         Args: { course_id?: string; title: string }
         Returns: string
