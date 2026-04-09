@@ -37,8 +37,8 @@ export interface CourseOptions {
   includeQuizzes: boolean;
   includeAssignments: boolean;
   template: CourseLayoutStyle;
-  lessonFormat: "video" | "written" | "mixed";
-  audiencePainPoint: string;
+  lessonFormat?: "video" | "written" | "mixed";
+  audiencePainPoint?: string;
 }
 
 export interface GenerationStep {
