@@ -102,7 +102,7 @@ No `eval()`, `new Function()`, or `import()` with user-supplied strings found.
 ### Storage bucket policies
 | Bucket | Public | Upload Policy |
 |---|---|---|
-| course-thumbnails | Yes (reads) | Authenticated users can upload/update/delete |
+| course-thumbnails | Yes (reads) | Scoped to user's own folder (`{userId}/...`) or course they own (`logos/{courseId}/`, `social/{courseId}/`) |
 | course-resources | No | Scoped to course owner via course_id in path |
 
 ---
@@ -128,7 +128,7 @@ No `eval()`, `new Function()`, or `import()` with user-supplied strings found.
 
 ### MEDIUM Priority
 4. **File upload validation**: The attachment system accepts files up to 10MB. Consider scanning for malicious content or limiting to specific MIME types server-side
-5. **CORS tightening for storage**: The `course-thumbnails` bucket allows any authenticated user to upload. Consider scoping uploads to `{user_id}/` prefix paths
+5. ~~**CORS tightening for storage**~~: DONE — `course-thumbnails` uploads now scoped to `{userId}/` prefix or course ownership check for `logos/` and `social/` folders
 6. **Session management**: Consider adding session timeout (currently unlimited) and concurrent session limits for premium accounts
 
 ### LOW Priority
