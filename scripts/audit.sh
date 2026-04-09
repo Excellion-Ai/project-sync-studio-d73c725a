@@ -42,7 +42,7 @@ for fn_dir in supabase/functions/*/; do
   fn_file="$fn_dir/index.ts"
   [ -f "$fn_file" ] || continue
 
-  if grep -q "corsHeaders" "$fn_file"; then
+  if grep -q "corsHeaders\|getCorsHeaders\|Access-Control-Allow-Origin" "$fn_file"; then
     pass "$fn_name has CORS headers"
   else
     fail "$fn_name missing CORS headers"
