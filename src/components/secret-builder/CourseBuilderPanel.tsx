@@ -5,7 +5,6 @@ import {
   Check,
   X,
   ChevronDown,
-  Paperclip,
   Send,
   Code2,
   Palette,
@@ -18,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import AttachmentMenu from "./attachments/AttachmentMenu";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -382,9 +382,10 @@ const CourseBuilderPanel = ({
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {attachments.map((a) => (
-              <Badge key={a.id} variant="secondary" className="gap-1 text-xs pr-1">
-                <Paperclip className="h-3 w-3" />
+              <Badge key={a.id} variant={a.content ? "default" : "secondary"} className="gap-1 text-xs pr-1">
+                <Check className={`h-3 w-3 ${a.content ? "text-emerald-400" : "text-muted-foreground"}`} />
                 {a.name}
+                {a.content && <span className="text-[9px] opacity-60">({(a.content.length / 1000).toFixed(0)}K)</span>}
                 <button onClick={() => onRemoveAttachment(a.id)} className="ml-0.5 hover:text-destructive">
                   <X className="h-3 w-3" />
                 </button>
@@ -430,9 +431,7 @@ const CourseBuilderPanel = ({
         )}
 
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isGenerating}>
-            <Paperclip className="h-4 w-4" />
-          </Button>
+          <AttachmentMenu onAdd={onAddAttachment} disabled={isGenerating} />
           <Button
             onClick={() => {
               // Append follow-up answers to the idea for context
