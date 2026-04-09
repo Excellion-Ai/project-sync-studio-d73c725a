@@ -79,16 +79,19 @@ serve(async (req) => {
       endpoint: "generate-lesson-content",
     });
 
-    const { moduleTitle, lessonTitle, lessonTitles } = await req.json();
+    const body = await req.json();
+    const moduleTitle = typeof body.moduleTitle === "string" ? body.moduleTitle.trim().slice(0, 500) : "";
+    const lessonTitle = typeof body.lessonTitle === "string" ? body.lessonTitle.trim().slice(0, 500) : "";
+    const lessonTitles = Array.isArray(body.lessonTitles) ? body.lessonTitles : [];
 
-    const resolvedLessonTitle = typeof lessonTitle === "string" && lessonTitle.trim()
-      ? lessonTitle.trim()
-      : Array.isArray(lessonTitles) && lessonTitles.length === 1 && typeof lessonTitles[0] === "string"
-        ? lessonTitles[0].trim()
-        : "";
+    const resolvedLessonTitle = lessonTitle
+      || (lessonTitles.length === 1 && typeof lessonTitles[0] === "string" ? lessonTitles[0].trim().slice(0, 500) : "");
 
     if (!moduleTitle || !resolvedLessonTitle) {
-      throw new Error("moduleTitle and lessonTitle are required");
+      return new Response(JSON.stringify({ error: "moduleTitle and lessonTitle are required" }), {
+        status: 400,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
     }
 
     // Return a stub — no AI call. Creators write their own content.

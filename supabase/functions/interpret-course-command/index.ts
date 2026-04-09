@@ -101,10 +101,15 @@ serve(async (req) => {
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
 
     const body = await req.json();
-    const command = body.command;
+    const command = typeof body.command === "string" ? body.command.trim().slice(0, 2000) : "";
     const currentCourse = body.current_course || body.currentCourse;
     const currentDesign = body.current_design || body.currentDesign;
-    if (!command) throw new Error("command is required");
+    if (!command) {
+      return new Response(JSON.stringify({ error: "Please enter a command." }), {
+        status: 400,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
 
     // ── RATE LIMITING: 30 commands per hour per user ────────
     const adminClient = createClient(

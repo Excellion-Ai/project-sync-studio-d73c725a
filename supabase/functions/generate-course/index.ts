@@ -152,8 +152,17 @@ serve(async (req) => {
       endpoint: "generate-course",
     });
 
-    const { prompt, options, attachmentContent } = await req.json();
-    if (!prompt || typeof prompt !== "string") throw new Error("prompt is required");
+    const body = await req.json();
+    const prompt = typeof body.prompt === "string" ? body.prompt.trim().slice(0, 2000) : "";
+    const options = body.options || {};
+    const attachmentContent = typeof body.attachmentContent === "string" ? body.attachmentContent.slice(0, 15000) : "";
+
+    if (!prompt) {
+      return new Response(JSON.stringify({ error: "Please describe your course idea." }), {
+        status: 400,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
 
     // ── FITNESS TOPIC GATE ──────────────────────────────────
     // Check if the prompt is fitness-related (attachment content can supplement any topic
