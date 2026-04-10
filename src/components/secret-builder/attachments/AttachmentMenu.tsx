@@ -8,33 +8,127 @@ import type { AttachmentItem } from "./types";
 // ── PDF extraction using pdf.js ─────────────────────────────
 
 async function extractPdfText(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+
+  // Method 1: Try pdf.js (works for most text-based PDFs)
   try {
     const pdfjsLib = await import("pdfjs-dist");
-    // Set worker source to CDN to avoid bundling issues
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
-    const buffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
     const pages: string[] = [];
-
-    // Extract text from each page (limit to first 50 pages)
     const maxPages = Math.min(pdf.numPages, 50);
+
     for (let i = 1; i <= maxPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      const pageText = content.items
-        .map((item: any) => item.str)
-        .join(" ");
-      if (pageText.trim()) pages.push(pageText.trim());
+
+      if (!content.items.length) continue;
+
+      // Reconstruct text with proper spacing and line breaks
+      let lastY: number | null = null;
+      const lines: string[] = [];
+      let currentLine = "";
+
+      for (const item of content.items as any[]) {
+        if (!item.str) continue;
+
+        // Detect line breaks by checking Y position change
+        const y = item.transform?.[5];
+        if (lastY !== null && y !== undefined && Math.abs(y - lastY) > 2) {
+          if (currentLine.trim()) lines.push(currentLine.trim());
+          currentLine = "";
+        }
+        lastY = y;
+
+        // Add space between items on the same line
+        if (currentLine && !currentLine.endsWith(" ") && !item.str.startsWith(" ")) {
+          currentLine += " ";
+        }
+        currentLine += item.str;
+      }
+      if (currentLine.trim()) lines.push(currentLine.trim());
+
+      const pageText = lines.join("\n");
+      if (pageText.trim()) pages.push(pageText);
     }
 
-    const result = pages.join("\n\n");
-    if (result.length > 20) return result;
-    return `[PDF: ${file.name} — ${pdf.numPages} pages, text extraction returned minimal content]`;
+    const pdfJsResult = pages.join("\n\n");
+    if (pdfJsResult.length > 100) {
+      console.log(`PDF extraction (pdf.js): ${pdfJsResult.length} chars from ${maxPages} pages`);
+      return pdfJsResult;
+    }
+    console.warn(`PDF extraction (pdf.js): only ${pdfJsResult.length} chars — trying fallback`);
   } catch (err) {
-    console.error("PDF extraction failed:", err);
-    return `[PDF: ${file.name} — could not extract text. ${(file.size / 1024).toFixed(0)}KB]`;
+    console.warn("pdf.js extraction failed:", err);
   }
+
+  // Method 2: Raw binary text extraction fallback
+  // Works for PDFs where pdf.js fails (embedded fonts, unusual encoding)
+  try {
+    const bytes = new Uint8Array(buffer);
+    const raw = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    const textChunks: string[] = [];
+
+    // Extract text from PDF stream objects between BT/ET markers
+    const streamRegex = /BT\s([\s\S]*?)ET/g;
+    let streamMatch;
+    while ((streamMatch = streamRegex.exec(raw)) !== null) {
+      const stream = streamMatch[1];
+      // Extract text inside parentheses (PDF literal strings)
+      const parenRegex = /\(([^)]*)\)/g;
+      let pm;
+      while ((pm = parenRegex.exec(stream)) !== null) {
+        const text = pm[1]
+          .replace(/\\n/g, "\n")
+          .replace(/\\r/g, "")
+          .replace(/\\\\/g, "\\")
+          .replace(/\\([()])/g, "$1");
+        if (text.length > 1 && /[a-zA-Z]/.test(text)) {
+          textChunks.push(text);
+        }
+      }
+      // Also extract hex strings <...>
+      const hexRegex = /<([0-9a-fA-F]+)>/g;
+      let hm;
+      while ((hm = hexRegex.exec(stream)) !== null) {
+        const hex = hm[1];
+        let decoded = "";
+        for (let i = 0; i < hex.length - 1; i += 2) {
+          const code = parseInt(hex.substring(i, i + 2), 16);
+          if (code >= 32 && code < 127) decoded += String.fromCharCode(code);
+        }
+        if (decoded.length > 1 && /[a-zA-Z]/.test(decoded)) {
+          textChunks.push(decoded);
+        }
+      }
+    }
+
+    // Also try extracting readable ASCII strings (4+ chars) from the entire binary
+    if (textChunks.length < 10) {
+      const asciiStrings = raw.match(/[\x20-\x7E]{6,}/g) || [];
+      const filtered = asciiStrings.filter((s) =>
+        /[a-zA-Z]{2,}/.test(s) &&
+        !/^[%\/\[\]<>{}()\\]+$/.test(s) &&
+        !s.startsWith("/") &&
+        !s.includes("obj") &&
+        !s.includes("endobj") &&
+        !s.includes("stream") &&
+        s.length < 500
+      );
+      textChunks.push(...filtered);
+    }
+
+    const fallbackResult = textChunks.join(" ").replace(/\s+/g, " ").trim();
+    if (fallbackResult.length > 100) {
+      console.log(`PDF extraction (fallback): ${fallbackResult.length} chars`);
+      return fallbackResult;
+    }
+  } catch (err) {
+    console.warn("PDF fallback extraction failed:", err);
+  }
+
+  return `[PDF: ${file.name} — ${(file.size / 1024).toFixed(0)}KB, ${Math.round(file.size / 1024 / 40)} estimated pages. This PDF may contain scanned images instead of text. Try copying the text manually and pasting it as a Text Note instead.]`;
 }
 
 // ── DOCX extraction using JSZip ─────────────────────────────
