@@ -237,12 +237,20 @@ serve(async (req) => {
     const text = data.content?.[0]?.text || "";
 
     console.log("generate-course stop_reason:", stopReason, "text length:", text.length);
+    // Log first 500 chars of raw response for debugging
+    console.log("generate-course raw response preview:", text.slice(0, 500));
 
     if (stopReason === "max_tokens") {
-      console.warn("generate-course: output was truncated by max_tokens");
+      console.warn("generate-course: output was truncated by max_tokens — response may be incomplete JSON");
     }
 
-    const course = parseCourseJson(text);
+    let course: any;
+    try {
+      course = parseCourseJson(text);
+    } catch (parseErr) {
+      console.error("generate-course JSON parse failed. Raw text:", text.slice(0, 1000));
+      throw new Error("The AI response wasn't valid JSON. This can happen with complex PDF content. Please try again or simplify your attachment.");
+    }
 
     // Check if AI returned the fitness-only error
     if (course?.error === "fitness_only") {
@@ -252,8 +260,61 @@ serve(async (req) => {
       });
     }
 
-    if (!course?.title || !Array.isArray(course?.modules) || course.modules.length === 0) {
-      throw new Error("AI response missing required course fields");
+    // Validate required fields — fill in defaults for missing ones instead of crashing
+    if (!course?.title) {
+      console.error("generate-course: missing title. Keys present:", Object.keys(course || {}));
+      console.error("generate-course: full parsed object:", JSON.stringify(course).slice(0, 500));
+      // Try to salvage — use prompt as title
+      course = course || {};
+      course.title = course.title || prompt.slice(0, 80);
+    }
+
+    if (!Array.isArray(course.modules) || course.modules.length === 0) {
+      console.error("generate-course: missing/empty modules. Keys present:", Object.keys(course || {}));
+      console.error("generate-course: full parsed object:", JSON.stringify(course).slice(0, 500));
+
+      // If we have some other structure, try to extract modules from it
+      if (Array.isArray(course.curriculum)) {
+        course.modules = course.curriculum;
+      } else if (course.outline && Array.isArray(course.outline)) {
+        course.modules = course.outline;
+      } else {
+        throw new Error("The AI couldn't generate a proper course structure. Please try again with a clearer description.");
+      }
+    }
+
+    // Ensure each module has lessons array
+    course.modules = course.modules.map((mod: any, i: number) => ({
+      id: mod.id || `mod-${i}`,
+      title: mod.title || `Module ${i + 1}`,
+      description: mod.description || "",
+      lessons: Array.isArray(mod.lessons) ? mod.lessons.map((l: any, j: number) => ({
+        id: l.id || `les-${i}-${j}`,
+        title: l.title || `Lesson ${j + 1}`,
+        description: l.description || "",
+        duration: l.duration || "20m",
+        type: l.type || "text",
+      })) : [],
+    }));
+
+    // Fill in other defaults
+    if (!course.subtitle) course.subtitle = "";
+    if (!course.description) course.description = "";
+    if (!Array.isArray(course.learningOutcomes)) course.learningOutcomes = [];
+    if (!course.target_audience) course.target_audience = "";
+    if (!Array.isArray(course.faq)) course.faq = [];
+    if (!Array.isArray(course.section_order)) {
+      course.section_order = ["hero", "outcomes", "who_is_for", "curriculum", "course_includes", "testimonials", "pricing", "guarantee", "faq"];
+    }
+    if (!course.design_config) {
+      course.design_config = {
+        colors: { primary: "#e53e3e", secondary: "#1a1a2e", accent: "#f56565", background: "#0a0a0a", cardBackground: "#111111", text: "#ffffff", textMuted: "#9ca3af" },
+        fonts: { heading: "Montserrat", body: "DM Sans" },
+        spacing: "normal",
+        borderRadius: "medium",
+        heroStyle: "gradient",
+        heroLayout: "left",
+      };
     }
 
     console.log("generate-course success:", course.title, course.modules.length, "modules");
