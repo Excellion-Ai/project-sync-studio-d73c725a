@@ -53,6 +53,7 @@ export interface AttachmentItem {
   type: string;
   content?: string;
   url?: string;
+  base64Data?: string;
   mimeType?: string;
   size?: number;
 }
