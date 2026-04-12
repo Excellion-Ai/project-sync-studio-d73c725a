@@ -73,7 +73,27 @@ if [ "$UNUSED_COUNT" -eq 0 ]; then
   pass "No obviously unused exports found"
 fi
 
-# ── 5. Build Check ───────────────────────────────────────────
+# ── 5. Stripe Data Exposure Check ───────────────────────────
+section "Stripe Security"
+# Check that no frontend code selects stripe columns
+STRIPE_SELECTS=$(grep -rn "stripe_account_id\|stripe_price_id\|stripe_product_id" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "types\.ts\|\.d\.ts\|node_modules" || true)
+if [ -z "$STRIPE_SELECTS" ]; then
+  pass "No frontend code references Stripe columns"
+else
+  fail "Frontend code references Stripe columns!"
+  REPORT+="$STRIPE_SELECTS\n"
+fi
+
+# Check that no .select("*") is used on courses table
+STAR_SELECTS=$(grep -rn '\.select("\*")' src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -i "course" || true)
+if [ -z "$STAR_SELECTS" ]; then
+  pass "No SELECT * on courses table"
+else
+  fail "SELECT * found on courses — may expose Stripe columns"
+  REPORT+="$STAR_SELECTS\n"
+fi
+
+# ── 6. Build Check ───────────────────────────────────────────
 section "Build"
 if command -v node >/dev/null 2>&1 && node -e "require('vite')" 2>/dev/null; then
   BUILD_OUTPUT=$(npx vite build 2>&1) || true
