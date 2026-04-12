@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, ArrowRight, X, FileText } from "lucide-react";
 import AttachmentMenu from "@/components/secret-builder/attachments/AttachmentMenu";
+import type { AttachmentMenuHandle } from "@/components/secret-builder/attachments/AttachmentMenu";
 import type { AttachmentItem } from "@/components/secret-builder/attachments/types";
 import { motion } from "framer-motion";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -83,7 +84,7 @@ const HeroSection = () => {
   const [userHasTyped, setUserHasTyped] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
   const [isStarting, setIsStarting] = useState(false);
-  const attachMenuRef = useRef<HTMLDivElement>(null);
+  const attachMenuRef = useRef<AttachmentMenuHandle>(null);
 
   const handleAddAttachment = (item: AttachmentItem) => {
     setAttachments((prev) => [...prev, item]);
@@ -268,10 +269,7 @@ const HeroSection = () => {
               }}
               isGenerating={isStarting}
               hasAttachment={attachments.length > 0}
-              onUploadClick={() => {
-                const btn = attachMenuRef.current?.querySelector("button");
-                btn?.click();
-              }}
+              onUploadClick={() => attachMenuRef.current?.openFilePicker()}
             />
             {attachments.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
@@ -286,9 +284,7 @@ const HeroSection = () => {
                 ))}
               </div>
             )}
-            <div ref={attachMenuRef} className="hidden">
-              <AttachmentMenu onAdd={handleAddAttachment} />
-            </div>
+            <AttachmentMenu ref={attachMenuRef} onAdd={handleAddAttachment} />
           </div>
 
           <div className="flex flex-wrap gap-2 justify-center">

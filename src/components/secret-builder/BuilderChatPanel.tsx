@@ -39,6 +39,7 @@ import {
   AttachmentItem,
 } from "./CourseBuilderPanel";
 import AttachmentMenu from "./attachments/AttachmentMenu";
+import type { AttachmentMenuHandle } from "./attachments/AttachmentMenu";
 import GuidedPromptBuilder from "@/components/builder/GuidedPromptBuilder";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -245,7 +246,7 @@ const BuildTab = ({
   courseOptions, updateOption, messagesEndRef, hasCourse,
 }: BuildTabProps) => {
   const isBusy = isGenerating || !!isRefining;
-  const attachMenuRef = useRef<HTMLDivElement>(null);
+  const attachMenuRef = useRef<AttachmentMenuHandle>(null);
 
   return (
     <>
@@ -478,11 +479,9 @@ const BuildTab = ({
           </div>
         )}
 
-        {/* Hidden AttachmentMenu for GuidedPromptBuilder step 4 */}
+        {/* AttachmentMenu for GuidedPromptBuilder step 4 file picker */}
         {!hasCourse && (
-          <div ref={attachMenuRef} className="hidden">
-            <AttachmentMenu onAdd={onAddAttachment} disabled={isBusy} />
-          </div>
+          <AttachmentMenu ref={attachMenuRef} onAdd={onAddAttachment} disabled={isBusy} />
         )}
 
         {hasCourse ? (
@@ -522,10 +521,7 @@ const BuildTab = ({
             onGenerate={(prompt) => { onIdeaChange(prompt); onSubmit(); }}
             isGenerating={isBusy}
             hasAttachment={attachments.length > 0}
-            onUploadClick={() => {
-              const btn = attachMenuRef.current?.querySelector("button");
-              btn?.click();
-            }}
+            onUploadClick={() => attachMenuRef.current?.openFilePicker()}
           />
         )}
       </div>

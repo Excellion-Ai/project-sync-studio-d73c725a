@@ -77,7 +77,8 @@ fi
 section "Stripe Security"
 # Check that no frontend code selects stripe columns from courses table
 # (profiles table stripe columns are the user's own data — OK)
-STRIPE_SELECTS=$(grep -rn "stripe_account_id\|stripe_price_id\|stripe_product_id" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "types\.ts\|\.d\.ts\|node_modules\|profiles" || true)
+# Exclude: types.ts (schema), profiles queries (user's own data), BillingSettings (reads own profile)
+STRIPE_SELECTS=$(grep -rn "stripe_account_id\|stripe_price_id\|stripe_product_id" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v 'types\.ts\|\.d\.ts\|node_modules\|profiles\|BillingSettings' || true)
 if [ -z "$STRIPE_SELECTS" ]; then
   pass "No frontend code references Stripe columns"
 else

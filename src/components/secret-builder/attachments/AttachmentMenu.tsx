@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Paperclip, FileUp, Type, Link, Palette, Loader2 } from "lucide-react";
@@ -240,9 +240,17 @@ interface AttachmentMenuProps {
   disabled?: boolean;
 }
 
-const AttachmentMenu = ({ onAdd, disabled }: AttachmentMenuProps) => {
+export interface AttachmentMenuHandle {
+  openFilePicker: () => void;
+}
+
+const AttachmentMenu = forwardRef<AttachmentMenuHandle, AttachmentMenuProps>(({ onAdd, disabled }, ref) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    openFilePicker: () => fileRef.current?.click(),
+  }));
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -375,6 +383,6 @@ const AttachmentMenu = ({ onAdd, disabled }: AttachmentMenuProps) => {
       </DropdownMenu>
     </>
   );
-};
+});
 
 export default AttachmentMenu;

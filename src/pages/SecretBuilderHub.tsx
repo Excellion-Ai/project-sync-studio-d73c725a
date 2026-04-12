@@ -108,6 +108,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import AttachmentMenu from "@/components/secret-builder/attachments/AttachmentMenu";
+import type { AttachmentMenuHandle } from "@/components/secret-builder/attachments/AttachmentMenu";
 import { AI } from "@/services/ai";
 import { GuidedPromptBuilder } from "@/components/builder/GuidedPromptBuilder";
 
@@ -814,7 +815,7 @@ function HubContent() {
   const [linkCopied, setLinkCopied] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const attachMenuRef = useRef<HTMLDivElement>(null);
+  const attachMenuRef = useRef<AttachmentMenuHandle>(null);
 
   // ── Load data ──────────────────────────────────────────────
 
@@ -1064,10 +1065,10 @@ function HubContent() {
           .single();
         if (error || !proj) throw error;
 
-        // Duplicate course row
+        // Duplicate course row (explicit columns — never select Stripe fields)
         const { data: origCourse } = await supabase
           .from("courses")
-          .select("*")
+          .select("id, title, slug, description, curriculum, design_config, layout_template, section_order, page_sections, type, instructor_name, instructor_bio")
           .eq("id", course.id)
           .single();
 
@@ -1245,13 +1246,11 @@ function HubContent() {
           {/* ── Input Card ─────────────────────────────── */}
           <Card className="border-border/60 bg-card">
             <CardContent className="p-5">
-              {/* Hidden AttachmentMenu for step 4 upload trigger */}
-              <div ref={attachMenuRef} className="hidden">
-                <AttachmentMenu
-                  onAdd={(item) => setAttachments((prev) => [...prev, item])}
-                  disabled={isGenerating}
-                />
-              </div>
+              <AttachmentMenu
+                ref={attachMenuRef}
+                onAdd={(item) => setAttachments((prev) => [...prev, item])}
+                disabled={isGenerating}
+              />
 
               <GuidedPromptBuilder
                 onPromptChange={(prompt) => setIdea(prompt)}
@@ -1261,10 +1260,7 @@ function HubContent() {
                 }}
                 isGenerating={isGenerating}
                 hasAttachment={attachments.length > 0}
-                onUploadClick={() => {
-                  const btn = attachMenuRef.current?.querySelector("button");
-                  btn?.click();
-                }}
+                onUploadClick={() => attachMenuRef.current?.openFilePicker()}
               />
 
               {/* Attachments */}
