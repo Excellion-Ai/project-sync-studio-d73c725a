@@ -118,11 +118,13 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
     );
   }
 
+  // Determine which step is current
   const currentStep = !audience ? 1 : !goal ? 2 : !duration ? 3 : 4;
 
   return (
     <div className="flex flex-col gap-4">
 
+      {/* Live prompt preview */}
       {audience && (
         <div className="bg-muted/30 border border-border/60 rounded-xl px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-300">
           <span className="text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Your course brief</span>
@@ -132,6 +134,7 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
         </div>
       )}
 
+      {/* Step 1: Audience */}
       <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <StepLabel number={1} text="Who are you coaching?" active={currentStep === 1} />
         <div className="flex flex-wrap gap-2">
@@ -141,6 +144,7 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
         </div>
       </div>
 
+      {/* Step 2: Goal */}
       {audience && (
         <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <StepLabel number={2} text="What's the transformation?" active={currentStep === 2} />
@@ -152,6 +156,7 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
         </div>
       )}
 
+      {/* Step 3: Duration */}
       {goal && (
         <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <StepLabel number={3} text="How long?" active={currentStep === 3} />
@@ -163,6 +168,7 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
         </div>
       )}
 
+      {/* Actions */}
       <div className="flex items-center justify-between pt-1">
         <button type="button" onClick={() => setSkipped(true)} className="text-xs text-muted-foreground hover:text-foreground underline">
           Skip — type my own prompt
