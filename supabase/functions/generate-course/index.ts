@@ -19,9 +19,9 @@ const MAX_TOKENS = 4000;
 // Fitness-only topic validation
 const FITNESS_KEYWORDS = /fitness|workout|training|exercise|gym|strength|cardio|hiit|yoga|pilates|mobility|flexibility|nutrition|diet|meal|protein|fat loss|weight loss|muscle|bodybuilding|calisthenics|crossfit|running|marathon|cycling|swimming|boxing|martial arts|mma|kickboxing|health|wellness|coaching|personal trainer|sports|athletic|recovery|stretching|posture|body|physique|transformation|bootcamp|endurance|conditioning|metabol|supplement|macro|keto|vegan|paleo|intermittent fasting|mindset|motivation|accountability|lifestyle|habit|sleep|stress|mental health|meditation|breathwork|holistic|functional|rehab|injury|prehab/i;
 
-const SYSTEM_PROMPT = `You are Excellion's AI course builder for FITNESS, HEALTH, and WELLNESS creators ONLY.
+const SYSTEM_PROMPT = `You are Excellion's AI course builder for FITNESS, HEALTH, and WELLNESS creators.
 
-STRICT RULE: You ONLY generate courses about fitness, health, nutrition, wellness, coaching, athletic training, and related topics. If the topic is not fitness/health related, respond with this exact JSON:
+IMPORTANT: You specialize in fitness, health, nutrition, wellness, coaching, and athletic training courses. If a topic seems unrelated to fitness/health, try to reframe it with a fitness/wellness angle before rejecting. Only reject if the topic is completely impossible to relate to health/wellness (e.g., pure software engineering, accounting). If you must reject, respond with this exact JSON:
 {"error":"fitness_only","message":"Excellion is built for fitness and health creators. Try describing your fitness program, nutrition plan, or wellness coaching instead."}
 
 WHEN REFERENCE MATERIAL IS PROVIDED:
@@ -156,7 +156,16 @@ serve(async (req) => {
     const prompt = typeof body.prompt === "string" ? body.prompt.trim().slice(0, 2000) : "";
     const options = body.options || {};
     const attachmentContent = typeof body.attachmentContent === "string" ? body.attachmentContent.slice(0, 15000) : "";
-    const pdfBase64 = typeof body.pdfBase64 === "string" ? body.pdfBase64 : "";
+    const pdfBase64 = typeof body.pdfBase64 === "string" && body.pdfBase64.length > 100 ? body.pdfBase64 : "";
+
+    console.log("generate-course input:", JSON.stringify({
+      promptLength: prompt.length,
+      promptPreview: prompt.slice(0, 100),
+      attachmentLength: attachmentContent.length,
+      pdfContentLength: pdfBase64.length,
+      hasPdf: !!pdfBase64,
+      pdfLength: pdfBase64.length,
+    }));
 
     if (!prompt) {
       return new Response(JSON.stringify({ error: "Please describe your course idea." }), {
