@@ -75,8 +75,9 @@ fi
 
 # ── 5. Stripe Data Exposure Check ───────────────────────────
 section "Stripe Security"
-# Check that no frontend code selects stripe columns
-STRIPE_SELECTS=$(grep -rn "stripe_account_id\|stripe_price_id\|stripe_product_id" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "types\.ts\|\.d\.ts\|node_modules" || true)
+# Check that no frontend code selects stripe columns from courses table
+# (profiles table stripe columns are the user's own data — OK)
+STRIPE_SELECTS=$(grep -rn "stripe_account_id\|stripe_price_id\|stripe_product_id" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "types\.ts\|\.d\.ts\|node_modules\|profiles" || true)
 if [ -z "$STRIPE_SELECTS" ]; then
   pass "No frontend code references Stripe columns"
 else
@@ -84,8 +85,8 @@ else
   REPORT+="$STRIPE_SELECTS\n"
 fi
 
-# Check that no .select("*") is used on courses table
-STAR_SELECTS=$(grep -rn '\.select("\*")' src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -i "course" || true)
+# Check that no .select("*") is used on courses table (course_versions is OK)
+STAR_SELECTS=$(grep -rn '\.select("\*")' src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -i 'from("courses")' || true)
 if [ -z "$STAR_SELECTS" ]; then
   pass "No SELECT * on courses table"
 else

@@ -20,7 +20,7 @@ fi
 
 # 2. Stripe columns referenced in frontend (not types)
 if [ -n "$STAGED" ]; then
-  STRIPE_HITS=$(echo "$STAGED" | grep '^src/' | xargs grep -ln 'stripe_account_id\|stripe_price_id\|stripe_product_id' 2>/dev/null | grep -v 'types\.ts' || true)
+  STRIPE_HITS=$(echo "$STAGED" | grep '^src/' | xargs grep -ln 'stripe_account_id\|stripe_price_id\|stripe_product_id' 2>/dev/null | grep -v 'types\.ts\|profiles' || true)
   if [ -n "$STRIPE_HITS" ]; then
     echo "BLOCKED: Frontend code references Stripe columns:"
     echo "$STRIPE_HITS"
@@ -30,7 +30,7 @@ fi
 
 # 3. SELECT * on courses table
 if [ -n "$STAGED" ]; then
-  STAR_HITS=$(echo "$STAGED" | grep '^src/' | xargs grep -ln '\.select("\*")' 2>/dev/null | xargs grep -li 'course' 2>/dev/null || true)
+  STAR_HITS=$(echo "$STAGED" | grep '^src/' | xargs grep -ln 'from("courses")' 2>/dev/null | xargs grep -ln '\.select("\*")' 2>/dev/null || true)
   if [ -n "$STAR_HITS" ]; then
     echo "BLOCKED: SELECT * on courses may expose Stripe data:"
     echo "$STAR_HITS"

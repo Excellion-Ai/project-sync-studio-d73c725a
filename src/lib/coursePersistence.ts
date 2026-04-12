@@ -288,7 +288,7 @@ export async function getCourseVersions(
 ): Promise<CourseVersion[]> {
   const { data, error } = await supabase
     .from("course_versions")
-    .select("*")
+    .select("id, course_id, version_number, snapshot, change_source, created_by, created_at")
     .eq("course_id", courseId)
     .order("version_number", { ascending: false })
     .limit(50);
