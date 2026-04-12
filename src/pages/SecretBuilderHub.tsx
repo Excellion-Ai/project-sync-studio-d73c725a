@@ -1262,22 +1262,19 @@ function HubContent() {
 
           {/* ── Input Card ─────────────────────────────── */}
           <Card className="border-border/60 bg-card">
-            <CardContent className="p-0">
-              {/* Guided prompt builder */}
-              <div className="px-5 pt-4 pb-2">
-                <GuidedPromptBuilder
-                  onPromptChange={(prompt) => setIdea(prompt)}
-                  onGenerate={(prompt) => {
-                    setIdea(prompt);
-                    handleGenerate(prompt);
-                  }}
-                  isGenerating={isGenerating}
-                />
-              </div>
+            <CardContent className="p-5">
+              <GuidedPromptBuilder
+                onPromptChange={(prompt) => setIdea(prompt)}
+                onGenerate={(prompt) => {
+                  setIdea(prompt);
+                  handleGenerate(prompt);
+                }}
+                isGenerating={isGenerating}
+              />
 
               {/* Attachments */}
               {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 px-5 pb-2">
+                <div className="flex flex-wrap gap-1.5 pt-3">
                   {attachments.map((a) => (
                     <Badge
                       key={a.id}
@@ -1296,62 +1293,8 @@ function HubContent() {
                   ))}
                 </div>
               )}
-
-              <Separator />
-
-              {/* Bottom toolbar */}
-              <div className="flex items-center justify-between px-4 py-3">
-                <div className="flex items-center gap-1">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <AttachmentMenu
-                            onAdd={(item) => setAttachments((prev) => [...prev, item])}
-                            disabled={isGenerating}
-                          />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>Attach files</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-
-                <Button
-                  disabled={!idea.trim() || isGenerating}
-                  onClick={() => handleGenerate()}
-                  className="h-9 px-5 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
-                >
-                  {isGenerating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <span>Generate</span>
-                      <Send className="h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              <p className="text-xs text-muted-foreground text-center pb-4">
-                The more specific you are, the better your course will be.
-              </p>
             </CardContent>
           </Card>
-
-          {/* ── Quick prompts ─────────────────────────────── */}
-          <div className="flex flex-wrap justify-center gap-2">
-            {QUICK_PROMPTS.map((prompt) => (
-              <button
-                key={prompt.label}
-                onClick={() => setIdea(prompt.label)}
-                className="flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-xs sm:text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground hover:border-primary/30"
-              >
-                <prompt.icon className="h-3.5 w-3.5" />
-                {prompt.label}
-              </button>
-            ))}
-          </div>
 
           {/* ── Your Courses ──────────────────────────────── */}
           {isLoading ? (
