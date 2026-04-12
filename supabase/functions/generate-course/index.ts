@@ -253,7 +253,8 @@ serve(async (req) => {
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: messageContent }],
       }),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      // PDF processing takes longer — Claude needs to read all pages
+      signal: AbortSignal.timeout(pdfBase64 ? 120000 : REQUEST_TIMEOUT_MS),
     });
 
     if (!response.ok) {
