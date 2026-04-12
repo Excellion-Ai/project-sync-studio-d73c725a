@@ -109,6 +109,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import AttachmentMenu from "@/components/secret-builder/attachments/AttachmentMenu";
 import { AI } from "@/services/ai";
 import GuidedModeFields, { type GuidedState, EMPTY_GUIDED, buildPromptFromGuided } from "@/components/guided-mode/GuidedModeFields";
 
@@ -1307,25 +1308,15 @@ function HubContent() {
               {/* Bottom toolbar */}
               <div className="flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-1">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    multiple
-                    accept=".pdf,.doc,.docx,.txt,.csv,.json,.md"
-                    onChange={handleFileSelect}
-                  />
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <Paperclip className="h-4 w-4" />
-                        </Button>
+                        <div>
+                          <AttachmentMenu
+                            onAdd={(item) => setAttachments((prev) => [...prev, item])}
+                            disabled={isGenerating}
+                          />
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent>Attach files</TooltipContent>
                     </Tooltip>
