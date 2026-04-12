@@ -171,10 +171,20 @@ const HeroSection = () => {
       );
 
       localStorage.setItem("last-project-id", proj.id);
+
+      // Store PDF in sessionStorage (router state can silently drop large payloads)
+      if (pdfAttachment?.base64Data) {
+        try {
+          sessionStorage.setItem("builder-pdf-base64", pdfAttachment.base64Data);
+          sessionStorage.setItem("builder-pdf-name", pdfAttachment.name);
+        } catch (e) {
+          console.warn("Failed to store PDF in sessionStorage:", e);
+        }
+      }
+
       navigate(`/studio/${proj.id}`, {
         state: {
           initialIdea: prompt,
-          pdfBase64: pdfAttachment?.base64Data,
           pdfName: pdfAttachment?.name,
         },
       });

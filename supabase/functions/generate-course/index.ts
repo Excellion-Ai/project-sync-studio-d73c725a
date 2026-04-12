@@ -258,10 +258,8 @@ serve(async (req) => {
 
     const refersToUploadedFile = /\b(this pdf|attached pdf|attached document|attached file|uploaded pdf|uploaded file|this document)\b/i.test(prompt);
     if (refersToUploadedFile && !attachmentContent && !pdfBase64) {
-      return new Response(JSON.stringify({ error: "I couldn't read the attachment. Please upload the PDF again or paste the content as text." }), {
-        status: 400,
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
+      console.warn("generate-course: user refers to attachment but none received — proceeding without it");
+      // Don't block — just generate from the prompt text alone
     }
 
     // ── STEP 3: API key check ───────────────────────────────
