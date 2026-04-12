@@ -20,9 +20,33 @@ function unwrap(fnName: string, data: unknown, error: unknown) {
 
 export const AI = {
   async generateCourse(prompt: string, options?: Record<string, unknown>, attachmentContent?: string, pdfBase64?: string) {
+    // Log auth state before calling
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log("AI.generateCourse: auth check", {
+      hasSession: !!session,
+      hasToken: !!session?.access_token,
+      tokenPreview: session?.access_token?.slice(0, 20) + "...",
+      promptLength: prompt.length,
+      hasPdf: !!pdfBase64,
+      pdfLength: pdfBase64?.length ?? 0,
+      attachmentLength: attachmentContent?.length ?? 0,
+    });
+
+    if (!session?.access_token) {
+      throw new Error("Not authenticated — please sign in again");
+    }
+
     const { data, error } = await supabase.functions.invoke("generate-course", {
       body: { prompt, options, attachmentContent, pdfBase64 },
     });
+
+    console.log("AI.generateCourse: response", {
+      hasData: !!data,
+      hasError: !!error,
+      errorMsg: error instanceof Error ? error.message : error ? String(error) : null,
+      dataKeys: data ? Object.keys(data) : null,
+    });
+
     return unwrap("generateCourse", data, error);
   },
 
