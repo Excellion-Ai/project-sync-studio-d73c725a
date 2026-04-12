@@ -933,11 +933,10 @@ function HubContent() {
           sessionStorage.setItem("builder-pdf-name", pdfAttachment.name || "document.pdf");
         } catch { /* sessionStorage full — router state will be the primary transport */ }
       }
-      // Pass PDF base64 via router state (in-memory, no localStorage size limit)
+      // Don't pass large pdfBase64 via router state — sessionStorage is the transport
       navigate(`/studio/${proj.id}`, {
         state: {
           initialIdea: prompt,
-          pdfBase64: pdfAttachment?.base64Data || undefined,
           pdfName: pdfAttachment?.name || undefined,
         },
       });
