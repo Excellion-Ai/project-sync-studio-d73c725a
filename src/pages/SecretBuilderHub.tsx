@@ -112,6 +112,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import AttachmentMenu from "@/components/secret-builder/attachments/AttachmentMenu";
 import { AI } from "@/services/ai";
 import GuidedModeFields, { type GuidedState, EMPTY_GUIDED, buildPromptFromGuided } from "@/components/guided-mode/GuidedModeFields";
+import { GuidedPromptBuilder } from "@/components/builder/GuidedPromptBuilder";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -1262,44 +1263,17 @@ function HubContent() {
           {/* ── Input Card ─────────────────────────────── */}
           <Card className="border-border/60 bg-card">
             <CardContent className="p-0">
-              {/* Guided mode toggle */}
+              {/* Guided prompt builder */}
               <div className="px-5 pt-4 pb-2">
-                <button
-                  onClick={() => setGuidedMode(!guidedMode)}
-                  className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 font-medium"
-                >
-                  <Lightbulb className="h-3.5 w-3.5" />
-                  {guidedMode ? "Switch to freeform" : "Need help? Use guided mode"}
-                </button>
+                <GuidedPromptBuilder
+                  onPromptChange={(prompt) => setIdea(prompt)}
+                  onGenerate={(prompt) => {
+                    setIdea(prompt);
+                    setTimeout(() => handleGenerate(), 0);
+                  }}
+                  isGenerating={isGenerating}
+                />
               </div>
-
-              {/* Guided questions */}
-              <div
-                className="overflow-hidden transition-all duration-300 ease-in-out"
-                style={{
-                  maxHeight: guidedMode ? "800px" : "0px",
-                  opacity: guidedMode ? 1 : 0,
-                }}
-              >
-                <div className="px-5 pb-3 max-h-[50vh] overflow-y-auto">
-                  <GuidedModeFields state={guided} onChange={handleGuidedChange} variant="card" />
-                </div>
-              </div>
-
-              {/* Main textarea */}
-              <Textarea
-                placeholder="Describe your course idea in detail..."
-                className="min-h-[120px] resize-none border-0 bg-transparent px-5 pt-3 pb-3 text-sm focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/60"
-                value={idea}
-                onChange={(e) => {
-                  setIdea(e.target.value);
-                  if (guidedMode) {
-                    setGuided(EMPTY_GUIDED);
-                    setGuidedMode(false);
-                  }
-                }}
-                onKeyDown={handleKeyDown}
-              />
 
               {/* Attachments */}
               {attachments.length > 0 && (
