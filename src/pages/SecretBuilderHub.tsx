@@ -896,6 +896,11 @@ function HubContent() {
         .single();
       if (error || !proj) throw error;
 
+      // Find PDF base64 for direct Claude document reading
+      const pdfAttachment = attachments.find((a: AttachmentItem) =>
+        a.base64Data && (a.mimeType === "application/pdf" || a.name?.toLowerCase().endsWith(".pdf"))
+      );
+
       // Store structured draft with guided options + attachments
       const draft = {
         prompt: prompt.trim(),
@@ -906,20 +911,27 @@ function HubContent() {
           taughtBefore: guided.taughtBefore || undefined,
           existingLink: guided.existingLink || undefined,
           attachmentText: attachments
-            .filter((a: AttachmentItem) => (a as any).content)
-            .map((a: AttachmentItem) => `--- ${a.name} ---\n${(a as any).content}`)
+            .filter((a: AttachmentItem) => a.content)
+            .map((a: AttachmentItem) => `--- ${a.name} ---\n${a.content}`)
             .join("\n\n") || undefined,
         } : {
           attachmentText: attachments
-            .filter((a: AttachmentItem) => (a as any).content)
-            .map((a: AttachmentItem) => `--- ${a.name} ---\n${(a as any).content}`)
+            .filter((a: AttachmentItem) => a.content)
+            .map((a: AttachmentItem) => `--- ${a.name} ---\n${a.content}`)
             .join("\n\n") || undefined,
         },
       };
       localStorage.setItem("builder-draft", JSON.stringify(draft));
       localStorage.setItem("builder-initial-idea", prompt);
       localStorage.setItem("last-project-id", proj.id);
-      navigate(`/studio/${proj.id}`, { state: { initialIdea: prompt } });
+      // Pass PDF base64 via router state (in-memory, no localStorage size limit)
+      navigate(`/studio/${proj.id}`, {
+        state: {
+          initialIdea: prompt,
+          pdfBase64: pdfAttachment?.base64Data || undefined,
+          pdfName: pdfAttachment?.name || undefined,
+        },
+      });
     } catch (err) {
       console.error("handleGenerate error:", err);
       toast.error("Failed to create project.");

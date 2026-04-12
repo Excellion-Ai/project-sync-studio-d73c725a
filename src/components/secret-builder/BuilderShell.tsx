@@ -155,12 +155,16 @@ interface BuilderShellProps {
   initialCourseId?: string;
   templateSpec?: any;
   courseMode?: string;
+  initialPdfBase64?: string;
+  initialPdfName?: string;
 }
 
 const BuilderShell = ({
   initialIdea,
   initialProjectId,
   initialCourseId,
+  initialPdfBase64,
+  initialPdfName,
 }: BuilderShellProps) => {
   const { user } = useAuth();
   const userId = user?.id ?? null;
@@ -199,7 +203,20 @@ const BuilderShell = ({
   const [hasAutoTriggered, setHasAutoTriggered] = useState(false);
   const [steps, setSteps] = useState<GenerationStep[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
+  const [attachments, setAttachments] = useState<AttachmentItem[]>(() => {
+    // If a PDF was passed from the Hub via router state, inject it as an attachment
+    if (initialPdfBase64 && initialPdfName) {
+      return [{
+        id: crypto.randomUUID(),
+        name: initialPdfName,
+        type: "file",
+        mimeType: "application/pdf",
+        base64Data: initialPdfBase64,
+        content: `[PDF will be sent directly to AI for reading — ${initialPdfName}]`,
+      }];
+    }
+    return [];
+  });
 
   // Publishing & Refining
   const [isPublishing, setIsPublishing] = useState(false);

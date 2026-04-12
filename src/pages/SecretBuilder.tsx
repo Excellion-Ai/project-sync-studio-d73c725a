@@ -40,6 +40,8 @@ const SecretBuilder = () => {
     templateSpec?: any;
     courseMode?: string;
     courseId?: string;
+    pdfBase64?: string;
+    pdfName?: string;
   }) || {};
 
   const resolvedProjectId = paramProjectId || state.projectId || null;
@@ -53,6 +55,8 @@ const SecretBuilder = () => {
         initialCourseId={state.courseId}
         templateSpec={state.templateSpec}
         courseMode={state.courseMode}
+        initialPdfBase64={state.pdfBase64}
+        initialPdfName={state.pdfName}
       />
     </div>
   );
