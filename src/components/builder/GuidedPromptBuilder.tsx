@@ -24,17 +24,29 @@ const GOAL_OPTIONS = [
 
 const DURATION_OPTIONS = ["4-week", "6-week", "8-week", "12-week", "90-day", "Self-paced"];
 
-function buildPrompt(audience: string, goal: string, duration: string): string {
-  if (!audience) return "";
+function joinList(items: string[]): string {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  return items.slice(0, -1).join(", ") + " and " + items[items.length - 1];
+}
+
+function buildPrompt(audiences: string[], goals: string[], duration: string): string {
+  if (audiences.length === 0) return "";
+  const audienceStr = joinList(audiences);
+  const goalStr = joinList(goals);
   let p = `Create a`;
   if (duration) p += ` ${duration}`;
-  p += ` fitness course for ${audience}`;
-  if (goal) p += ` with the goal of: ${goal}`;
+  p += ` fitness course for ${audienceStr}`;
+  if (goalStr) p += ` with the goal of: ${goalStr}`;
   p += `.`;
-  if (audience && goal && duration) {
+  if (audiences.length > 0 && goals.length > 0 && duration) {
     p += ` Deliver a complete course outline, full module structure, detailed lesson plans, and coaching notes per module.`;
   }
   return p;
+}
+
+function toggleItem<T>(list: T[], item: T): T[] {
+  return list.includes(item) ? list.filter((i) => i !== item) : [...list, item];
 }
 
 function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
@@ -71,20 +83,20 @@ function StepLabel({ number, text, active }: { number: number; text: string; act
 }
 
 export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating = false }: GuidedPromptBuilderProps) {
-  const [audience, setAudience] = useState("");
-  const [goal, setGoal] = useState("");
+  const [audiences, setAudiences] = useState<string[]>([]);
+  const [goals, setGoals] = useState<string[]>([]);
   const [duration, setDuration] = useState("");
   const [skipped, setSkipped] = useState(false);
   const [manualPrompt, setManualPrompt] = useState("");
 
-  const prompt = buildPrompt(audience, goal, duration);
+  const prompt = buildPrompt(audiences, goals, duration);
 
   useEffect(() => {
     if (!skipped) {
       setManualPrompt(prompt);
       onPromptChange(prompt);
     }
-  }, [audience, goal, duration, skipped]);
+  }, [audiences, goals, duration, skipped]);
 
   function handleGenerate() {
     const final = manualPrompt.trim();
@@ -118,14 +130,15 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
     );
   }
 
-  // Determine which step is current
-  const currentStep = !audience ? 1 : !goal ? 2 : !duration ? 3 : 4;
+  const hasAudience = audiences.length > 0;
+  const hasGoal = goals.length > 0;
+  const currentStep = !hasAudience ? 1 : !hasGoal ? 2 : !duration ? 3 : 4;
 
   return (
     <div className="flex flex-col gap-4">
 
       {/* Live prompt preview */}
-      {audience && (
+      {hasAudience && (
         <div className="bg-muted/30 border border-border/60 rounded-xl px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-300">
           <span className="text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Your course brief</span>
           <p className="text-sm text-foreground leading-relaxed">
@@ -134,30 +147,30 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
         </div>
       )}
 
-      {/* Step 1: Audience */}
+      {/* Step 1: Audience (multi-select) */}
       <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <StepLabel number={1} text="Who are you coaching?" active={currentStep === 1} />
         <div className="flex flex-wrap gap-2">
           {AUDIENCE_OPTIONS.map((opt) => (
-            <Chip key={opt} label={opt} selected={audience === opt} onClick={() => setAudience(audience === opt ? "" : opt)} />
+            <Chip key={opt} label={opt} selected={audiences.includes(opt)} onClick={() => setAudiences((prev) => toggleItem(prev, opt))} />
           ))}
         </div>
       </div>
 
-      {/* Step 2: Goal */}
-      {audience && (
+      {/* Step 2: Goal (multi-select) */}
+      {hasAudience && (
         <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <StepLabel number={2} text="What's the transformation?" active={currentStep === 2} />
           <div className="flex flex-wrap gap-2">
             {GOAL_OPTIONS.map((opt) => (
-              <Chip key={opt.value} label={opt.label} selected={goal === opt.value} onClick={() => setGoal(goal === opt.value ? "" : opt.value)} />
+              <Chip key={opt.value} label={opt.label} selected={goals.includes(opt.value)} onClick={() => setGoals((prev) => toggleItem(prev, opt.value))} />
             ))}
           </div>
         </div>
       )}
 
-      {/* Step 3: Duration */}
-      {goal && (
+      {/* Step 3: Duration (single-select) */}
+      {hasGoal && (
         <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <StepLabel number={3} text="How long?" active={currentStep === 3} />
           <div className="flex flex-wrap gap-2">
