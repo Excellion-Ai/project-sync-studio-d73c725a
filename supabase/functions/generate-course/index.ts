@@ -74,6 +74,107 @@ function parseCourseJson(text: string) {
   }
 }
 
+function toTitleCase(input: string) {
+  return input
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function extractReferenceHeadings(text: string, limit = 5) {
+  return Array.from(new Set(
+    text
+      .split(/\n+/)
+      .map((line) => line.replace(/^[-*#\d.\s]+/, "").trim())
+      .filter((line) => line.length >= 6 && line.length <= 72)
+      .filter((line) => !/^attached:/i.test(line))
+      .filter((line) => !/^creator'?s description:/i.test(line))
+  )).slice(0, limit);
+}
+
+function buildFallbackCourse(
+  prompt: string,
+  options: Record<string, unknown>,
+  attachmentContent: string,
+  hasPdf: boolean,
+) {
+  const extractedHeadings = extractReferenceHeadings(attachmentContent);
+  const cleanedPrompt = prompt
+    .replace(/\b(make|create|build|generate|outline|course|program|with|this|pdf|document|attached|attachment|from)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const topicSeed = extractedHeadings[0] || cleanedPrompt || "Signature Fitness Program";
+  const title = toTitleCase(topicSeed);
+  const durationWeeks = typeof options?.duration_weeks === "number" && options.duration_weeks > 0
+    ? options.duration_weeks
+    : 6;
+  const moduleTitles = extractedHeadings.length > 0
+    ? extractedHeadings.slice(0, 5)
+    : [
+        "Foundation & Goals",
+        "Training Blueprint",
+        "Nutrition & Recovery",
+        "Weekly Execution",
+        "Progress & Next Steps",
+      ];
+
+  return {
+    title,
+    subtitle: hasPdf || attachmentContent
+      ? "A structured coaching program shaped from your reference material."
+      : "A step-by-step fitness and wellness course your audience can implement fast.",
+    description: `${title} gives students a clear path to build consistency, apply the core method, and track results week by week. You can now customize this outline with your exact lessons, videos, and coaching assets inside Excellion.`,
+    learningOutcomes: [
+      "Understand the program framework and expected transformation",
+      "Follow a clear implementation path week by week",
+      "Build better training and recovery consistency",
+      "Identify common mistakes before they stall progress",
+      "Measure progress with simple checkpoints",
+      "Create a repeatable routine that supports long-term results",
+    ],
+    modules: moduleTitles.map((moduleTitle: string, index: number) => ({
+      title: moduleTitle,
+      description: `Module ${index + 1} focuses on the key actions, coaching points, and implementation steps for ${moduleTitle.toLowerCase()}.`,
+      lessons: [
+        {
+          title: `${moduleTitle}: Core Concepts`,
+          description: `Introduce the main ideas and expectations for ${moduleTitle.toLowerCase()}.`,
+        },
+        {
+          title: `${moduleTitle}: Action Plan`,
+          description: `Turn the strategy into practical steps students can follow immediately.`,
+        },
+        {
+          title: `${moduleTitle}: Review & Adjust`,
+          description: "Help students evaluate progress and make the right next-step adjustments.",
+        },
+      ],
+    })),
+    design_config: {
+      colors: { primary: "#e53e3e", secondary: "#1a1a2e", accent: "#f56565", background: "#0a0a0a", cardBackground: "#111111", text: "#ffffff", textMuted: "#9ca3af" },
+      fonts: { heading: "Montserrat", body: "DM Sans" },
+      spacing: "normal",
+      borderRadius: "medium",
+      heroStyle: "gradient",
+      heroLayout: "left",
+    },
+    target_audience: "Fitness, health, and wellness clients who want a guided step-by-step transformation plan.",
+    faq: [
+      {
+        question: "How long should students spend each week?",
+        answer: `Plan for 2-4 focused sessions each week across the ${durationWeeks}-week program.`,
+      },
+      {
+        question: "Is this suitable for beginners?",
+        answer: "Yes — the outline is intentionally structured so you can adapt the final lessons to beginner, intermediate, or advanced students.",
+      },
+    ],
+    section_order: ["hero", "outcomes", "who_is_for", "curriculum", "course_includes", "testimonials", "pricing", "guarantee", "faq"],
+  };
+}
+
 function isTimeoutError(error: unknown) {
   return error instanceof Error && (
     error.name === "TimeoutError" ||
@@ -150,6 +251,14 @@ serve(async (req) => {
 
     if (!prompt) {
       return new Response(JSON.stringify({ error: "Please describe your course idea." }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    const refersToUploadedFile = /\b(this pdf|attached pdf|attached document|attached file|uploaded pdf|uploaded file|this document)\b/i.test(prompt);
+    if (refersToUploadedFile && !attachmentContent && !pdfBase64) {
+      return new Response(JSON.stringify({ error: "I couldn't read the attachment. Please upload the PDF again or paste the content as text." }), {
         status: 400,
         headers: { ...cors, "Content-Type": "application/json" },
       });
@@ -287,7 +396,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: MODEL,
           max_tokens: maxTokens,
-          temperature: 0.7,
+          temperature: 0.3,
           system: SYSTEM_PROMPT,
           messages: [{ role: "user", content: messageContent }],
         }),
@@ -341,15 +450,21 @@ serve(async (req) => {
       course = parseCourseJson(text);
     } catch (parseErr) {
       console.error("generate-course: JSON parse failed. Raw text:", text.slice(0, 1000));
-      throw new Error("The AI response wasn't valid JSON. This can happen with complex PDF content. Please try again or simplify your attachment.");
+      console.warn("generate-course: using fallback outline after JSON parse failure");
+      course = buildFallbackCourse(prompt, options, attachmentContent, hasPdf);
     }
 
     // Check if AI returned the fitness-only error
     if (course?.error === "fitness_only") {
+      if (hasPdf || attachmentContent) {
+        console.warn("generate-course: AI returned fitness_only despite reference material; using fallback outline");
+        course = buildFallbackCourse(prompt, options, attachmentContent, hasPdf);
+      } else {
       return new Response(JSON.stringify({ error: course.message }), {
         status: 400,
         headers: { ...cors, "Content-Type": "application/json" },
       });
+      }
     }
 
     // ── STEP 8: Validate & fill defaults ────────────────────

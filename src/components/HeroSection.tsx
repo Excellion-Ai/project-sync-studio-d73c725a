@@ -163,8 +163,21 @@ const HeroSection = () => {
         .single();
       if (error || !proj) throw error;
 
+      const pdfAttachment = attachments.find((a) =>
+        a.base64Data && (
+          a.mimeType === "application/pdf" ||
+          a.name?.toLowerCase().endsWith(".pdf")
+        )
+      );
+
       localStorage.setItem("last-project-id", proj.id);
-      navigate(`/studio/${proj.id}`, { state: { initialIdea: prompt } });
+      navigate(`/studio/${proj.id}`, {
+        state: {
+          initialIdea: prompt,
+          pdfBase64: pdfAttachment?.base64Data,
+          pdfName: pdfAttachment?.name,
+        },
+      });
     } catch (err: any) {
       console.error("handleStartBuilding error:", err);
       toast.error("Failed to create project. Please try again.");

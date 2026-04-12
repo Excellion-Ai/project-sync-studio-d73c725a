@@ -147,6 +147,18 @@ const GENERATION_STEPS: GenerationStep[] = [
   { id: "save", label: "Finalizing course", status: "pending" },
 ];
 
+function getEdgeFunctionErrorMessage(raw: string) {
+  const jsonStart = raw.indexOf('{"error":');
+  if (jsonStart === -1) return "";
+
+  try {
+    const parsed = JSON.parse(raw.slice(jsonStart));
+    return typeof parsed?.error === "string" ? parsed.error : "";
+  } catch {
+    return "";
+  }
+}
+
 // ── Component ───────────────────────────────────────────────
 
 interface BuilderShellProps {
@@ -335,7 +347,7 @@ const BuilderShell = ({
 
   // ── Auto-trigger generation ───────────────────────────────
 
-  const handleGenerateCourseRef = useRef<((options: CourseOptions) => Promise<void>) | null>(null);
+  const handleGenerateCourseRef = useRef<((options: CourseOptions, overrideAttachments?: AttachmentItem[]) => Promise<void>) | null>(null);
 
   useEffect(() => {
     if (hasAutoTriggered || !resolvedIdea || !userId || isGenerating) return;
@@ -360,29 +372,39 @@ const BuilderShell = ({
       return "mixed" as const;
     })();
 
-    // If draft has attachment text, inject it into attachments state
-    if (draftGuided.attachmentText) {
-      setAttachments((prev) => {
-        if (prev.some((a) => a.name === "Imported content")) return prev;
-        return [...prev, {
+    const importedContentAttachment = draftGuided.attachmentText && !attachments.some((a) => a.name === "Imported content")
+      ? {
           id: crypto.randomUUID(),
           name: "Imported content",
-          type: "text",
+          type: "text" as const,
           content: draftGuided.attachmentText,
-        }];
+        }
+      : null;
+
+    const effectiveAttachments = importedContentAttachment
+      ? [...attachments, importedContentAttachment]
+      : attachments;
+
+    if (importedContentAttachment) {
+      setAttachments((prev) => {
+        if (prev.some((a) => a.name === "Imported content")) return prev;
+        return [...prev, importedContentAttachment];
       });
     }
 
-    handleGenerateCourseRef.current({
-      difficulty: "beginner",
-      duration_weeks: durationWeeks,
-      includeQuizzes: true,
-      includeAssignments: true,
-      template: "creator",
-      lessonFormat,
-      audiencePainPoint: draftGuided.existingLink ? `Reference: ${draftGuided.existingLink}` : undefined,
-    });
-  }, [userId, resolvedIdea, hasAutoTriggered, isGenerating, courseSpec]); // eslint-disable-line react-hooks/exhaustive-deps
+    handleGenerateCourseRef.current(
+      {
+        difficulty: "beginner",
+        duration_weeks: durationWeeks,
+        includeQuizzes: true,
+        includeAssignments: true,
+        template: "creator",
+        lessonFormat,
+        audiencePainPoint: draftGuided.existingLink ? `Reference: ${draftGuided.existingLink}` : undefined,
+      },
+      effectiveAttachments
+    );
+  }, [attachments, userId, resolvedIdea, hasAutoTriggered, isGenerating, courseSpec]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Warn before leaving with unsaved changes ──────────────
   useEffect(() => {
@@ -474,7 +496,7 @@ const BuilderShell = ({
   // ── handleGenerateCourse ──────────────────────────────────
 
   const handleGenerateCourse = useCallback(
-    async (options: CourseOptions) => {
+    async (options: CourseOptions, sourceAttachments: AttachmentItem[] = attachments) => {
       const ideaToUse = idea.trim();
       if (!ideaToUse || !userId) return;
 
@@ -501,13 +523,13 @@ const BuilderShell = ({
 
       try {
         // Collect text content from all attachments
-        const attachmentContent = attachments
+        const attachmentContent = sourceAttachments
           .filter((a) => a.content)
           .map((a) => `--- Attached: ${a.name} ---\n${a.content}`)
           .join("\n\n");
 
         // Collect base64 PDF data for direct Claude document reading
-        const pdfAttachment = attachments.find((a) =>
+        const pdfAttachment = sourceAttachments.find((a) =>
           a.base64Data && (
             a.mimeType === "application/pdf" ||
             a.name?.toLowerCase().endsWith(".pdf")
@@ -517,12 +539,12 @@ const BuilderShell = ({
 
         // Log what we're sending for debugging
         console.log("Generation attachments:", {
-          totalAttachments: attachments.length,
-          withContent: attachments.filter(a => a.content).length,
+          totalAttachments: sourceAttachments.length,
+          withContent: sourceAttachments.filter(a => a.content).length,
           contentLength: attachmentContent.length,
           hasPdfBase64: !!pdfBase64,
           pdfBase64Length: pdfBase64?.length ?? 0,
-          attachmentNames: attachments.map(a => `${a.name} (type=${a.mimeType}, content=${(a.content?.length ?? 0)}chars, base64=${!!a.base64Data})`),
+          attachmentNames: sourceAttachments.map(a => `${a.name} (type=${a.mimeType}, content=${(a.content?.length ?? 0)}chars, base64=${!!a.base64Data})`),
         });
 
         // Step 1: Generate outline
@@ -534,6 +556,8 @@ const BuilderShell = ({
           includeQuizzes: options.includeQuizzes,
           includeAssignments: options.includeAssignments,
           template: options.template,
+          lessonFormat: options.lessonFormat,
+          audiencePainPoint: options.audiencePainPoint,
         }, attachmentContent || undefined, pdfBase64)) as Record<string, any>;
 
         updateStep("analyze", "complete");
@@ -624,20 +648,21 @@ const BuilderShell = ({
 
         // Show specific error messages based on error type
         const msg = err?.message || "";
-        if (msg.includes("401") || msg.includes("Unauthorized") || msg.includes("session")) {
+        const detail = getEdgeFunctionErrorMessage(msg) || msg;
+        if (detail.includes("401") || detail.includes("Unauthorized") || detail.includes("session")) {
           toast.error("Session expired. Please sign in again.");
-        } else if (msg.includes("429") || msg.includes("rate limit") || msg.includes("Rate limit")) {
-          toast.error("Rate limit reached. Please wait a moment and try again.");
-        } else if (msg.includes("504") || msg.includes("timeout") || msg.includes("Timeout")) {
-          toast.error("Generation timed out. Please try a simpler prompt or try again.");
+        } else if (detail.includes("429") || /rate limit/i.test(detail)) {
+          toast.error(detail);
+        } else if (detail.includes("504") || /timeout/i.test(detail)) {
+          toast.error("Generation timed out. Please try again.");
         } else {
-          toast.error(`Generation failed: ${msg || "Unknown error"}`);
+          toast.error(detail || "Generation failed.");
         }
       } finally {
         setIsGenerating(false);
       }
     },
-    [idea, userId, projectId, resetSiteSpec]
+    [attachments, idea, userId, projectId, resetSiteSpec]
   );
 
   handleGenerateCourseRef.current = handleGenerateCourse;
