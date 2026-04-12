@@ -86,13 +86,16 @@ function StepLabel({ number, text, active }: { number: number; text: string; act
 
 export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating = false, onUploadClick, hasAttachment = false }: GuidedPromptBuilderProps) {
   const [audiences, setAudiences] = useState<string[]>([]);
+  const [customAudience, setCustomAudience] = useState("");
   const [goals, setGoals] = useState<string[]>([]);
   const [duration, setDuration] = useState("");
   const [skipped, setSkipped] = useState(false);
   const [materialChoice, setMaterialChoice] = useState<"upload" | "skip" | null>(null);
   const [manualPrompt, setManualPrompt] = useState("");
 
-  const prompt = buildPrompt(audiences, goals, duration);
+  // Custom audience overrides chip selection
+  const effectiveAudiences = customAudience.trim() ? [customAudience.trim()] : audiences;
+  const prompt = buildPrompt(effectiveAudiences, goals, duration);
 
   // Auto-set materialChoice to "upload" when an attachment is added externally
   useEffect(() => {
@@ -106,7 +109,7 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
       setManualPrompt(prompt);
       onPromptChange(prompt);
     }
-  }, [audiences, goals, duration, skipped]);
+  }, [audiences, customAudience, goals, duration, skipped]);
 
   function handleGenerate() {
     const final = manualPrompt.trim();
@@ -140,7 +143,7 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
     );
   }
 
-  const hasAudience = audiences.length > 0;
+  const hasAudience = audiences.length > 0 || !!customAudience.trim();
   const hasGoal = goals.length > 0;
   const hasDuration = !!duration;
   const hasMaterialChoice = materialChoice !== null;
@@ -159,14 +162,26 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
         </div>
       )}
 
-      {/* Step 1: Audience (multi-select) */}
+      {/* Step 1: Audience (multi-select or custom) */}
       <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <StepLabel number={1} text="Who are you coaching?" active={currentStep === 1} />
         <div className="flex flex-wrap gap-2">
           {AUDIENCE_OPTIONS.map((opt) => (
-            <Chip key={opt} label={opt} selected={audiences.includes(opt)} onClick={() => setAudiences((prev) => toggleItem(prev, opt))} />
+            <Chip
+              key={opt}
+              label={opt}
+              selected={!customAudience && audiences.includes(opt)}
+              onClick={() => { setCustomAudience(""); setAudiences((prev) => toggleItem(prev, opt)); }}
+            />
           ))}
         </div>
+        <input
+          type="text"
+          value={customAudience}
+          onChange={(e) => { setCustomAudience(e.target.value); if (e.target.value) setAudiences([]); }}
+          placeholder="Or describe your niche..."
+          className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 transition-colors"
+        />
       </div>
 
       {/* Step 2: Goal (multi-select) */}
