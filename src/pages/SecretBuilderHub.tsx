@@ -112,6 +112,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import AttachmentMenu from "@/components/secret-builder/attachments/AttachmentMenu";
 import { AI } from "@/services/ai";
 import GuidedModeFields, { type GuidedState, EMPTY_GUIDED, buildPromptFromGuided } from "@/components/guided-mode/GuidedModeFields";
+import GuidedPromptBuilder from "@/components/builder/GuidedPromptBuilder";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -1262,49 +1263,16 @@ function HubContent() {
 
           {/* ── Input Card ─────────────────────────────── */}
           <Card className="border-border/60 bg-card">
-            <CardContent className="p-0">
-              {/* Guided mode toggle */}
-              <div className="px-5 pt-4 pb-2">
-                <button
-                  onClick={() => setGuidedMode(!guidedMode)}
-                  className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 font-medium"
-                >
-                  <Lightbulb className="h-3.5 w-3.5" />
-                  {guidedMode ? "Switch to freeform" : "Need help? Use guided mode"}
-                </button>
-              </div>
-
-              {/* Guided questions */}
-              <div
-                className="overflow-hidden transition-all duration-300 ease-in-out"
-                style={{
-                  maxHeight: guidedMode ? "800px" : "0px",
-                  opacity: guidedMode ? 1 : 0,
-                }}
-              >
-                <div className="px-5 pb-3 max-h-[50vh] overflow-y-auto">
-                  <GuidedModeFields state={guided} onChange={handleGuidedChange} variant="card" />
-                </div>
-              </div>
-
-              {/* Main textarea */}
-              <Textarea
-                placeholder="Describe your course idea in detail..."
-                className="min-h-[120px] resize-none border-0 bg-transparent px-5 pt-3 pb-3 text-sm focus-visible:ring-0 shadow-none placeholder:text-muted-foreground/60"
-                value={idea}
-                onChange={(e) => {
-                  setIdea(e.target.value);
-                  if (guidedMode) {
-                    setGuided(EMPTY_GUIDED);
-                    setGuidedMode(false);
-                  }
-                }}
-                onKeyDown={handleKeyDown}
+            <CardContent className="p-5 space-y-3">
+              <GuidedPromptBuilder
+                onPromptChange={(prompt) => setIdea(prompt)}
+                onGenerate={(prompt) => { setIdea(prompt); handleGenerate(prompt); }}
+                isGenerating={isGenerating}
               />
 
               {/* Attachments */}
               {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 px-5 pb-2">
+                <div className="flex flex-wrap gap-1.5 pt-2">
                   {attachments.map((a) => (
                     <Badge
                       key={a.id}
@@ -1324,45 +1292,22 @@ function HubContent() {
                 </div>
               )}
 
-              <Separator />
-
-              {/* Bottom toolbar */}
-              <div className="flex items-center justify-between px-4 py-3">
-                <div className="flex items-center gap-1">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <AttachmentMenu
-                            onAdd={(item) => setAttachments((prev) => [...prev, item])}
-                            disabled={isGenerating}
-                          />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>Attach files</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-
-                <Button
-                  disabled={!idea.trim() || isGenerating}
-                  onClick={() => handleGenerate()}
-                  className="h-9 px-5 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
-                >
-                  {isGenerating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <span>Generate</span>
-                      <Send className="h-4 w-4" />
-                    </>
-                  )}
-                </Button>
+              {/* Attach files */}
+              <div className="flex items-center gap-1 pt-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <AttachmentMenu
+                          onAdd={(item) => setAttachments((prev) => [...prev, item])}
+                          disabled={isGenerating}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Attach files</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
-
-              <p className="text-xs text-muted-foreground text-center pb-4">
-                The more specific you are, the better your course will be.
-              </p>
             </CardContent>
           </Card>
 
