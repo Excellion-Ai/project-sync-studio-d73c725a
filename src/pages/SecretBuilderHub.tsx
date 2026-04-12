@@ -1269,7 +1269,7 @@ function HubContent() {
                   onPromptChange={(prompt) => setIdea(prompt)}
                   onGenerate={(prompt) => {
                     setIdea(prompt);
-                    setTimeout(() => handleGenerate(), 0);
+                    handleGenerate(prompt);
                   }}
                   isGenerating={isGenerating}
                 />
