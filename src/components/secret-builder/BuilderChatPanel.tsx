@@ -39,6 +39,7 @@ import {
   AttachmentItem,
 } from "./CourseBuilderPanel";
 import AttachmentMenu from "./attachments/AttachmentMenu";
+import GuidedPromptBuilder from "@/components/builder/GuidedPromptBuilder";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -476,36 +477,44 @@ const BuildTab = ({
           </div>
         )}
 
-        <div className="relative">
-          <Textarea
-            value={idea}
-            onChange={(e) => onIdeaChange(e.target.value)}
-            placeholder={hasCourse ? "Tell me what to change…" : "Describe your course idea…"}
-            rows={hasCourse ? 2 : 3}
-            className="resize-none text-sm pr-20 bg-background border-border focus:border-primary/50 focus:ring-primary/20"
-            disabled={isBusy}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (hasCourse ? !e.shiftKey : (e.metaKey || e.ctrlKey)) && idea.trim()) {
-                e.preventDefault();
-                onSubmit();
-              }
-            }}
+        {hasCourse ? (
+          <>
+            <div className="relative">
+              <Textarea
+                value={idea}
+                onChange={(e) => onIdeaChange(e.target.value)}
+                placeholder="Tell me what to change…"
+                rows={2}
+                className="resize-none text-sm pr-20 bg-background border-border focus:border-primary/50 focus:ring-primary/20"
+                disabled={isBusy}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey && idea.trim()) {
+                    e.preventDefault();
+                    onSubmit();
+                  }
+                }}
+              />
+              <div className="absolute bottom-2 right-2 flex flex-col items-center gap-1">
+                <AttachmentMenu onAdd={onAddAttachment} disabled={isBusy} />
+                <Button
+                  size="icon"
+                  className="h-7 w-7 bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow-sm"
+                  onClick={onSubmit}
+                  disabled={isBusy || !idea.trim()}
+                >
+                  {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                </Button>
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center">Enter to send</p>
+          </>
+        ) : (
+          <GuidedPromptBuilder
+            onPromptChange={onIdeaChange}
+            onGenerate={(prompt) => { onIdeaChange(prompt); onSubmit(); }}
+            isGenerating={isBusy}
           />
-          <div className="absolute bottom-2 right-2 flex flex-col items-center gap-1">
-            <AttachmentMenu onAdd={onAddAttachment} disabled={isBusy} />
-            <Button
-              size="icon"
-              className="h-7 w-7 bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow-sm"
-              onClick={onSubmit}
-              disabled={isBusy || !idea.trim()}
-            >
-              {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-            </Button>
-          </div>
-        </div>
-        <p className="text-[10px] text-muted-foreground text-center">
-          {hasCourse ? "Enter to send" : "⌘ + Enter to generate"}
-        </p>
+        )}
       </div>
     </>
   );
