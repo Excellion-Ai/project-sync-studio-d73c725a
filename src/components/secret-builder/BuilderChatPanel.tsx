@@ -245,6 +245,7 @@ const BuildTab = ({
   courseOptions, updateOption, messagesEndRef, hasCourse,
 }: BuildTabProps) => {
   const isBusy = isGenerating || !!isRefining;
+  const attachMenuRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
@@ -477,6 +478,13 @@ const BuildTab = ({
           </div>
         )}
 
+        {/* Hidden AttachmentMenu for GuidedPromptBuilder step 4 */}
+        {!hasCourse && (
+          <div ref={attachMenuRef} className="hidden">
+            <AttachmentMenu onAdd={onAddAttachment} disabled={isBusy} />
+          </div>
+        )}
+
         {hasCourse ? (
           <>
             <div className="relative">
@@ -513,6 +521,11 @@ const BuildTab = ({
             onPromptChange={onIdeaChange}
             onGenerate={(prompt) => { onIdeaChange(prompt); onSubmit(); }}
             isGenerating={isBusy}
+            hasAttachment={attachments.length > 0}
+            onUploadClick={() => {
+              const btn = attachMenuRef.current?.querySelector("button");
+              btn?.click();
+            }}
           />
         )}
       </div>

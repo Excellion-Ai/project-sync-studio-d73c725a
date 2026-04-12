@@ -814,6 +814,7 @@ function HubContent() {
   const [linkCopied, setLinkCopied] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachMenuRef = useRef<HTMLDivElement>(null);
 
   // ── Load data ──────────────────────────────────────────────
 
@@ -1244,6 +1245,14 @@ function HubContent() {
           {/* ── Input Card ─────────────────────────────── */}
           <Card className="border-border/60 bg-card">
             <CardContent className="p-5">
+              {/* Hidden AttachmentMenu for step 4 upload trigger */}
+              <div ref={attachMenuRef} className="hidden">
+                <AttachmentMenu
+                  onAdd={(item) => setAttachments((prev) => [...prev, item])}
+                  disabled={isGenerating}
+                />
+              </div>
+
               <GuidedPromptBuilder
                 onPromptChange={(prompt) => setIdea(prompt)}
                 onGenerate={(prompt) => {
@@ -1251,6 +1260,11 @@ function HubContent() {
                   handleGenerate(prompt);
                 }}
                 isGenerating={isGenerating}
+                hasAttachment={attachments.length > 0}
+                onUploadClick={() => {
+                  const btn = attachMenuRef.current?.querySelector("button");
+                  btn?.click();
+                }}
               />
 
               {/* Attachments */}

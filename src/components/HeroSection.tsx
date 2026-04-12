@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, ArrowRight, X, FileText } from "lucide-react";
 import AttachmentMenu from "@/components/secret-builder/attachments/AttachmentMenu";
@@ -83,6 +83,7 @@ const HeroSection = () => {
   const [userHasTyped, setUserHasTyped] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
   const [isStarting, setIsStarting] = useState(false);
+  const attachMenuRef = useRef<HTMLDivElement>(null);
 
   const handleAddAttachment = (item: AttachmentItem) => {
     setAttachments((prev) => [...prev, item]);
@@ -266,6 +267,11 @@ const HeroSection = () => {
                 handleStartBuilding();
               }}
               isGenerating={isStarting}
+              hasAttachment={attachments.length > 0}
+              onUploadClick={() => {
+                const btn = attachMenuRef.current?.querySelector("button");
+                btn?.click();
+              }}
             />
             {attachments.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
@@ -280,7 +286,7 @@ const HeroSection = () => {
                 ))}
               </div>
             )}
-            <div className="flex items-center gap-1.5 mt-3">
+            <div ref={attachMenuRef} className="hidden">
               <AttachmentMenu onAdd={handleAddAttachment} />
             </div>
           </div>

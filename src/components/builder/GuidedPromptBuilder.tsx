@@ -4,6 +4,8 @@ interface GuidedPromptBuilderProps {
   onPromptChange: (prompt: string) => void;
   onGenerate: (prompt: string) => void;
   isGenerating?: boolean;
+  onUploadClick?: () => void;
+  hasAttachment?: boolean;
 }
 
 const AUDIENCE_OPTIONS = [
@@ -82,14 +84,22 @@ function StepLabel({ number, text, active }: { number: number; text: string; act
   );
 }
 
-export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating = false }: GuidedPromptBuilderProps) {
+export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating = false, onUploadClick, hasAttachment = false }: GuidedPromptBuilderProps) {
   const [audiences, setAudiences] = useState<string[]>([]);
   const [goals, setGoals] = useState<string[]>([]);
   const [duration, setDuration] = useState("");
   const [skipped, setSkipped] = useState(false);
+  const [materialChoice, setMaterialChoice] = useState<"upload" | "skip" | null>(null);
   const [manualPrompt, setManualPrompt] = useState("");
 
   const prompt = buildPrompt(audiences, goals, duration);
+
+  // Auto-set materialChoice to "upload" when an attachment is added externally
+  useEffect(() => {
+    if (hasAttachment && materialChoice !== "upload") {
+      setMaterialChoice("upload");
+    }
+  }, [hasAttachment]);
 
   useEffect(() => {
     if (!skipped) {
@@ -132,7 +142,9 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
 
   const hasAudience = audiences.length > 0;
   const hasGoal = goals.length > 0;
-  const currentStep = !hasAudience ? 1 : !hasGoal ? 2 : !duration ? 3 : 4;
+  const hasDuration = !!duration;
+  const hasMaterialChoice = materialChoice !== null;
+  const currentStep = !hasAudience ? 1 : !hasGoal ? 2 : !hasDuration ? 3 : !hasMaterialChoice ? 4 : 5;
 
   return (
     <div className="flex flex-col gap-4">
@@ -181,12 +193,39 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
         </div>
       )}
 
+      {/* Step 4: Material upload */}
+      {hasDuration && (
+        <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <StepLabel number={4} text="Got existing material?" active={currentStep === 4} />
+          <div className="flex flex-wrap items-start gap-2">
+            <div className="flex flex-col items-start">
+              <button
+                type="button"
+                onClick={() => {
+                  setMaterialChoice("upload");
+                  onUploadClick?.();
+                }}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-all ${
+                  materialChoice === "upload"
+                    ? "bg-primary/20 border-primary text-primary font-medium"
+                    : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                }`}
+              >
+                Upload a PDF
+              </button>
+              <span className="text-[10px] text-primary/70 font-medium mt-1 ml-2">3x better results</span>
+            </div>
+            <Chip label="Skip for now" selected={materialChoice === "skip"} onClick={() => setMaterialChoice("skip")} />
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex items-center justify-between pt-1">
         <button type="button" onClick={() => setSkipped(true)} className="text-xs text-muted-foreground hover:text-foreground underline">
           Skip — type my own prompt
         </button>
-        {currentStep === 4 && (
+        {currentStep === 5 && (
           <button
             type="button"
             onClick={handleGenerate}
