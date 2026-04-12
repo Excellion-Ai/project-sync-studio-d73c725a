@@ -156,7 +156,16 @@ serve(async (req) => {
     const prompt = typeof body.prompt === "string" ? body.prompt.trim().slice(0, 2000) : "";
     const options = body.options || {};
     const attachmentContent = typeof body.attachmentContent === "string" ? body.attachmentContent.slice(0, 15000) : "";
-    const pdfBase64 = typeof body.pdfBase64 === "string" ? body.pdfBase64 : "";
+    const pdfBase64 = typeof body.pdfBase64 === "string" && body.pdfBase64.length > 100 ? body.pdfBase64 : "";
+
+    console.log("generate-course input:", JSON.stringify({
+      promptLength: prompt.length,
+      promptPreview: prompt.slice(0, 100),
+      attachmentLength: attachmentContent.length,
+      pdfContentLength: pdfBase64.length,
+      hasPdf: !!pdfBase64,
+      pdfLength: pdfBase64.length,
+    }));
 
     if (!prompt) {
       return new Response(JSON.stringify({ error: "Please describe your course idea." }), {
