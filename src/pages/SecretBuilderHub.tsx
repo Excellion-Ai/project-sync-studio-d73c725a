@@ -43,7 +43,6 @@ import {
   Camera,
   Music,
   Heart,
-  Lightbulb,
   TrendingUp,
   Users,
   Star,
@@ -57,7 +56,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -111,7 +109,6 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import AttachmentMenu from "@/components/secret-builder/attachments/AttachmentMenu";
 import { AI } from "@/services/ai";
-import GuidedModeFields, { type GuidedState, EMPTY_GUIDED, buildPromptFromGuided } from "@/components/guided-mode/GuidedModeFields";
 import { GuidedPromptBuilder } from "@/components/builder/GuidedPromptBuilder";
 
 // ── Types ────────────────────────────────────────────────────
@@ -800,8 +797,6 @@ function HubContent() {
   const [idea, setIdea] = useState(
     () => localStorage.getItem("builder-initial-idea") || ""
   );
-  const [guidedMode, setGuidedMode] = useState(false);
-  const [guided, setGuided] = useState<GuidedState>(EMPTY_GUIDED);
   const [autoTriggered, setAutoTriggered] = useState(false);
   const [projects, setProjects] = useState<BuilderProject[]>([]);
   const [courses, setCourses] = useState<CourseItem[]>([]);
@@ -913,16 +908,7 @@ function HubContent() {
 
       const draft = {
         prompt: prompt.trim(),
-        guided: guidedMode ? {
-          duration: guided.duration || undefined,
-          format: guided.format || undefined,
-          price: guided.price || undefined,
-          taughtBefore: guided.taughtBefore || undefined,
-          existingLink: guided.existingLink || undefined,
-          attachmentText,
-        } : {
-          attachmentText,
-        },
+        guided: { attachmentText },
       };
       localStorage.setItem("builder-draft", JSON.stringify(draft));
       localStorage.setItem("builder-initial-idea", prompt);
@@ -947,7 +933,7 @@ function HubContent() {
     } finally {
       setIsGenerating(false);
     }
-  }, [idea, userId, navigate, guidedMode, guided, attachments]);
+  }, [idea, userId, navigate, attachments]);
 
   // Template generation removed — users start from prompts or saved courses
 
@@ -1175,11 +1161,6 @@ function HubContent() {
       e.preventDefault();
       handleGenerate();
     }
-  };
-
-  const handleGuidedChange = (next: GuidedState) => {
-    setGuided(next);
-    setIdea(buildPromptFromGuided(next));
   };
 
   const visibleCourses = showAllCourses ? courses : courses.slice(0, 6);

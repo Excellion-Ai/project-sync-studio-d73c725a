@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Mic, ArrowRight, X, FileText } from "lucide-react";
+import { Sparkles, ArrowRight, X, FileText } from "lucide-react";
 import AttachmentMenu from "@/components/secret-builder/attachments/AttachmentMenu";
 import type { AttachmentItem } from "@/components/secret-builder/attachments/types";
 import { motion } from "framer-motion";
 import heroBg from "@/assets/hero-bg.jpg";
-import GuidedModeFields, { type GuidedState, EMPTY_GUIDED, buildPromptFromGuided } from "@/components/guided-mode/GuidedModeFields";
+import { GuidedPromptBuilder } from "@/components/builder/GuidedPromptBuilder";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,8 +82,6 @@ const HeroSection = () => {
   const [prompt, setPrompt] = useState("");
   const [userHasTyped, setUserHasTyped] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
-  const [guidedMode, setGuidedMode] = useState(false);
-  const [guided, setGuided] = useState<GuidedState>(EMPTY_GUIDED);
   const [isStarting, setIsStarting] = useState(false);
 
   const handleAddAttachment = (item: AttachmentItem) => {
@@ -100,14 +98,6 @@ const HeroSection = () => {
     setPrompt(e.target.value);
     if (!userHasTyped && e.target.value) setUserHasTyped(true);
     if (userHasTyped && !e.target.value) setUserHasTyped(false);
-  };
-
-  const handleGuidedChange = (next: GuidedState) => {
-    setGuided(next);
-    const built = buildPromptFromGuided(next);
-    setPrompt(built);
-    if (built && !userHasTyped) setUserHasTyped(true);
-    if (!built) setUserHasTyped(false);
   };
 
   /** Store structured draft and navigate to builder */
@@ -199,17 +189,7 @@ const HeroSection = () => {
   /** Build a structured draft object from current state */
   const buildDraft = () => ({
     prompt: prompt.trim(),
-    guided: guidedMode ? {
-      duration: guided.duration || undefined,
-      format: guided.format || undefined,
-      price: guided.price || undefined,
-      taughtBefore: guided.taughtBefore || undefined,
-      existingLink: guided.existingLink || undefined,
-      attachmentText: attachments
-        .filter((a) => a.content)
-        .map((a) => `--- ${a.name} ---\n${a.content}`)
-        .join("\n\n") || undefined,
-    } : {
+    guided: {
       attachmentText: attachments
         .filter((a) => a.content)
         .map((a) => `--- ${a.name} ---\n${a.content}`)
@@ -273,50 +253,22 @@ const HeroSection = () => {
           transition={{ duration: 0.7, delay: 0.2 }}
           className="premium-card p-6 space-y-4"
         >
-          <div className="relative rounded-xl border border-primary/20 bg-black/40 backdrop-blur-sm p-3">
-            {/* Toggle link */}
-            <div className="mb-2">
-              <button
-                onClick={() => {
-                  setGuidedMode(!guidedMode);
-                  if (guidedMode) setGuided(EMPTY_GUIDED);
-                }}
-                className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 font-medium font-body"
-              >
-                <Sparkles className="w-3 h-3" />
-                {guidedMode ? "Back to simple mode" : "Need help? Use guided mode"}
-              </button>
-            </div>
-
-            {/* Guided fields */}
-            <div
-              className="overflow-hidden transition-all duration-300 ease-in-out"
-              style={{ maxHeight: guidedMode ? "800px" : "0px", opacity: guidedMode ? 1 : 0 }}
-            >
-              <div className="pb-3 max-h-[50vh] overflow-y-auto pr-1">
-                <GuidedModeFields state={guided} onChange={handleGuidedChange} variant="hero" />
-              </div>
-            </div>
-
-            {/* Main textarea */}
-            <textarea
-              value={prompt}
-              onChange={(e) => {
-                handlePromptChange(e);
-                if (guidedMode) { setGuidedMode(false); setGuided(EMPTY_GUIDED); }
+          <div className="rounded-xl border border-primary/20 bg-black/40 backdrop-blur-sm p-4">
+            <GuidedPromptBuilder
+              onPromptChange={(p) => {
+                setPrompt(p);
+                if (p && !userHasTyped) setUserHasTyped(true);
+                if (!p) setUserHasTyped(false);
               }}
-              placeholder={!userHasTyped && !prompt ? "" : "Help [AUDIENCE] achieve [RESULT] in [TIMEFRAME]"}
-              className="w-full bg-transparent text-foreground placeholder:text-muted-foreground resize-none border-none outline-none text-base min-h-[60px] font-body"
-              rows={2}
+              onGenerate={(p) => {
+                setPrompt(p);
+                setUserHasTyped(true);
+                handleStartBuilding();
+              }}
+              isGenerating={isStarting}
             />
-            {!prompt && !userHasTyped && !guidedMode && (
-              <span className="absolute top-[calc(2rem+24px)] left-3 text-base text-muted-foreground pointer-events-none font-body">
-                {animatedText}
-                <span className="inline-block w-[2px] h-[1.1em] bg-primary/70 ml-[1px] align-text-bottom animate-blink" />
-              </span>
-            )}
             {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2 mb-1">
+              <div className="flex flex-wrap gap-1.5 mt-3">
                 {attachments.map((a) => (
                   <span key={a.id} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/20 text-xs text-primary">
                     <FileText className="w-3 h-3" />
@@ -328,11 +280,8 @@ const HeroSection = () => {
                 ))}
               </div>
             )}
-            <div className="absolute bottom-2 right-2 flex flex-col items-center gap-1.5">
+            <div className="flex items-center gap-1.5 mt-3">
               <AttachmentMenu onAdd={handleAddAttachment} />
-              <button className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary hover:bg-primary/30 transition-colors" title="Voice input">
-                <Mic className="w-4 h-4" />
-              </button>
             </div>
           </div>
 
