@@ -27,7 +27,19 @@ const steps = [
 
 const HowItWorksSection = () => {
   return (
-    <section id="how-it-works" className="py-[60px] bg-background relative radial-glow">
+    <section id="how-it-works" className="py-[60px] relative overflow-hidden">
+      {/* Video background */}
+      <div className="absolute inset-0">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          src="/videos/section-bg.mp4"
+        />
+        <div className="absolute inset-0 bg-black/70" />
+      </div>
       <div className="max-w-6xl mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
