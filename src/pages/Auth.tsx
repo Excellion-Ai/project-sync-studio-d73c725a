@@ -52,12 +52,29 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}${redirectTo}` },
-    });
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    console.log("[Auth] Google sign-in clicked");
+    try {
+      const redirectUrl = `${window.location.origin}${redirectTo}`;
+      console.log("[Auth] signInWithOAuth redirectTo:", redirectUrl);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: { access_type: "offline", prompt: "consent" },
+        },
+      });
+      console.log("[Auth] signInWithOAuth response:", { data, error });
+      if (error) {
+        console.error("[Auth] OAuth error:", error);
+        toast({ title: "Sign-in error", description: error.message, variant: "destructive" });
+      } else if (!data?.url) {
+        console.error("[Auth] OAuth returned no redirect URL");
+        toast({ title: "Sign-in error", description: "No redirect URL returned. Google provider may be disabled.", variant: "destructive" });
+      }
+      // Supabase auto-redirects via window.location.assign when data.url is returned
+    } catch (err: any) {
+      console.error("[Auth] Unhandled Google sign-in exception:", err);
+      toast({ title: "Sign-in error", description: err?.message || "Unexpected error", variant: "destructive" });
     }
   };
 
@@ -72,6 +89,7 @@ const Auth = () => {
           </div>
 
           <button
+            type="button"
             onClick={handleGoogleSignIn}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg border border-border hover:bg-secondary transition-colors text-foreground text-sm font-medium mb-6"
           >
