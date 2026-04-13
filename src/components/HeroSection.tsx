@@ -204,11 +204,21 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Background — CSS gradients only, no image */}
-      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(201, 168, 76, 0.07) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(201, 168, 76, 0.05) 0%, transparent 50%), linear-gradient(135deg, #0a0a0a 0%, #111111 50%, #0d0d0d 100%)' }} />
-
-      {/* Vignette — dark edges, bright center */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 45%, transparent 0%, rgba(0,0,0,0.6) 100%)' }} />
+      {/* Video background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          src="/videos/hero-bg.mp4"
+        />
+        {/* Dark overlay for text legibility */}
+        <div className="absolute inset-0 bg-black/60" />
+        {/* Vignette */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 45%, transparent 0%, rgba(0,0,0,0.5) 100%)' }} />
+      </div>
 
       {/* Lens flare sweep */}
       <div className="absolute top-[40%] left-0 w-full h-[1px] overflow-hidden pointer-events-none">
