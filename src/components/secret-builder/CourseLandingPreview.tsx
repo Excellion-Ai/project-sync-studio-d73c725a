@@ -140,13 +140,15 @@ const HeroSection = ({
     }
   })();
 
+  const programDuration = ((course as any).meta?.duration_label || (course as any).duration_label) as string | undefined;
+  const durationDisplay = programDuration || `${course.duration_weeks} weeks`;
+
   const statsRow = (
     <motion.div variants={fadeUp} className={`flex flex-wrap gap-4 mb-10 ${isCentered ? "justify-center" : ""}`}>
       {[
         { icon: BookOpen, label: `${course.modules.length} Modules` },
         { icon: FileText, label: `${totalLessons} Lessons` },
-        { icon: Clock, label: durationStr },
-        { icon: Award, label: "Certificate" },
+        { icon: Clock, label: durationDisplay },
       ].map(({ icon: Icon, label }) => (
         <div
           key={label}
@@ -563,15 +565,18 @@ const PricingSection = ({
 }) => {
   const pricing = course.pages?.pricing;
   const totalLessons = course.modules.reduce((s, m) => s + m.lessons.length, 0);
+  const meta = (course as any).meta || {};
+  const pricingFeatures: string[] = meta.pricing_features || (course as any).pricing_features || [];
+  const durationLabel: string = meta.duration_label || (course as any).duration_label || `${course.duration_weeks} weeks of content`;
 
-  const includes = [
-    { icon: BookOpen, label: `${course.modules.length} comprehensive modules` },
-    { icon: FileText, label: `${totalLessons} in-depth lessons` },
-    { icon: Infinity, label: "Lifetime access" },
-    { icon: Award, label: "Certificate of completion" },
-    { icon: Download, label: "Downloadable resources" },
-    { icon: Headphones, label: "Community support" },
-  ];
+  // Use AI-generated features if available, otherwise build from course data
+  const includes = pricingFeatures.length > 0
+    ? pricingFeatures.map((label: string) => ({ icon: Check, label }))
+    : [
+        { icon: BookOpen, label: `${course.modules.length} comprehensive modules` },
+        { icon: FileText, label: `${totalLessons} in-depth lessons` },
+        { icon: Clock, label: durationLabel },
+      ];
 
   return (
     <section className="py-[60px] px-6 bg-background relative radial-glow">
@@ -614,7 +619,7 @@ const PricingSection = ({
               </div>
             ) : (
               <div className="mb-6">
-                <span className="text-5xl font-heading font-black text-gradient-gold">Free</span>
+                <span className="text-2xl font-heading font-bold text-muted-foreground">Price coming soon</span>
               </div>
             )}
 
@@ -632,7 +637,7 @@ const PricingSection = ({
               onClick={onEnrollClick}
               className="w-full btn-primary text-lg py-6 font-heading font-bold shadow-glow"
             >
-              {pricing ? `Enroll for $${pricing.price}` : "Enroll for Free"}
+              {pricing ? `Enroll for $${pricing.price}` : "Get Started"}
             </Button>
 
             <p className="text-xs text-muted-foreground mt-4 font-body">
@@ -739,12 +744,17 @@ const CourseIncludesSection = ({
   course: ExtendedCourse;
   style: ReturnType<typeof getLayoutStyleConfig>;
 }) => {
-  const items = [
-    { icon: BookOpen, label: `${course.modules.length} comprehensive modules` },
-    { icon: FileText, label: `${course.modules.reduce((s, m) => s + m.lessons.length, 0)} lessons` },
-    { icon: Infinity, label: "Lifetime access" },
-    { icon: Award, label: "Certificate of completion" },
-  ];
+  const meta = (course as any).meta || {};
+  const pricingFeatures: string[] = meta.pricing_features || (course as any).pricing_features || [];
+  const totalLessons = course.modules.reduce((s, m) => s + m.lessons.length, 0);
+
+  const items = pricingFeatures.length > 0
+    ? pricingFeatures.slice(0, 4).map((label: string) => ({ icon: Check, label }))
+    : [
+        { icon: BookOpen, label: `${course.modules.length} comprehensive modules` },
+        { icon: FileText, label: `${totalLessons} lessons` },
+        { icon: Clock, label: `${course.duration_weeks} weeks of content` },
+      ];
 
   return (
     <section className="py-[60px] px-6 bg-background">

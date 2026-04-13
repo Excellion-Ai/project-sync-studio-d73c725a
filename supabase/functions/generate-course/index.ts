@@ -45,6 +45,9 @@ OUTPUT: Compact JSON, no markdown fences.
 - modules: [{title, description, lessons: [{title, description}]}]
 - design_config: {colors: {primary, secondary, accent, background, cardBackground, text, textMuted}, fonts: {heading, body}, spacing, borderRadius, heroStyle, heroLayout}
 - target_audience, faq: [{question, answer}], section_order
+- duration_label: human-readable duration matching the program (e.g. "12 weeks of coaching", "8-week transformation", "90-day challenge"). MUST match the actual program duration from the prompt, NOT a generic "6 weeks".
+- pricing_features: 5-6 bullet points describing what's included, derived from the ACTUAL course content. Examples: "12 progressive workout modules", "Custom meal plan templates", "Weekly check-in frameworks". NEVER use generic filler like "Lifetime access", "Certificate of completion", or "Community support" — every bullet must be specific to THIS course.
+- PRICING: Do NOT set a price. The creator sets their own price. Do NOT include a pricing object or price field.
 - DESIGN: Dark bg (#0a-#15), light text, vibrant primary. Fonts from: "Playfair Display"+"DM Sans", "Space Grotesk"+"Inter", "Poppins"+"Inter", "Montserrat"+"DM Sans", "Lora"+"Inter"`;
 
 function parseCourseJson(text: string) {

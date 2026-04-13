@@ -16,6 +16,8 @@ export interface SaveCourseParams {
   pageSections?: object;
   builderProjectId?: string;
   offerType?: string;
+  pricingFeatures?: string[];
+  durationLabel?: string;
 }
 
 // ── Helpers ─────────────────────────────────────────────────
@@ -133,7 +135,12 @@ export async function saveCourseToDatabase(
       section_order: sectionOrder as any,
       page_sections: pageSections as any,
       builder_project_id: builderProjectId ?? null,
-      meta: { difficulty, duration_weeks: durationWeeks } as any,
+      meta: {
+        difficulty,
+        duration_weeks: durationWeeks,
+        ...(params.pricingFeatures?.length ? { pricing_features: params.pricingFeatures } : {}),
+        ...(params.durationLabel ? { duration_label: params.durationLabel } : {}),
+      } as any,
     };
 
     console.log(`💾 [saveCourse] Attempt ${attempt + 1}/3 — inserting with slug:`, payload.slug);

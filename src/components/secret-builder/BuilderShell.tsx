@@ -136,7 +136,10 @@ function mapAIResponseToCourse(ai: any, options: CourseOptions): ExtendedCourse 
     pages,
     section_order: sectionOrder,
     design_config: designConfig,
-  };
+    // AI-generated pricing page content
+    pricing_features: ai.pricing_features || [],
+    duration_label: ai.duration_label || undefined,
+  } as ExtendedCourse;
 }
 
 const GENERATION_STEPS: GenerationStep[] = [
@@ -259,7 +262,7 @@ const BuilderShell = ({
     const loadExisting = async () => {
       const { data: rows, error } = await supabase
         .from("courses")
-        .select("*")
+        .select("id, user_id, slug, subdomain, title, description, tagline, hero_copy, curriculum, branding, status, published_at, created_at, updated_at, thumbnail_url, price_cents, currency, instructor_name, instructor_bio, total_students, is_featured, builder_project_id, page_sections, custom_domain, domain_verified, seo_title, seo_description, social_image_url, has_video_content, type, meta, layout_template, design_config, section_order, section_config, deleted_at, is_free")
         .eq("builder_project_id", projectId)
         .eq("user_id", userId)
         .is("deleted_at", null)
@@ -602,6 +605,8 @@ const BuilderShell = ({
           pageSections: course.pages,
           builderProjectId: bProjectId ?? undefined,
           offerType: options.template,
+          pricingFeatures: (course as any).pricing_features,
+          durationLabel: (course as any).duration_label,
         });
 
         if (saved) {
