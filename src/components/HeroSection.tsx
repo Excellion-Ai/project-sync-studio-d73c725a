@@ -204,12 +204,46 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Background — dark gradient with gold glow */}
+      {/* Background — cinematic dark with animated orbs */}
       <div className="absolute inset-0 bg-[#0A0A0A]">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,#1a1a1a_0%,#0A0A0A_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(201,168,76,0.08)_0%,transparent_70%)]" />
-        {/* Noise texture overlay */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`, backgroundRepeat: 'repeat', backgroundSize: '128px 128px' }} />
+        {/* Animated gold orb — top center */}
+        <div className="hero-orb-gold absolute top-[-20%] left-[20%] w-[800px] h-[600px] bg-[radial-gradient(ellipse,rgba(201,168,76,0.12)_0%,transparent_70%)]" />
+        {/* Animated amber orb — bottom right */}
+        <div className="hero-orb-amber absolute bottom-[-10%] right-[-5%] w-[600px] h-[500px] bg-[radial-gradient(ellipse,rgba(139,105,20,0.08)_0%,transparent_70%)]" />
+      </div>
+
+      {/* Vignette — dark edges, bright center */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 45%, transparent 0%, rgba(0,0,0,0.6) 100%)' }} />
+
+      {/* Lens flare sweep */}
+      <div className="absolute top-[40%] left-0 w-full h-[1px] overflow-hidden pointer-events-none">
+        <div className="hero-flare w-[40%] h-full bg-gradient-to-r from-transparent via-[rgba(201,168,76,0.15)] to-transparent opacity-0" />
+      </div>
+
+      {/* Floating particles */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[
+          { top: '15%', left: '10%', delay: '0s', dur: '6s' },
+          { top: '25%', left: '85%', delay: '1s', dur: '7s' },
+          { top: '60%', left: '5%', delay: '2s', dur: '8s' },
+          { top: '70%', left: '90%', delay: '0.5s', dur: '6.5s' },
+          { top: '10%', left: '50%', delay: '3s', dur: '7.5s' },
+          { top: '80%', left: '30%', delay: '1.5s', dur: '6s' },
+          { top: '40%', left: '15%', delay: '4s', dur: '8s' },
+          { top: '30%', left: '70%', delay: '2.5s', dur: '7s' },
+          { top: '55%', left: '45%', delay: '0.8s', dur: '6.5s' },
+          { top: '85%', left: '65%', delay: '3.5s', dur: '7.5s' },
+          { top: '20%', left: '35%', delay: '1.2s', dur: '8s' },
+          { top: '45%', left: '80%', delay: '2.8s', dur: '6s' },
+          { top: '75%', left: '20%', delay: '0.3s', dur: '7s' },
+          { top: '5%', left: '60%', delay: '4.5s', dur: '6.5s' },
+        ].map((p, i) => (
+          <div
+            key={i}
+            className="hero-particle"
+            style={{ top: p.top, left: p.left, animationDelay: p.delay, animationDuration: p.dur, animation: `float-particle ${p.dur} ease-in-out ${p.delay} infinite` }}
+          />
+        ))}
       </div>
 
       <div className="relative z-10 max-w-3xl mx-auto px-4 text-center py-20">

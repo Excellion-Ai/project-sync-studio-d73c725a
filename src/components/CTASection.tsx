@@ -4,30 +4,34 @@ import { Link } from "react-router-dom";
 
 const CTASection = () => {
   return (
-    <section className="py-[60px] bg-[hsl(0_0%_5%)] relative">
+    <section className="py-[100px] bg-[#0A0A0A] relative overflow-hidden">
+      {/* Dramatic spotlight */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-[600px] h-[400px]" style={{ background: 'radial-gradient(ellipse at center, rgba(201,168,76,0.06) 0%, transparent 70%)' }} />
+        <div className="w-[900px] h-[600px] bg-[radial-gradient(ellipse,rgba(201,168,76,0.06)_0%,transparent_60%)]" />
       </div>
 
       <div className="max-w-3xl mx-auto px-4 text-center relative z-10">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
         >
-          <h2 className="text-3xl sm:text-4xl font-heading font-bold text-foreground mb-4">
-            Ready to launch your course this weekend?
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-heading font-black text-foreground mb-6 leading-tight">
+            Your course.{" "}
+            <span className="text-gradient-gold">This weekend.</span>
           </h2>
-          <p className="text-muted-foreground text-lg mb-8 font-body">
+          <p className="text-muted-foreground text-lg mb-10 font-body max-w-xl mx-auto">
             Generate the outline and sales page now. Film and publish when you're ready.
           </p>
           <Link
             to="/auth"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-[10px] btn-primary font-semibold font-body"
+            className="btn-shimmer inline-flex items-center gap-2 px-10 py-5 rounded-[12px] btn-primary text-lg font-heading font-bold shadow-glow"
           >
-            Start Building
+            Start Building Free
             <ArrowRight className="w-5 h-5" />
           </Link>
+          <p className="text-xs text-muted-foreground mt-6 font-body">No credit card required.</p>
         </motion.div>
       </div>
     </section>

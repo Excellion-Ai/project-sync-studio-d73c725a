@@ -72,8 +72,17 @@ const PricingSection = () => {
             {yearly && <span className="text-xs text-primary font-medium font-body">Save $158</span>}
           </div>
 
-          {/* Card */}
-          <div className="premium-card p-8 text-center shadow-glow">
+          {/* Card with animated border + pulse glow */}
+          <div className="relative">
+            {/* Most Popular badge */}
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
+              <span className="px-4 py-1 rounded-full text-xs font-bold font-body bg-gradient-to-r from-[#C9A84C] to-[#8B6914] text-black uppercase tracking-wider">
+                Most Popular
+              </span>
+            </div>
+            {/* Animated gradient border */}
+            <div className="pricing-animated-border rounded-2xl p-[1px]">
+              <div className="premium-card p-8 text-center rounded-2xl pricing-glow-pulse">
             <div className="mb-6">
               <span className="text-4xl font-heading font-black text-gradient-gold">{yearly ? "$790" : "$29"}</span>
               <span className="text-muted-foreground text-sm ml-2 font-body">{yearly ? "/year" : "/first month"}</span>
@@ -104,6 +113,8 @@ const PricingSection = () => {
             </button>
 
             <p className="text-xs text-muted-foreground mt-4 font-body">No hidden fees. Just build and sell your course.</p>
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>
