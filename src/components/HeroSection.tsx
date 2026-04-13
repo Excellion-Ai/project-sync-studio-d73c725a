@@ -204,16 +204,8 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Background — cinematic fitness image with dark overlay + gold glow */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920&q=80')` }} />
-        {/* Dark overlay — 82% opacity */}
-        <div className="absolute inset-0 bg-[#0A0A0A]/[0.82]" />
-        {/* Animated gold orb — top center */}
-        <div className="hero-orb-gold absolute top-[-20%] left-[20%] w-[800px] h-[600px] bg-[radial-gradient(ellipse,rgba(201,168,76,0.12)_0%,transparent_70%)]" />
-        {/* Animated amber orb — bottom right */}
-        <div className="hero-orb-amber absolute bottom-[-10%] right-[-5%] w-[600px] h-[500px] bg-[radial-gradient(ellipse,rgba(139,105,20,0.08)_0%,transparent_70%)]" />
-      </div>
+      {/* Background — CSS gradients only, no image */}
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 20% 50%, rgba(201, 168, 76, 0.07) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(201, 168, 76, 0.05) 0%, transparent 50%), linear-gradient(135deg, #0a0a0a 0%, #111111 50%, #0d0d0d 100%)' }} />
 
       {/* Vignette — dark edges, bright center */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 45%, transparent 0%, rgba(0,0,0,0.6) 100%)' }} />
@@ -226,20 +218,21 @@ const HeroSection = () => {
       {/* Floating particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {[
-          { top: '15%', left: '10%', delay: '0s', dur: '6s' },
-          { top: '25%', left: '85%', delay: '1s', dur: '7s' },
-          { top: '60%', left: '5%', delay: '2s', dur: '8s' },
-          { top: '70%', left: '90%', delay: '0.5s', dur: '6.5s' },
-          { top: '10%', left: '50%', delay: '3s', dur: '7.5s' },
-          { top: '80%', left: '30%', delay: '1.5s', dur: '6s' },
-          { top: '40%', left: '15%', delay: '4s', dur: '8s' },
-          { top: '30%', left: '70%', delay: '2.5s', dur: '7s' },
-          { top: '55%', left: '45%', delay: '0.8s', dur: '6.5s' },
-          { top: '85%', left: '65%', delay: '3.5s', dur: '7.5s' },
-          { top: '20%', left: '35%', delay: '1.2s', dur: '8s' },
-          { top: '45%', left: '80%', delay: '2.8s', dur: '6s' },
-          { top: '75%', left: '20%', delay: '0.3s', dur: '7s' },
-          { top: '5%', left: '60%', delay: '4.5s', dur: '6.5s' },
+          { top: '12%', left: '8%', delay: '0s', dur: '7s' },
+          { top: '22%', left: '88%', delay: '1.2s', dur: '8s' },
+          { top: '58%', left: '4%', delay: '2.4s', dur: '6.5s' },
+          { top: '68%', left: '92%', delay: '0.6s', dur: '7.5s' },
+          { top: '8%', left: '48%', delay: '3.2s', dur: '8.5s' },
+          { top: '82%', left: '28%', delay: '1.8s', dur: '6s' },
+          { top: '38%', left: '12%', delay: '4.1s', dur: '7s' },
+          { top: '28%', left: '72%', delay: '2.7s', dur: '8s' },
+          { top: '52%', left: '42%', delay: '0.9s', dur: '6.5s' },
+          { top: '88%', left: '62%', delay: '3.6s', dur: '7.5s' },
+          { top: '18%', left: '32%', delay: '1.4s', dur: '8s' },
+          { top: '42%', left: '78%', delay: '2.1s', dur: '6s' },
+          { top: '72%', left: '18%', delay: '0.3s', dur: '7s' },
+          { top: '5%', left: '58%', delay: '4.8s', dur: '6.5s' },
+          { top: '48%', left: '55%', delay: '3.9s', dur: '7.5s' },
         ].map((p, i) => (
           <div
             key={i}
