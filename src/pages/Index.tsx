@@ -23,24 +23,27 @@ const Index = () => {
       <Navbar />
       <HeroSection />
 
-      <SocialProofTicker />
-      <SectionDivider />
-      <StatsBar />
-      <SectionDivider />
-      <HowItWorksSection />
-      <SectionDivider />
-      <FeaturesSection />
-      <SectionDivider />
-      <TestimonialsSection />
-      <SectionDivider />
-      <PricingSection />
-      <SectionDivider />
-      <GuaranteeSection />
-      <SectionDivider />
-      <FAQSection />
-      <SectionDivider />
-      <CTASection />
-      <Footer />
+      {/* All sections below hero get a plain dark background */}
+      <div className="bg-[#0A0A0A] relative z-10">
+        <SocialProofTicker />
+        <SectionDivider />
+        <StatsBar />
+        <SectionDivider />
+        <HowItWorksSection />
+        <SectionDivider />
+        <FeaturesSection />
+        <SectionDivider />
+        <TestimonialsSection />
+        <SectionDivider />
+        <PricingSection />
+        <SectionDivider />
+        <GuaranteeSection />
+        <SectionDivider />
+        <FAQSection />
+        <SectionDivider />
+        <CTASection />
+        <Footer />
+      </div>
     </div>
   );
 };
