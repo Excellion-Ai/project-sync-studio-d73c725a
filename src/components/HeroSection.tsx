@@ -204,8 +204,11 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Background — cinematic dark with animated orbs */}
-      <div className="absolute inset-0 bg-[#0A0A0A]">
+      {/* Background — cinematic fitness image with dark overlay + gold glow */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80')` }} />
+        {/* Dark overlay — 75% opacity */}
+        <div className="absolute inset-0 bg-[#0A0A0A]/[0.75]" />
         {/* Animated gold orb — top center */}
         <div className="hero-orb-gold absolute top-[-20%] left-[20%] w-[800px] h-[600px] bg-[radial-gradient(ellipse,rgba(201,168,76,0.12)_0%,transparent_70%)]" />
         {/* Animated amber orb — bottom right */}
