@@ -5,7 +5,6 @@ import AttachmentMenu from "@/components/secret-builder/attachments/AttachmentMe
 import type { AttachmentMenuHandle } from "@/components/secret-builder/attachments/AttachmentMenu";
 import type { AttachmentItem } from "@/components/secret-builder/attachments/types";
 import { motion } from "framer-motion";
-import heroBg from "@/assets/hero-bg.jpg";
 import { GuidedPromptBuilder } from "@/components/builder/GuidedPromptBuilder";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -205,15 +204,12 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Background */}
-      <div className="absolute inset-0">
-        <img src={heroBg} alt="" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-[hsl(0_0%_4%/0.7)]" />
-      </div>
-
-      {/* Radial glow */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-[800px] h-[600px] bg-[radial-gradient(ellipse,hsl(43_52%_54%/0.1)_0%,transparent_70%)]" />
+      {/* Background — dark gradient with gold glow */}
+      <div className="absolute inset-0 bg-[#0A0A0A]">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,#1a1a1a_0%,#0A0A0A_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(201,168,76,0.08)_0%,transparent_70%)]" />
+        {/* Noise texture overlay */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`, backgroundRepeat: 'repeat', backgroundSize: '128px 128px' }} />
       </div>
 
       <div className="relative z-10 max-w-3xl mx-auto px-4 text-center py-20">
