@@ -205,6 +205,7 @@ const BuilderChatPanel = ({
           updateOption={updateOption}
           messagesEndRef={messagesEndRef}
           hasCourse={hasCourse}
+          setPendingBrandStyle={setPendingBrandStyle}
         />
       )}
 
@@ -239,12 +240,13 @@ interface BuildTabProps {
   updateOption: <K extends keyof CourseOptions>(key: K, val: CourseOptions[K]) => void;
   messagesEndRef: React.RefObject<HTMLDivElement>;
   hasCourse?: boolean;
+  setPendingBrandStyle: (style: CourseOptions["brandStyle"]) => void;
 }
 
 const BuildTab = ({
   idea, onIdeaChange, onSubmit, isGenerating, isRefining, steps, messages,
   attachments, onAddAttachment, onRemoveAttachment, showOptions, setShowOptions,
-  courseOptions, updateOption, messagesEndRef, hasCourse,
+  courseOptions, updateOption, messagesEndRef, hasCourse, setPendingBrandStyle,
 }: BuildTabProps) => {
   const isBusy = isGenerating || !!isRefining;
   const attachMenuRef = useRef<AttachmentMenuHandle>(null);
