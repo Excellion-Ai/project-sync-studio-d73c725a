@@ -75,14 +75,12 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     console.log("[Auth] Google sign-in clicked");
     try {
-      // Always return to /auth — the onAuthStateChange listener reads the
-      // user's role and forwards them to the correct dashboard (or the
-      // role-selection screen). If the user arrived with ?redirect=/foo we
-      // carry that through so the post-auth flow can honor it.
-      const returnPath = explicitRedirect
-        ? `/auth?redirect=${encodeURIComponent(explicitRedirect)}`
-        : "/auth";
-      const redirectUrl = `${window.location.origin}${returnPath}`;
+      // Hardcoded string literal — must match an entry in Supabase's OAuth
+      // redirect allowlist EXACTLY. Any whitespace, newline, or stray
+      // character here produces a malformed URL and Supabase returns
+      // server_error, so we deliberately avoid template interpolation
+      // or window.location.origin (which would drift between envs).
+      const redirectUrl = "https://excellioncourses.com/dashboard";
       console.log("[Auth] signInWithOAuth redirectTo:", redirectUrl);
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
