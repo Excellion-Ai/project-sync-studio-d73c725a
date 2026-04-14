@@ -25,19 +25,32 @@ const Auth = () => {
   useEffect(() => {
     let cancelled = false;
 
+    // eslint-disable-next-line no-console
+    console.log("[oauth-debug] /auth mounted", {
+      url: typeof window !== "undefined" ? window.location.href : null,
+      explicitRedirect,
+    });
+
     const routeAfterAuth = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]) => {
       if (!session) return;
       identifyUser(session.user.id, { email: session.user.email });
       if (explicitRedirect) {
+        // eslint-disable-next-line no-console
+        console.log("[oauth-debug] /auth routeAfterAuth → explicit redirect", explicitRedirect);
         navigate(explicitRedirect, { replace: true });
         return;
       }
       const role = await fetchRoleForUser(session.user.id);
       if (cancelled) return;
-      navigate(role ? destinationForRole(role) : "/onboarding/role", { replace: true });
+      const dest = role ? destinationForRole(role) : "/onboarding/role";
+      // eslint-disable-next-line no-console
+      console.log("[oauth-debug] /auth routeAfterAuth → role-based redirect", { role, dest });
+      navigate(dest, { replace: true });
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // eslint-disable-next-line no-console
+      console.log("[oauth-debug] /auth onAuthStateChange", { event, hasSession: !!session });
       if (session) {
         if (event === "SIGNED_IN" && session.user.created_at && Date.now() - new Date(session.user.created_at).getTime() < 60_000) {
           const method = session.user.app_metadata?.provider || "email";
@@ -48,7 +61,9 @@ const Auth = () => {
     });
 
     // Check current session in case the component mounts already-authenticated
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      // eslint-disable-next-line no-console
+      console.log("[oauth-debug] /auth getSession on mount", { hasSession: !!session, error: error?.message ?? null });
       if (session) void routeAfterAuth(session);
     });
 

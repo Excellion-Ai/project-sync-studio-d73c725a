@@ -73,7 +73,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Rely on onAuthStateChange — Supabase fires INITIAL_SESSION exactly once
     // AFTER it finishes processing any OAuth code/token in the URL.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
+      async (event, newSession) => {
+        // ── OAuth callback debugging ──
+        // eslint-disable-next-line no-console
+        console.log("[oauth-debug] onAuthStateChange fired", {
+          event,
+          hasSession: !!newSession,
+          userId: newSession?.user?.id ?? null,
+          userEmail: newSession?.user?.email ?? null,
+          provider: newSession?.user?.app_metadata?.provider ?? null,
+          expiresAt: newSession?.expires_at ?? null,
+          urlAtFire: typeof window !== "undefined" ? window.location.href : null,
+        });
+
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setLoading(false);
@@ -81,6 +93,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (newSession?.user) {
           setProfileLoading(true);
           const fresh = await fetchProfile(newSession.user.id);
+          // eslint-disable-next-line no-console
+          console.log("[oauth-debug] profile fetched after auth event", { event, profile: fresh });
           setProfile(fresh);
           setProfileLoading(false);
         } else {
@@ -89,6 +103,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     );
+
+    // Extra belt-and-suspenders: immediately read the current session at
+    // mount and log what we see, without touching state (onAuthStateChange
+    // remains the source of truth).
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      // eslint-disable-next-line no-console
+      console.log("[oauth-debug] getSession on mount", {
+        hasSession: !!session,
+        userId: session?.user?.id ?? null,
+        error: error?.message ?? null,
+        url: typeof window !== "undefined" ? window.location.href : null,
+      });
+    });
 
     return () => subscription.unsubscribe();
   }, [fetchProfile]);

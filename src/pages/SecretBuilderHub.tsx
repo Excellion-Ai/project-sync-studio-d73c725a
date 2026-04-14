@@ -1521,7 +1521,18 @@ function HubContent() {
 const SecretBuilderHub = () => {
   const { user, ready, role } = useAuth();
 
+  // eslint-disable-next-line no-console
+  console.log("[oauth-debug] /dashboard guard render", {
+    ready,
+    hasUser: !!user,
+    userId: user?.id ?? null,
+    role,
+    url: typeof window !== "undefined" ? window.location.href : null,
+  });
+
   if (!ready) {
+    // eslint-disable-next-line no-console
+    console.log("[oauth-debug] /dashboard guard → showing loader (auth not ready)");
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -1530,19 +1541,27 @@ const SecretBuilderHub = () => {
   }
 
   if (!user) {
+    // eslint-disable-next-line no-console
+    console.log("[oauth-debug] /dashboard guard → redirecting to /auth (no user)");
     return <Navigate to="/auth" replace />;
   }
 
   // No role chosen yet → onboarding.
   if (!role) {
+    // eslint-disable-next-line no-console
+    console.log("[oauth-debug] /dashboard guard → redirecting to /onboarding/role (no role)");
     return <Navigate to="/onboarding/role" replace />;
   }
 
   // Students get their own dashboard.
   if (role === "student") {
+    // eslint-disable-next-line no-console
+    console.log("[oauth-debug] /dashboard guard → redirecting to /dashboard/student (role=student)");
     return <Navigate to="/dashboard/student" replace />;
   }
 
+  // eslint-disable-next-line no-console
+  console.log("[oauth-debug] /dashboard guard → rendering HubContent (role=coach)");
   return <HubContent />;
 };
 
