@@ -6,6 +6,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { analytics, identifyUser } from "@/lib/analytics";
+import { destinationForRole, fetchRoleForUser } from "@/lib/roleRouting";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -16,32 +17,46 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Get redirect destination from URL params
+  // Explicit redirect target (e.g. ?redirect=/pricing) wins over role routing.
   const searchParams = new URLSearchParams(window.location.search);
-  const redirectTo = searchParams.get("redirect") || "/dashboard";
+  const explicitRedirect = searchParams.get("redirect");
 
   // Redirect if already authenticated
   useEffect(() => {
+    let cancelled = false;
+
+    const routeAfterAuth = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]) => {
+      if (!session) return;
+      identifyUser(session.user.id, { email: session.user.email });
+      if (explicitRedirect) {
+        navigate(explicitRedirect, { replace: true });
+        return;
+      }
+      const role = await fetchRoleForUser(session.user.id);
+      if (cancelled) return;
+      navigate(role ? destinationForRole(role) : "/onboarding/role", { replace: true });
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        identifyUser(session.user.id, { email: session.user.email });
         if (event === "SIGNED_IN" && session.user.created_at && Date.now() - new Date(session.user.created_at).getTime() < 60_000) {
           const method = session.user.app_metadata?.provider || "email";
           analytics.signedUp({ method, email: session.user.email });
         }
-        navigate(redirectTo);
+        void routeAfterAuth(session);
       }
     });
 
-    // Check current session
+    // Check current session in case the component mounts already-authenticated
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate(redirectTo);
-      }
+      if (session) void routeAfterAuth(session);
     });
 
-    return () => subscription.unsubscribe();
-  }, [navigate, redirectTo]);
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [navigate, explicitRedirect]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +75,14 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     console.log("[Auth] Google sign-in clicked");
     try {
-      const redirectUrl = `${window.location.origin}${redirectTo}`;
+      // Always return to /auth — the onAuthStateChange listener reads the
+      // user's role and forwards them to the correct dashboard (or the
+      // role-selection screen). If the user arrived with ?redirect=/foo we
+      // carry that through so the post-auth flow can honor it.
+      const returnPath = explicitRedirect
+        ? `/auth?redirect=${encodeURIComponent(explicitRedirect)}`
+        : "/auth";
+      const redirectUrl = `${window.location.origin}${returnPath}`;
       console.log("[Auth] signInWithOAuth redirectTo:", redirectUrl);
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",

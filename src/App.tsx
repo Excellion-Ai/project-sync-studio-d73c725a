@@ -39,6 +39,9 @@ const MaintenanceRequest = lazyWithRetry(() => import("./pages/MaintenanceReques
 const BuilderTest = lazyWithRetry(() => import("./pages/BuilderTest"), "BuilderTest");
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
 
+// Onboarding
+const RoleSelection = lazyWithRetry(() => import("./pages/onboarding/RoleSelection"), "RoleSelection");
+
 // Settings
 const Settings = lazyWithRetry(() => import("./pages/Settings"), "Settings");
 const ProfileSettings = lazyWithRetry(() => import("./pages/settings/ProfileSettings"), "ProfileSettings");
@@ -83,6 +86,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<SecretBuilderHub />} />
             <Route path="/secret-builder-hub" element={<SecretBuilderHub />} />
+            <Route path="/onboarding/role" element={<RoleSelection />} />
             <Route path="/secret-builder" element={<SecretBuilder />} />
             <Route path="/secret-builder/:projectId" element={<SecretBuilder />} />
             <Route path="/studio/:projectId" element={<SecretBuilder />} />

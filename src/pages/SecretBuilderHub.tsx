@@ -1516,12 +1516,12 @@ function HubContent() {
   );
 }
 
-// ── Page wrapper with Auth Guard ─────────────────────────────
+// ── Page wrapper with Auth + Role Guard ─────────────────────
 
 const SecretBuilderHub = () => {
-  const { user, loading } = useAuth();
+  const { user, ready, role } = useAuth();
 
-  if (loading) {
+  if (!ready) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -1531,6 +1531,16 @@ const SecretBuilderHub = () => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // No role chosen yet → onboarding.
+  if (!role) {
+    return <Navigate to="/onboarding/role" replace />;
+  }
+
+  // Students get their own dashboard.
+  if (role === "student") {
+    return <Navigate to="/dashboard/student" replace />;
   }
 
   return <HubContent />;
