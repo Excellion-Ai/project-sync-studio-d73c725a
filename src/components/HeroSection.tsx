@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, ArrowRight, X, FileText } from "lucide-react";
+import heroImg from "@/assets/hero-bg.jpg";
 import AttachmentMenu from "@/components/secret-builder/attachments/AttachmentMenu";
 import type { AttachmentMenuHandle } from "@/components/secret-builder/attachments/AttachmentMenu";
 import type { AttachmentItem } from "@/components/secret-builder/attachments/types";
