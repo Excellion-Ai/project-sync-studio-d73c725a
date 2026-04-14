@@ -5,7 +5,7 @@ import StatsBar from "@/components/StatsBar";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import FeaturesSection from "@/components/FeaturesSection";
 
-import QuickstartSection from "@/components/QuickstartSection";
+
 import PricingSection from "@/components/PricingSection";
 import GuaranteeSection from "@/components/GuaranteeSection";
 import FAQSection from "@/components/FAQSection";
@@ -24,7 +24,7 @@ const WebBuilderHome = () => {
       <HowItWorksSection />
       <FeaturesSection />
       
-      <QuickstartSection />
+      
       <PricingSection />
       <GuaranteeSection />
       <FAQSection />
