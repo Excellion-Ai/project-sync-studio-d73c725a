@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Check, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
+import { analytics } from "@/lib/analytics";
 
 const features = [
   "Unlimited courses",
@@ -19,6 +20,10 @@ const PricingSection = () => {
   const [yearly, setYearly] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    analytics.pricingPageViewed({ source: "landing_pricing_section" });
+  }, []);
   const { user } = useAuth();
   const { startCheckout } = useSubscription();
 

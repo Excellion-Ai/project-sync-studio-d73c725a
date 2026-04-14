@@ -5,6 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
+import { analytics, identifyUser } from "@/lib/analytics";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -23,6 +24,11 @@ const Auth = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
+        identifyUser(session.user.id, { email: session.user.email });
+        if (event === "SIGNED_IN" && session.user.created_at && Date.now() - new Date(session.user.created_at).getTime() < 60_000) {
+          const method = session.user.app_metadata?.provider || "email";
+          analytics.signedUp({ method, email: session.user.email });
+        }
         navigate(redirectTo);
       }
     });

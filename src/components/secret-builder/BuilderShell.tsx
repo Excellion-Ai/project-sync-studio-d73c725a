@@ -17,6 +17,7 @@ import { useHistory } from "@/hooks/useHistory";
 import { useSubscription } from "@/hooks/useSubscription";
 import { ExtendedCourse } from "@/types/course-pages";
 import { BRAND_STYLE_CONFIGS, type BrandStylePreset } from "@/components/builder/GuidedPromptBuilder";
+import { analytics } from "@/lib/analytics";
 import {
   CourseOptions,
   GenerationStep,
@@ -590,6 +591,12 @@ const BuilderShell = ({
         updateStep("structure", "in_progress");
 
         const course = mapAIResponseToCourse(outlineResponse, options);
+        analytics.courseGenerated({
+          title: course.title,
+          module_count: course.modules.length,
+          has_pdf: !!pdfBase64,
+          duration_weeks: course.duration_weeks,
+        });
         updateStep("structure", "complete");
 
         // Step 2: Save
@@ -706,6 +713,7 @@ const BuilderShell = ({
 
   const handlePublishCourse = useCallback(async () => {
     if (!courseId || !courseSpec) return;
+    analytics.publishClicked({ course_id: courseId, course_title: courseSpec.title });
 
     // Subscription gate (founders bypass)
     if (!subscribed && !isFounder) {
