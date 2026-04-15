@@ -1,8 +1,26 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const CTASection = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { subscribed } = useSubscription();
+
+  const handleClick = () => {
+    if (!user) {
+      navigate("/auth?redirect=/dashboard");
+      return;
+    }
+    if (subscribed) {
+      navigate("/dashboard");
+      return;
+    }
+    navigate("/paywall");
+  };
+
   return (
     <section id="cta-section" className="py-[100px] bg-[#0A0A0A] relative overflow-hidden">
       {/* Dramatic spotlight */}
@@ -24,13 +42,13 @@ const CTASection = () => {
           <p className="text-muted-foreground text-lg mb-10 font-body max-w-xl mx-auto">
             Generate the outline and sales page now. Film and publish when you're ready.
           </p>
-          <Link
-            to="/auth"
+          <button
+            onClick={handleClick}
             className="btn-shimmer inline-flex items-center gap-2 px-10 py-5 rounded-[12px] btn-primary text-lg font-heading font-bold shadow-glow"
           >
             Start Building
             <ArrowRight className="w-5 h-5" />
-          </Link>
+          </button>
         </motion.div>
       </div>
     </section>
