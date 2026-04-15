@@ -28,10 +28,9 @@ const CTASection = () => {
             to="/auth"
             className="btn-shimmer inline-flex items-center gap-2 px-10 py-5 rounded-[12px] btn-primary text-lg font-heading font-bold shadow-glow"
           >
-            Start Building Free
+            Start Building
             <ArrowRight className="w-5 h-5" />
           </Link>
-          <p className="text-xs text-muted-foreground mt-6 font-body">No credit card required.</p>
         </motion.div>
       </div>
     </section>

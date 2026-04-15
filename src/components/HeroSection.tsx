@@ -306,12 +306,12 @@ const HeroSection = () => {
               disabled={isStarting}
               className="flex-1 px-6 py-3 rounded-[10px] btn-primary text-sm flex items-center justify-center gap-2 font-body disabled:opacity-50"
             >
-              {isStarting ? "Creating…" : "Start Building Free"}
+              {isStarting ? "Creating…" : "Start Building"}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
-          <p className="text-xs text-muted-foreground font-body">No credit card required.</p>
+          <p className="text-xs text-muted-foreground font-body">No credit card needed.</p>
 
           <div className="flex flex-wrap gap-2 justify-center pt-2">
             {suggestions.map((s) => (

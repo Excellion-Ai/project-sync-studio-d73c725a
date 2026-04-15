@@ -62,7 +62,7 @@ const QuickstartSection = () => {
               href="/auth"
               className="mt-6 w-full px-6 py-3 rounded-[10px] btn-primary text-sm flex items-center justify-center gap-2 font-body"
             >
-              Start Building Free
+              Start Building
             </a>
 
             <p className="text-xs text-muted-foreground text-center mt-3 font-body">Most coaches finish setup in 1 weekend.</p>
