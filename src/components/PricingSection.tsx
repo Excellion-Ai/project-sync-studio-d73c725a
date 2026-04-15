@@ -25,11 +25,15 @@ const PricingSection = () => {
     analytics.pricingPageViewed({ source: "landing_pricing_section" });
   }, []);
   const { user } = useAuth();
-  const { startCheckout } = useSubscription();
+  const { subscribed, startCheckout } = useSubscription();
 
   const handleSubscribe = async () => {
     if (!user) {
-      navigate("/auth?redirect=/pricing");
+      navigate("/auth?redirect=/paywall");
+      return;
+    }
+    if (subscribed) {
+      navigate("/dashboard");
       return;
     }
 
