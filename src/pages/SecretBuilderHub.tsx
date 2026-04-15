@@ -1233,7 +1233,7 @@ function HubContent() {
 
         <div className="mx-auto w-full max-w-[960px] px-4 sm:px-8 py-10 sm:py-16 space-y-10">
           {/* ── Welcome / Hero ────────────────────────────── */}
-          {!isLoading && courses.length === 0 ? (
+          {!isLoading && courses.length === 0 && !localStorage.getItem("builder-initial-idea") ? (
             <div className="text-center space-y-8 py-8">
               <div className="space-y-3">
                 <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">Welcome to Excellion</h1>
@@ -1259,6 +1259,14 @@ function HubContent() {
                     <button key={exPrompt} onClick={() => { setIdea(exPrompt); handleGenerate(exPrompt); }} disabled={isGenerating} className="px-4 py-2 rounded-full border border-border bg-card hover:bg-primary/10 hover:border-primary/40 text-sm text-foreground transition-colors disabled:opacity-50">{exPrompt}</button>
                   ))}
                 </div>
+              </div>
+            </div>
+          ) : !isLoading && courses.length === 0 && localStorage.getItem("builder-initial-idea") ? (
+            <div className="text-center space-y-6 py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold text-foreground">Setting up your course…</h2>
+                <p className="text-sm text-muted-foreground">We're preparing your builder workspace</p>
               </div>
             </div>
           ) : (
