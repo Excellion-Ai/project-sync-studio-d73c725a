@@ -12,7 +12,7 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = "claude-sonnet-4-6";
 
 const SYSTEM_PROMPT = `You are a Supabase/PostgreSQL database expert. Given a request, generate schema queries, SQL migrations, or database design recommendations.
 

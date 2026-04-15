@@ -12,7 +12,7 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = "claude-sonnet-4-6";
 const REQUEST_TIMEOUT_MS = 55000;
 const PDF_TIMEOUT_MS = 120000;
 const MAX_TOKENS = 4000;

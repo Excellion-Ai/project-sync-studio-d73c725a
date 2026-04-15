@@ -12,7 +12,7 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = "claude-sonnet-4-6";
 
 const SYSTEM_PROMPT = `You are a React code generation agent. Given a component specification or design blueprint, generate clean, production-ready React + TypeScript + Tailwind CSS code.
 

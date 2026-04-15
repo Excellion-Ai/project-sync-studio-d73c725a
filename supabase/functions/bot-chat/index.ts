@@ -12,7 +12,7 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = "claude-sonnet-4-6";
 
 const SYSTEM_PROMPT = `You are a helpful, friendly AI assistant for a course creation platform called Excellion. You help creators refine their courses, brainstorm ideas, improve content, and answer questions about course design and marketing.
 

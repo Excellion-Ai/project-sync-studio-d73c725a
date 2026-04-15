@@ -12,7 +12,7 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = "claude-sonnet-4-6";
 
 const SYSTEM_PROMPT = `You are a website/course site blueprint architect. Given a business description and goals, generate a complete site specification as JSON.
 

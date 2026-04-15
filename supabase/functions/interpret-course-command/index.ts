@@ -12,7 +12,7 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = "claude-sonnet-4-6";
 
 const SYSTEM_PROMPT = `You are a course builder AI that makes SURGICAL, PRECISE changes. The user describes changes to their course and you return a JSON object with ONLY the specific updates to apply.
 
