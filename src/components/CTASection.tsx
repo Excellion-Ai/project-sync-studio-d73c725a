@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 const CTASection = () => {
   return (
-    <section className="py-[100px] bg-[#0A0A0A] relative overflow-hidden">
+    <section id="cta-section" className="py-[100px] bg-[#0A0A0A] relative overflow-hidden">
       {/* Dramatic spotlight */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-[900px] h-[600px] bg-[radial-gradient(ellipse,rgba(201,168,76,0.06)_0%,transparent_60%)]" />
