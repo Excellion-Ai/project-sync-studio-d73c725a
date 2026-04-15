@@ -40,7 +40,7 @@ import {
 } from "./CourseBuilderPanel";
 import AttachmentMenu from "./attachments/AttachmentMenu";
 import type { AttachmentMenuHandle } from "./attachments/AttachmentMenu";
-import GuidedPromptBuilder from "@/components/builder/GuidedPromptBuilder";
+import { AI } from "@/services/ai";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -482,51 +482,36 @@ const BuildTab = ({
           </div>
         )}
 
-        {/* AttachmentMenu for GuidedPromptBuilder step 4 file picker */}
-        {!hasCourse && (
-          <AttachmentMenu ref={attachMenuRef} onAdd={onAddAttachment} disabled={isBusy} />
-        )}
-
-        {hasCourse ? (
-          <>
-            <div className="relative">
-              <Textarea
-                value={idea}
-                onChange={(e) => onIdeaChange(e.target.value)}
-                placeholder="Tell me what to change…"
-                rows={2}
-                className="resize-none text-sm pr-20 bg-background border-border focus:border-primary/50 focus:ring-primary/20"
-                disabled={isBusy}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && idea.trim()) {
-                    e.preventDefault();
-                    onSubmit();
-                  }
-                }}
-              />
-              <div className="absolute bottom-2 right-2 flex flex-col items-center gap-1">
-                <AttachmentMenu onAdd={onAddAttachment} disabled={isBusy} />
-                <Button
-                  size="icon"
-                  className="h-7 w-7 bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow-sm"
-                  onClick={onSubmit}
-                  disabled={isBusy || !idea.trim()}
-                >
-                  {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                </Button>
-              </div>
-            </div>
-            <p className="text-[10px] text-muted-foreground text-center">Enter to send</p>
-          </>
-        ) : (
-          <GuidedPromptBuilder
-            onPromptChange={onIdeaChange}
-            onGenerate={(prompt, brandStyle) => { onIdeaChange(prompt); setPendingBrandStyle(brandStyle); setTimeout(() => onSubmit(), 0); }}
-            isGenerating={isBusy}
-            hasAttachment={attachments.length > 0}
-            onUploadClick={() => attachMenuRef.current?.openFilePicker()}
+        <div className="relative">
+          <Textarea
+            value={idea}
+            onChange={(e) => onIdeaChange(e.target.value)}
+            placeholder={hasCourse ? "Tell me what to change…" : "Describe your course idea…"}
+            rows={2}
+            className="resize-none text-sm pr-20 bg-background border-border focus:border-primary/50 focus:ring-primary/20"
+            disabled={isBusy}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && idea.trim()) {
+                e.preventDefault();
+                onSubmit();
+              }
+            }}
           />
-        )}
+          <div className="absolute bottom-2 right-2 flex flex-col items-center gap-1">
+            <AttachmentMenu onAdd={onAddAttachment} disabled={isBusy} />
+            <Button
+              size="icon"
+              className="h-7 w-7 bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow-sm"
+              onClick={onSubmit}
+              disabled={isBusy || !idea.trim()}
+            >
+              {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
+        </div>
+        <p className="text-[10px] text-muted-foreground text-center">
+          {hasCourse ? "Enter to send" : "Enter to generate"}
+        </p>
       </div>
     </>
   );
@@ -538,63 +523,104 @@ const HelpTab = ({
   helpInput,
   setHelpInput,
   messages,
+  setMessages,
   messagesEndRef,
 }: {
   helpInput: string;
   setHelpInput: (v: string) => void;
   messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   messagesEndRef: React.RefObject<HTMLDivElement>;
-}) => (
-  <>
-    <ScrollArea className="flex-1 px-4 py-3">
-      {messages.length === 0 ? (
-        <div className="py-8 text-center space-y-2">
-          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-            <MessageSquare className="h-6 w-6 text-primary" />
-          </div>
-          <h3 className="text-sm font-semibold text-foreground">AI Assistant</h3>
-          <p className="text-xs text-muted-foreground max-w-[240px] mx-auto">
-            Ask questions about course creation, get suggestions, or troubleshoot issues.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3 py-2">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={cn(
-                "max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm",
-                msg.role === "user"
-                  ? "ml-auto bg-primary/15 text-foreground border border-primary/20"
-                  : "mr-auto bg-muted text-foreground border border-border"
-              )}
-            >
-              {msg.content}
+}) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSend = async () => {
+    const text = helpInput.trim();
+    if (!text || isLoading) return;
+
+    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: text };
+    setMessages((prev) => [...prev, userMsg]);
+    setHelpInput("");
+    setIsLoading(true);
+
+    try {
+      const allMessages = [...messages, userMsg].map((m) => ({ role: m.role, content: m.content }));
+      const data = await AI.help(allMessages);
+      const reply = data?.reply || data?.text || "Sorry, I couldn't generate a response.";
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: reply }]);
+    } catch (err: any) {
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", content: "Something went wrong. Please try again." }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <ScrollArea className="flex-1 px-4 py-3">
+        {messages.length === 0 ? (
+          <div className="py-8 text-center space-y-2">
+            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+              <MessageSquare className="h-6 w-6 text-primary" />
             </div>
-          ))}
-          <div ref={messagesEndRef} />
+            <h3 className="text-sm font-semibold text-foreground">AI Assistant</h3>
+            <p className="text-xs text-muted-foreground max-w-[240px] mx-auto">
+              Ask questions about course creation, get suggestions, or troubleshoot issues.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3 py-2">
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={cn(
+                  "max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm",
+                  msg.role === "user"
+                    ? "ml-auto bg-primary/15 text-foreground border border-primary/20"
+                    : "mr-auto bg-muted text-foreground border border-border"
+                )}
+              >
+                {msg.content}
+              </div>
+            ))}
+            {isLoading && (
+              <div className="mr-auto flex items-center gap-2 text-xs text-muted-foreground py-2">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                Thinking…
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </ScrollArea>
+      <div className="px-4 pb-3 pt-2 border-t border-border">
+        <div className="relative">
+          <Textarea
+            value={helpInput}
+            onChange={(e) => setHelpInput(e.target.value)}
+            placeholder="Ask anything about your course…"
+            rows={2}
+            className="resize-none text-sm pr-12 bg-background border-border focus:border-primary/50"
+            disabled={isLoading}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && helpInput.trim()) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+          />
+          <Button
+            size="icon"
+            className="absolute bottom-2 right-2 h-7 w-7 bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={!helpInput.trim() || isLoading}
+            onClick={handleSend}
+          >
+            {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+          </Button>
         </div>
-      )}
-    </ScrollArea>
-    <div className="px-4 pb-3 pt-2 border-t border-border">
-      <div className="relative">
-        <Textarea
-          value={helpInput}
-          onChange={(e) => setHelpInput(e.target.value)}
-          placeholder="Ask anything about your course…"
-          rows={2}
-          className="resize-none text-sm pr-12 bg-background border-border focus:border-primary/50"
-        />
-        <Button
-          size="icon"
-          className="absolute bottom-2 right-2 h-7 w-7 bg-primary text-primary-foreground hover:bg-primary/90"
-          disabled={!helpInput.trim()}
-        >
-          <Send className="h-3.5 w-3.5" />
-        </Button>
       </div>
-    </div>
-  </>
-);
+    </>
+  );
+};
 
 export default BuilderChatPanel;
