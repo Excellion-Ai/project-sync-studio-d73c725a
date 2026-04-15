@@ -1261,6 +1261,14 @@ function HubContent() {
                 </div>
               </div>
             </div>
+          ) : !isLoading && courses.length === 0 && localStorage.getItem("builder-initial-idea") ? (
+            <div className="text-center space-y-6 py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold text-foreground">Setting up your course…</h2>
+                <p className="text-sm text-muted-foreground">We're preparing your builder workspace</p>
+              </div>
+            </div>
           ) : (
             <>
               <div className="text-center space-y-3">
