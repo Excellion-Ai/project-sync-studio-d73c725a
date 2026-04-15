@@ -104,16 +104,19 @@ const HeroSection = () => {
   };
 
   /** Store structured draft and navigate to builder */
-  const handleStartBuilding = async () => {
+  const handleStartBuilding = async (overridePrompt?: string) => {
     if (isStarting) return;
+    const effectivePrompt = overridePrompt || prompt;
 
     // Check access
     if (!user) {
       // Store draft so it persists through auth
-      if (prompt.trim()) {
+      if (effectivePrompt.trim()) {
         const draft = buildDraft();
+        // Use override prompt in draft if provided
+        if (overridePrompt) draft.prompt = overridePrompt.trim();
         localStorage.setItem("builder-draft", JSON.stringify(draft));
-        localStorage.setItem("builder-initial-idea", prompt);
+        localStorage.setItem("builder-initial-idea", effectivePrompt);
       }
       navigate("/auth?redirect=/secret-builder-hub");
       return;
@@ -129,7 +132,7 @@ const HeroSection = () => {
       return;
     }
 
-    if (!prompt.trim()) {
+    if (!effectivePrompt.trim()) {
       toast.error("Enter a course idea first.");
       return;
     }
@@ -145,13 +148,14 @@ const HeroSection = () => {
 
       // Store structured draft
       const draft = buildDraft();
+      if (overridePrompt) draft.prompt = overridePrompt.trim();
       localStorage.setItem("builder-draft", JSON.stringify(draft));
-      localStorage.setItem("builder-initial-idea", prompt);
+      localStorage.setItem("builder-initial-idea", effectivePrompt);
 
       // Create project
       const { data: proj, error } = await supabase
         .from("builder_projects")
-        .insert({ name: prompt.slice(0, 80), user_id: session.user.id })
+        .insert({ name: effectivePrompt.slice(0, 80), user_id: session.user.id })
         .select("id")
         .single();
       if (error || !proj) throw error;
@@ -177,7 +181,7 @@ const HeroSection = () => {
 
       navigate(`/studio/${proj.id}`, {
         state: {
-          initialIdea: prompt,
+          initialIdea: effectivePrompt,
           pdfName: pdfAttachment?.name,
         },
       });
