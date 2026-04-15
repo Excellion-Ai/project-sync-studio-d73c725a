@@ -69,6 +69,15 @@ const Navigation = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+          My Courses
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate("/dashboard/analytics")}>
+          Analytics
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate("/settings")}>
+          Settings
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/billing")}>
           Billing
         </DropdownMenuItem>
