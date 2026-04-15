@@ -5,14 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { identifyUser } from "@/lib/analytics";
 
 /**
- * Dedicated OAuth callback route. Google redirects users here with a
- * ?code= PKCE authorization code. We exchange it for a session and then
- * navigate to /dashboard — guards there handle role-based routing
- * (coach vs student vs onboarding).
- *
- * Default UI is a spinner. We only render the error screen when
- * exchangeCodeForSession explicitly returns an error object — no
- * timeouts, no speculative "maybe it failed" states.
+ * OAuth callback route. Supabase client (with detectSessionInUrl: true)
+ * automatically exchanges the ?code= parameter for a session.
+ * This page just waits for the session and redirects.
  */
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -21,75 +16,42 @@ const AuthCallback = () => {
   useEffect(() => {
     let cancelled = false;
 
-    // eslint-disable-next-line no-console
-    console.log("[oauth-debug] /auth/callback MOUNTED", {
-      href: window.location.href,
-      search: window.location.search,
-      hash: window.location.hash,
-    });
-
     const goToDashboard = (userId?: string, email?: string) => {
       if (cancelled) return;
       if (userId) {
-        try {
-          identifyUser(userId, { email });
-        } catch { /* analytics is best-effort */ }
+        try { identifyUser(userId, { email }); } catch { /* best-effort */ }
       }
       navigate("/dashboard", { replace: true });
     };
 
-    // Fallback: if onAuthStateChange fires SIGNED_IN (e.g. session was
-    // already set, or exchange succeeded via another path), forward to
-    // the dashboard. No timeout — the spinner stays up until a session
-    // is available or exchangeCodeForSession returns an error.
+    // Primary: listen for SIGNED_IN event (fired after auto code exchange)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // eslint-disable-next-line no-console
-      console.log("[oauth-debug] /auth/callback onAuthStateChange", { event, hasSession: !!session });
       if (event === "SIGNED_IN" && session) {
         goToDashboard(session.user.id, session.user.email);
       }
     });
 
-    const run = async () => {
-      const code = new URLSearchParams(window.location.search).get("code");
-      // eslint-disable-next-line no-console
-      console.log("[oauth-debug] /auth/callback code present?", !!code);
-
-      if (!code) {
-        // No code in URL — possibly the user hit this route while already
-        // logged in. If a session already exists, forward immediately.
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) goToDashboard(session.user.id, session.user.email);
-        return;
-      }
-
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    // Fallback: check for existing session after 2s
+    const fallbackTimer = setTimeout(async () => {
       if (cancelled) return;
-
-      if (error) {
-        // eslint-disable-next-line no-console
-        console.error("[oauth-debug] /auth/callback exchangeCodeForSession error", error);
-        setErrorMsg(error.message);
-        return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        goToDashboard(session.user.id, session.user.email);
       }
+    }, 2000);
 
-      if (data.session) {
-        // eslint-disable-next-line no-console
-        console.log("[oauth-debug] /auth/callback exchange succeeded", {
-          userId: data.session.user.id,
-        });
-        goToDashboard(data.session.user.id, data.session.user.email);
+    // Final timeout: show error after 15s
+    const errorTimer = setTimeout(() => {
+      if (!cancelled) {
+        setErrorMsg("Sign-in timed out. Please try again.");
       }
-      // If exchange returned neither an error nor a session, the
-      // onAuthStateChange SIGNED_IN listener will catch the session
-      // when it arrives.
-    };
-
-    void run();
+    }, 15000);
 
     return () => {
       cancelled = true;
       subscription.unsubscribe();
+      clearTimeout(fallbackTimer);
+      clearTimeout(errorTimer);
     };
   }, [navigate]);
 

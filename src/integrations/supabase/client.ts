@@ -17,6 +17,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     // exclusively. Without this, detectSessionInUrl consumes the ?code= param
     // on page load, leaving nothing for exchangeCodeForSession() → "Unable to
     // exchange external code" error.
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
   }
 });
