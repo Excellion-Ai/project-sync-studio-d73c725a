@@ -1343,23 +1343,7 @@ function HubContent() {
                 ))}
               </div>
             </section>
-          ) : (
-            !isLoading && (
-              <div className="text-center py-16 space-y-4">
-                <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
-                  <BookOpen className="h-8 w-8 text-muted-foreground/30" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">
-                    No courses yet
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Describe your idea above to get started.
-                  </p>
-                </div>
-              </div>
-            )
-          )}
+          ) : null}
           {/* ── Trashed Courses ───────────────────────────── */}
           {trashedCourses.length > 0 && (
             <section className="space-y-4 pt-4 border-t border-border">
