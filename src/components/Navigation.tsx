@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import excellionLogo from "@/assets/excellion-logo.png";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -23,8 +24,12 @@ const Navigation = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { subscribed, startCheckout } = useSubscription();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const closeMobile = () => setMobileOpen(false);
 
   const handleSignOut = async () => {
+    closeMobile();
     try {
       await supabase.auth.signOut();
       toast.success("Signed out successfully");
@@ -36,8 +41,9 @@ const Navigation = () => {
 
   const ALLOWED_EMAIL = "excellionai@gmail.com";
   const handleStartBuilding = async () => {
+    closeMobile();
     if (user && (user.email === ALLOWED_EMAIL || subscribed)) {
-      navigate("/secret-builder-hub");
+      navigate("/dashboard");
     } else if (user) {
       try {
         await startCheckout("monthly");
@@ -50,12 +56,18 @@ const Navigation = () => {
   };
 
   const scrollTo = (id: string) => {
+    closeMobile();
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: "smooth" });
     } else {
       window.location.href = `/#${id}`;
     }
+  };
+
+  const mobileNavigate = (path: string) => {
+    closeMobile();
+    navigate(path);
   };
 
   const UserMenu = () => (
@@ -137,7 +149,7 @@ const Navigation = () => {
 
           {/* Mobile Menu */}
           <div className="md:hidden">
-            <Sheet>
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
                   <Menu className="h-5 w-5" />
@@ -153,13 +165,13 @@ const Navigation = () => {
 
                   {/* Navigation Links */}
                   <div className="flex flex-col gap-3">
-                    <button onClick={() => scrollTo("how-it-works")} className="text-muted-foreground hover:text-foreground transition-colors text-sm text-left py-2">
+                    <button onClick={() => scrollTo("how-it-works")} className="text-muted-foreground hover:text-foreground transition-colors text-sm text-left py-2 touch-manipulation">
                       How it Works
                     </button>
-                    <button onClick={() => scrollTo("pricing")} className="text-muted-foreground hover:text-foreground transition-colors text-sm text-left py-2">
+                    <button onClick={() => scrollTo("pricing")} className="text-muted-foreground hover:text-foreground transition-colors text-sm text-left py-2 touch-manipulation">
                       Pricing
                     </button>
-                    <button onClick={() => scrollTo("faq")} className="text-muted-foreground hover:text-foreground transition-colors text-sm text-left py-2">
+                    <button onClick={() => scrollTo("faq")} className="text-muted-foreground hover:text-foreground transition-colors text-sm text-left py-2 touch-manipulation">
                       FAQ
                     </button>
                   </div>
@@ -167,38 +179,45 @@ const Navigation = () => {
                   {/* User Section */}
                   <div className="flex flex-col gap-3 pt-4 border-t border-border">
                     {isAdmin && (
-                      <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-2 py-2">
+                      <button onClick={() => mobileNavigate("/admin")} className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-2 py-2 text-left touch-manipulation">
                         <Shield className="h-4 w-4" />
                         Admin
-                      </Link>
+                      </button>
                     )}
                     {!loading && (
                       user ? (
                         <>
                           <div className="text-sm text-muted-foreground flex items-center gap-2 py-2">
                             <User className="h-4 w-4" />
-                            {user.email}
+                            <span className="truncate">{user.email}</span>
                           </div>
-                          <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2">
+                          <button onClick={() => mobileNavigate("/dashboard")} className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2 text-left touch-manipulation">
                             My Courses
-                          </Link>
-                          <Link to="/dashboard/analytics" className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2">
+                          </button>
+                          <button onClick={() => mobileNavigate("/dashboard/analytics")} className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2 text-left touch-manipulation">
                             Analytics
-                          </Link>
-                          <Link to="/settings" className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2">
+                          </button>
+                          <button onClick={() => mobileNavigate("/settings")} className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2 text-left touch-manipulation">
                             Settings
-                          </Link>
-                          <Link to="/billing" className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2">
+                          </button>
+                          <button onClick={() => mobileNavigate("/billing")} className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2 text-left touch-manipulation">
                             Billing
-                          </Link>
-                          <button onClick={handleSignOut} className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-2 py-2 text-left">
+                          </button>
+                          <button
+                            onClick={handleSignOut}
+                            className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-2 py-2 text-left touch-manipulation"
+                          >
                             <LogOut className="h-4 w-4" />
                             Sign Out
                           </button>
                         </>
-                      ) : null
+                      ) : (
+                        <button onClick={() => mobileNavigate("/auth")} className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2 text-left touch-manipulation">
+                          Sign In
+                        </button>
+                      )
                     )}
-                    <Button onClick={handleStartBuilding} className="w-full mt-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground" variant="outline">
+                    <Button onClick={handleStartBuilding} className="w-full mt-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground touch-manipulation" variant="outline">
                       Start Building
                     </Button>
                   </div>
