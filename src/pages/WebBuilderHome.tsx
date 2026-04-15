@@ -11,12 +11,14 @@ import GuaranteeSection from "@/components/GuaranteeSection";
 import FAQSection from "@/components/FAQSection";
 
 import CTASection from "@/components/CTASection";
+import FloatingCTA from "@/components/FloatingCTA";
 import Footer from "@/components/Footer";
 
 const WebBuilderHome = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      <FloatingCTA />
       <HeroSection />
       
       <SocialProofTicker />
