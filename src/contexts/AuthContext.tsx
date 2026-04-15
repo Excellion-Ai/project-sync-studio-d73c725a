@@ -15,8 +15,6 @@ interface AuthContextType {
   profile: AuthProfile | null;
   role: UserRole | null;
   loading: boolean;
-  // True once we have BOTH the session resolved AND (if signed in) the profile fetched.
-  // Auth guards should wait on this to avoid flashing a redirect while the role loads.
   ready: boolean;
   refreshProfile: () => Promise<void>;
 }
@@ -33,6 +31,24 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+/**
+ * Auto-assign "coach" role to a profile that has no role set yet.
+ * This replaces the old role-selection onboarding page.
+ */
+async function ensureCoachRole(userId: string): Promise<UserRole> {
+  try {
+    const { error } = await (supabase as any)
+      .from("profiles")
+      .update({ role: "coach", updated_at: new Date().toISOString() })
+      .eq("id", userId)
+      .is("role", null);
+    if (error) console.error("[auth] ensureCoachRole update failed", error);
+  } catch (err) {
+    console.error("[auth] ensureCoachRole exception", err);
+  }
+  return "coach";
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -42,8 +58,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchProfile = useCallback(async (userId: string): Promise<AuthProfile | null> => {
     try {
-      // role is a new column; cast to any to bypass the checked-in generated types
-      // until the next types regen. Other columns remain strongly typed.
       const { data, error } = await (supabase as any)
         .from("profiles")
         .select("id, role")
@@ -54,7 +68,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
       if (!data) return { id: userId, role: null };
-      return { id: data.id as string, role: (data.role ?? null) as UserRole | null };
+      let role = (data.role ?? null) as UserRole | null;
+
+      // Auto-assign coach role for new users with no role
+      if (!role) {
+        role = await ensureCoachRole(userId);
+      }
+
+      return { id: data.id as string, role };
     } catch (err) {
       console.error("[auth] profile fetch exception", err);
       return null;
@@ -70,22 +91,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, fetchProfile]);
 
   useEffect(() => {
-    // Rely on onAuthStateChange — Supabase fires INITIAL_SESSION exactly once
-    // AFTER it finishes processing any OAuth code/token in the URL.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        // ── OAuth callback debugging ──
-        // eslint-disable-next-line no-console
-        console.log("[oauth-debug] onAuthStateChange fired", {
-          event,
-          hasSession: !!newSession,
-          userId: newSession?.user?.id ?? null,
-          userEmail: newSession?.user?.email ?? null,
-          provider: newSession?.user?.app_metadata?.provider ?? null,
-          expiresAt: newSession?.expires_at ?? null,
-          urlAtFire: typeof window !== "undefined" ? window.location.href : null,
-        });
-
+      async (_event, newSession) => {
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setLoading(false);
@@ -93,8 +100,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (newSession?.user) {
           setProfileLoading(true);
           const fresh = await fetchProfile(newSession.user.id);
-          // eslint-disable-next-line no-console
-          console.log("[oauth-debug] profile fetched after auth event", { event, profile: fresh });
           setProfile(fresh);
           setProfileLoading(false);
         } else {
@@ -104,17 +109,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // Extra belt-and-suspenders: immediately read the current session at
-    // mount and log what we see, without touching state (onAuthStateChange
-    // remains the source of truth).
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      // eslint-disable-next-line no-console
-      console.log("[oauth-debug] getSession on mount", {
-        hasSession: !!session,
-        userId: session?.user?.id ?? null,
-        error: error?.message ?? null,
-        url: typeof window !== "undefined" ? window.location.href : null,
-      });
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      console.log("[auth] getSession on mount", { hasSession: !!s });
     });
 
     return () => subscription.unsubscribe();

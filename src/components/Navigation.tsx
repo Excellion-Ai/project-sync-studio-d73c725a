@@ -69,6 +69,15 @@ const Navigation = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+          My Courses
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate("/dashboard/analytics")}>
+          Analytics
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate("/settings")}>
+          Settings
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/billing")}>
           Billing
         </DropdownMenuItem>
@@ -170,10 +179,19 @@ const Navigation = () => {
                             <User className="h-4 w-4" />
                             {user.email}
                           </div>
+                          <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2">
+                            My Courses
+                          </Link>
+                          <Link to="/dashboard/analytics" className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2">
+                            Analytics
+                          </Link>
+                          <Link to="/settings" className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2">
+                            Settings
+                          </Link>
                           <Link to="/billing" className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2">
                             Billing
                           </Link>
-                      <button onClick={handleSignOut} className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-2 py-2 text-left">
+                          <button onClick={handleSignOut} className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-2 py-2 text-left">
                             <LogOut className="h-4 w-4" />
                             Sign Out
                           </button>

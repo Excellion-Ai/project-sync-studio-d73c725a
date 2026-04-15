@@ -4,11 +4,6 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { identifyUser } from "@/lib/analytics";
 
-/**
- * OAuth callback route. Supabase client (with detectSessionInUrl: true)
- * automatically exchanges the ?code= parameter for a session.
- * This page just waits for the session and redirects.
- */
 const AuthCallback = () => {
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -24,14 +19,12 @@ const AuthCallback = () => {
       navigate("/dashboard", { replace: true });
     };
 
-    // Primary: listen for SIGNED_IN event (fired after auto code exchange)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         goToDashboard(session.user.id, session.user.email);
       }
     });
 
-    // Fallback: check for existing session after 2s
     const fallbackTimer = setTimeout(async () => {
       if (cancelled) return;
       const { data: { session } } = await supabase.auth.getSession();
@@ -40,7 +33,6 @@ const AuthCallback = () => {
       }
     }, 2000);
 
-    // Final timeout: show error after 15s
     const errorTimer = setTimeout(() => {
       if (!cancelled) {
         setErrorMsg("Sign-in timed out. Please try again.");

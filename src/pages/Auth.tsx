@@ -6,7 +6,6 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { analytics, identifyUser } from "@/lib/analytics";
-import { destinationForRole, fetchRoleForUser } from "@/lib/roleRouting";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -17,40 +16,21 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Explicit redirect target (e.g. ?redirect=/pricing) wins over role routing.
   const searchParams = new URLSearchParams(window.location.search);
   const explicitRedirect = searchParams.get("redirect");
 
-  // Redirect if already authenticated
   useEffect(() => {
     let cancelled = false;
 
-    // eslint-disable-next-line no-console
-    console.log("[oauth-debug] /auth mounted", {
-      url: typeof window !== "undefined" ? window.location.href : null,
-      explicitRedirect,
-    });
-
-    const routeAfterAuth = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"]) => {
-      if (!session) return;
+    const routeAfterAuth = async (session: any) => {
+      if (!session || cancelled) return;
       identifyUser(session.user.id, { email: session.user.email });
-      if (explicitRedirect) {
-        // eslint-disable-next-line no-console
-        console.log("[oauth-debug] /auth routeAfterAuth → explicit redirect", explicitRedirect);
-        navigate(explicitRedirect, { replace: true });
-        return;
-      }
-      const role = await fetchRoleForUser(session.user.id);
-      if (cancelled) return;
-      const dest = role ? destinationForRole(role) : "/onboarding/role";
-      // eslint-disable-next-line no-console
-      console.log("[oauth-debug] /auth routeAfterAuth → role-based redirect", { role, dest });
+      // Always go to dashboard (or explicit redirect). No more role selection.
+      const dest = explicitRedirect || "/dashboard";
       navigate(dest, { replace: true });
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // eslint-disable-next-line no-console
-      console.log("[oauth-debug] /auth onAuthStateChange", { event, hasSession: !!session });
       if (session) {
         if (event === "SIGNED_IN" && session.user.created_at && Date.now() - new Date(session.user.created_at).getTime() < 60_000) {
           const method = session.user.app_metadata?.provider || "email";
@@ -60,10 +40,7 @@ const Auth = () => {
       }
     });
 
-    // Check current session in case the component mounts already-authenticated
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      // eslint-disable-next-line no-console
-      console.log("[oauth-debug] /auth getSession on mount", { hasSession: !!session, error: error?.message ?? null });
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) void routeAfterAuth(session);
     });
 
@@ -76,7 +53,6 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
@@ -88,15 +64,8 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    console.log("[Auth] Google sign-in clicked");
     try {
-      // Use the current origin so the PKCE code-verifier (stored in
-      // localStorage) is available when the callback page exchanges the
-      // code. A hardcoded origin breaks preview/staging environments.
-      // IMPORTANT: every origin used here must be listed in Supabase's
-      // Auth → URL Configuration → Redirect URLs allowlist.
       const redirectUrl = `${window.location.origin}/auth/callback`;
-      console.log("[Auth] signInWithOAuth redirectTo:", redirectUrl);
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -104,17 +73,12 @@ const Auth = () => {
           queryParams: { access_type: "offline", prompt: "consent" },
         },
       });
-      console.log("[Auth] signInWithOAuth response:", { data, error });
       if (error) {
-        console.error("[Auth] OAuth error:", error);
         toast({ title: "Sign-in error", description: error.message, variant: "destructive" });
       } else if (!data?.url) {
-        console.error("[Auth] OAuth returned no redirect URL");
         toast({ title: "Sign-in error", description: "No redirect URL returned. Google provider may be disabled.", variant: "destructive" });
       }
-      // Supabase auto-redirects via window.location.assign when data.url is returned
     } catch (err: any) {
-      console.error("[Auth] Unhandled Google sign-in exception:", err);
       toast({ title: "Sign-in error", description: err?.message || "Unexpected error", variant: "destructive" });
     }
   };
@@ -187,19 +151,19 @@ const Auth = () => {
             </div>
 
             <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="rounded border-border"
-                  />
-                  Remember me
-                </label>
-                <button type="button" className="text-sm text-primary hover:underline">
-                  Forgot password?
-                </button>
-              </div>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded border-border"
+                />
+                Remember me
+              </label>
+              <button type="button" className="text-sm text-primary hover:underline">
+                Forgot password?
+              </button>
+            </div>
 
             <button
               type="submit"
@@ -209,7 +173,6 @@ const Auth = () => {
               {loading ? "Loading..." : "Sign In"}
             </button>
           </form>
-
         </div>
       </div>
       <Footer />

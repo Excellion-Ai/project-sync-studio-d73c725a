@@ -88,7 +88,7 @@ const App = () => (
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={<SecretBuilderHub />} />
             <Route path="/secret-builder-hub" element={<SecretBuilderHub />} />
-            <Route path="/onboarding/role" element={<RoleSelection />} />
+            {/* /onboarding/role removed — coaches are auto-assigned */}
             <Route path="/secret-builder" element={<SecretBuilder />} />
             <Route path="/secret-builder/:projectId" element={<SecretBuilder />} />
             <Route path="/studio/:projectId" element={<SecretBuilder />} />

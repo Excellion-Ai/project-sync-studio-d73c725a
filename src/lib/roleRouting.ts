@@ -1,8 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { UserRole } from "@/contexts/AuthContext";
 
-export const destinationForRole = (role: UserRole): string =>
-  role === "coach" ? "/dashboard" : "/dashboard/student";
+export const destinationForRole = (_role: UserRole): string => "/dashboard";
 
 /**
  * Fetch the `role` column from the profiles table.
