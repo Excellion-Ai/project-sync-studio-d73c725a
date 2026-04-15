@@ -113,7 +113,7 @@ const Paywall = () => {
           {/* Founder quote */}
           <div className="max-w-xl mx-auto mb-10 px-6 py-5 rounded-xl border border-border bg-card/50">
             <p className="text-sm sm:text-base text-foreground/80 italic font-body leading-relaxed mb-2">
-              "Built by a coach who was tired of seeing great programs stuck in Google Docs."
+              "Built for coaches who are tired of seeing great programs stuck in Google Docs."
             </p>
             <p className="text-xs text-muted-foreground font-body">— John, Founder</p>
           </div>
