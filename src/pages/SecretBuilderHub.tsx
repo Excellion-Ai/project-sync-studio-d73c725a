@@ -1233,7 +1233,7 @@ function HubContent() {
 
         <div className="mx-auto w-full max-w-[960px] px-4 sm:px-8 py-10 sm:py-16 space-y-10">
           {/* ── Welcome / Hero ────────────────────────────── */}
-          {!isLoading && courses.length === 0 ? (
+          {!isLoading && courses.length === 0 && !localStorage.getItem("builder-initial-idea") ? (
             <div className="text-center space-y-8 py-8">
               <div className="space-y-3">
                 <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">Welcome to Excellion</h1>
