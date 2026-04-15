@@ -206,7 +206,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24">
+    <section className="relative min-h-[calc(100vh-80px)] flex items-center justify-center overflow-hidden pt-20">
       {/* Background image */}
       <div className="absolute inset-0">
         <img
@@ -218,26 +218,26 @@ const HeroSection = () => {
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 45%, transparent 0%, rgba(0,0,0,0.5) 100%)' }} />
       </div>
 
-      <div className="relative z-10 max-w-3xl mx-auto px-4 text-center py-20">
+      <div className="relative z-10 max-w-3xl mx-auto px-4 text-center py-8 md:py-12">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/10 backdrop-blur-sm mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 backdrop-blur-sm mb-3">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             <span className="text-sm text-primary font-body font-semibold tracking-wide">Full Course in 1 Weekend</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-heading font-black text-foreground leading-tight mb-6">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-heading font-black text-foreground leading-tight mb-3">
             Launch your fitness course in{" "}
             <em className="not-italic text-gradient-gold">1 weekend.</em>
           </h1>
 
-          <p className="text-sm text-primary/80 font-body font-medium mb-6">Built for coaches who are done waiting to launch</p>
+          <p className="text-sm text-primary/80 font-body font-medium mb-3">Built for coaches who are done waiting to launch</p>
 
           <p
-            className="max-w-2xl mx-auto mb-10 font-body font-light text-lg text-white/90"
+            className="max-w-2xl mx-auto mb-6 font-body font-light text-base text-white/90"
           >
             Excellion generates your course outline, lesson plan, sales page copy, and student portal from 1 prompt. Spend the weekend polishing, filming, and publishing.
           </p>
@@ -247,7 +247,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2 }}
-          className="premium-card p-6 space-y-4"
+          className="premium-card p-4 space-y-3"
         >
           <div className="rounded-xl border border-primary/20 bg-black/40 backdrop-blur-sm p-4">
             <GuidedPromptBuilder

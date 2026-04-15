@@ -9,7 +9,6 @@ import PricingSection from "@/components/PricingSection";
 import GuaranteeSection from "@/components/GuaranteeSection";
 import FAQSection from "@/components/FAQSection";
 import CTASection from "@/components/CTASection";
-import FloatingCTA from "@/components/FloatingCTA";
 import Footer from "@/components/Footer";
 import "@/styles/cinematic.css";
 
@@ -22,7 +21,6 @@ const Index = () => {
       <div className="noise-overlay" />
 
       <Navbar />
-      <FloatingCTA />
       <HeroSection />
 
       {/* All sections below hero get a plain dark background */}
