@@ -24,9 +24,9 @@ interface GuidedPromptBuilderProps {
 }
 
 const AUDIENCE_OPTIONS = [
-  "Busy moms", "Men over 40", "Beginners",
-  "Athletes", "Bodybuilders", "Powerlifters",
-  "Women who lift", "Busy professionals", "Weight loss clients",
+  "Beginners", "Busy professionals", "Women who lift",
+  "Men over 40", "Weight loss clients", "Athletes",
+  "Busy moms", "Powerlifters", "Bodybuilders",
 ];
 
 const GOAL_OPTIONS = [
