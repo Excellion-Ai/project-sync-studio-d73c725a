@@ -1510,10 +1510,21 @@ const FOUNDER_EMAIL = "excellionai@gmail.com";
 const SecretBuilderHub = () => {
   const { user, ready, role } = useAuth();
   const { subscribed, loading: subLoading } = useSubscription();
+  const [forceRender, setForceRender] = useState(false);
 
-  // Wait for BOTH auth + subscription to resolve so we don't flash a
-  // redirect to /paywall while the Stripe check is still in flight.
-  if (!ready || (user && subLoading)) {
+  // Hard safety net: never let a user stare at an infinite spinner.
+  // After 10s, render the page anyway and warn.
+  useEffect(() => {
+    if (forceRender) return;
+    const t = setTimeout(() => {
+      setForceRender(true);
+      toast.warning("Taking longer than expected — loading may be incomplete.");
+    }, 10000);
+    return () => clearTimeout(t);
+  }, [forceRender]);
+
+  const stillLoading = (!ready || (user && subLoading)) && !forceRender;
+  if (stillLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
