@@ -1647,14 +1647,13 @@ const SecretBuilderHub = () => {
   const { user, ready, role } = useAuth();
   const { subscribed, loading: subLoading } = useSubscription();
   const location = useLocation();
+  const mountId = useRef(Math.random().toString(36).slice(2, 6));
 
-  // Once we've rendered the hub once, never swap back to a spinner on a
-  // transient loading flicker (token refresh, tab focus, etc.). The
-  // 5s-timeout-based data load handles the worst-case data hang.
-  const hasRenderedRef = useRef(false);
+  // eslint-disable-next-line no-console
+  console.log(`[hub-guard:${mountId.current}] render`, { ready, hasUser: !!user, subLoading, role, subscribed });
 
   const stillLoading = !ready || (!!user && subLoading);
-  if (!hasRenderedRef.current && stillLoading) {
+  if (stillLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -1674,7 +1673,6 @@ const SecretBuilderHub = () => {
     return <Navigate to="/paywall" replace />;
   }
 
-  hasRenderedRef.current = true;
   return <HubContent />;
 };
 

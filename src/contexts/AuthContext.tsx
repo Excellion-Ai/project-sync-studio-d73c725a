@@ -101,8 +101,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (newSession?.user) {
         setProfileLoading(true);
-        const fresh = await fetchProfile(newSession.user.id);
-        setProfile(fresh);
+        try {
+          // 3s timeout on profile fetch — if the Supabase query hangs
+          // (dead JWT, network), assume coach and let the user through.
+          const fresh = await Promise.race([
+            fetchProfile(newSession.user.id),
+            new Promise<AuthProfile>((resolve) =>
+              setTimeout(() => {
+                // eslint-disable-next-line no-console
+                console.warn("[auth-ctx] profile fetch timed out after 3s — defaulting to coach");
+                resolve({ id: newSession.user.id, role: "coach" });
+              }, 3000)
+            ),
+          ]);
+          setProfile(fresh ?? { id: newSession.user.id, role: "coach" });
+        } catch {
+          setProfile({ id: newSession.user.id, role: "coach" });
+        }
         setProfileLoading(false);
       } else {
         setProfile(null);
