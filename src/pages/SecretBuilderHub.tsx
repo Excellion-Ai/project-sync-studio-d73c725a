@@ -830,30 +830,41 @@ function HubContent() {
       // eslint-disable-next-line no-console
       console.log("[hub-load] starting load for userId (from useAuth):", userId);
 
-      // Cross-check: what does the Supabase JWT actually contain?
-      // If these IDs don't match, RLS will return zero rows even though the
-      // SQL query is correct.
+      // Ensure the Supabase client has a valid JWT before querying.
+      // getUser() can hang indefinitely when the token is stale, so we
+      // race it against a 5-second timeout. If it fails or mismatches,
+      // we force a token refresh. The course queries themselves use the
+      // JWT implicitly (RLS checks auth.uid()), so we need it valid.
       try {
-        const { data: { user: jwtUser }, error: jwtErr } = await supabase.auth.getUser();
+        const getUserWithTimeout = Promise.race([
+          supabase.auth.getUser(),
+          new Promise<{ data: { user: null }; error: Error }>((resolve) =>
+            setTimeout(() => resolve({ data: { user: null }, error: new Error("getUser timed out after 5s") }), 5000)
+          ),
+        ]);
+        const { data: { user: jwtUser }, error: jwtErr } = await getUserWithTimeout;
+
         // eslint-disable-next-line no-console
-        console.log("[hub-load] supabase.auth.getUser() →", {
+        console.log("[hub-load] getUser() →", {
           jwtUserId: jwtUser?.id ?? null,
-          jwtEmail: jwtUser?.email ?? null,
           matchesAuthContext: jwtUser?.id === userId,
           jwtError: jwtErr?.message ?? null,
         });
-        if (jwtUser && jwtUser.id !== userId) {
+
+        if (jwtErr || !jwtUser || jwtUser.id !== userId) {
           // eslint-disable-next-line no-console
-          console.error(
-            "[hub-load] ⚠️ AUTH MISMATCH: useAuth user.id !== Supabase JWT user.id — RLS will block reads",
-            { authContextId: userId, jwtUserId: jwtUser.id }
-          );
+          console.warn("[hub-load] stale/missing JWT — forcing session refresh");
+          const { error: refreshErr } = await supabase.auth.refreshSession();
+          // eslint-disable-next-line no-console
+          console.log("[hub-load] refreshSession() →", { error: refreshErr?.message ?? null });
         }
       } catch (e) {
         // eslint-disable-next-line no-console
-        console.error("[hub-load] getUser() threw", e);
+        console.error("[hub-load] getUser/refresh threw:", e);
       }
 
+      // Proceed with the data queries regardless — userId from useAuth
+      // is valid and the JWT should now be refreshed (or was fine).
       const [projRes, activeRes, trashedRes] = await Promise.all([
         supabase
           .from("builder_projects")
@@ -885,14 +896,12 @@ function HubContent() {
       console.log("[hub-load] builder_projects →", {
         count: projRes.data?.length ?? 0,
         error: projRes.error?.message ?? null,
-        firstFew: projRes.data?.slice(0, 3),
       });
       // eslint-disable-next-line no-console
       console.log("[hub-load] courses (active) →", {
         count: activeRes.data?.length ?? 0,
         error: activeRes.error?.message ?? null,
-        errorDetails: activeRes.error,
-        firstFew: activeRes.data?.slice(0, 3).map((c: any) => ({ id: c.id, title: c.title, user_id: c.user_id })),
+        firstFew: activeRes.data?.slice(0, 3).map((c: any) => ({ id: c.id, title: c.title })),
       });
       // eslint-disable-next-line no-console
       console.log("[hub-load] courses (trashed) →", {
