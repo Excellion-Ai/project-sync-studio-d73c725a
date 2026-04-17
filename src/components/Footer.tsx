@@ -1,14 +1,16 @@
 import { Link } from "react-router-dom";
 import excellionLogo from "@/assets/excellion-logo.png";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Footer = () => {
+  const { user } = useAuth();
   return (
     <footer className="bg-[hsl(0_0%_3%)] border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-3">
+            <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2 mb-3">
               <img src={excellionLogo} alt="Excellion" className="w-8 h-8 rounded-full object-cover" />
               <span className="text-foreground font-heading font-bold text-lg">Excellion</span>
             </Link>

@@ -2,8 +2,10 @@ import { Link, useLocation } from "react-router-dom";
 import excellionLogo from "@/assets/excellion-logo.png";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
+  const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const isHome = location.pathname === "/";
@@ -22,7 +24,7 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[hsl(0_0%_4%/0.85)] backdrop-blur-xl border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2">
             <img src={excellionLogo} alt="Excellion" className="w-8 h-8 rounded-full object-cover" />
             <span className="text-foreground font-heading font-bold text-lg">Excellion</span>
           </Link>

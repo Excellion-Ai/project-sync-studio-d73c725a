@@ -300,7 +300,7 @@ function SidebarInner({
       {/* Brand */}
       <div className="p-5 pb-4">
         <button
-          onClick={() => onNavigate("/")}
+          onClick={() => onNavigate("/dashboard")}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity"
         >
           <img
