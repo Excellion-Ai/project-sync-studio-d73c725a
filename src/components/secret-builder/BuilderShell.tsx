@@ -24,6 +24,7 @@ import {
   AttachmentItem,
 } from "./CourseBuilderPanel";
 import BuilderHeader from "./BuilderHeader";
+import PaymentLinkDialog from "./PaymentLinkDialog";
 import BuilderChatPanel from "./BuilderChatPanel";
 import BuilderPreviewArea from "./BuilderPreviewArea";
 import CourseSettingsDialog, { CourseSettings } from "./CourseSettingsDialog";
@@ -214,6 +215,8 @@ const BuilderShell = ({
   const [courseId, setCourseId] = useState<string | null>(initialCourseId || null);
   const [projectId, setProjectId] = useState<string | null>(initialProjectId || null);
   const [coursePublishedUrl, setCoursePublishedUrl] = useState<string | null>(null);
+  const [stripePaymentUrl, setStripePaymentUrl] = useState<string | null>(null);
+  const [showPaymentLinkDialog, setShowPaymentLinkDialog] = useState(false);
 
   // Generation — consume localStorage idea + draft only on first mount.
   // Use a ref so the values survive re-renders but the side-effect
@@ -283,7 +286,7 @@ const BuilderShell = ({
     const loadExisting = async () => {
       const { data: rows, error } = await supabase
         .from("courses")
-        .select("id, user_id, slug, subdomain, title, description, tagline, hero_copy, curriculum, branding, status, published_at, created_at, updated_at, thumbnail_url, price_cents, currency, instructor_name, instructor_bio, total_students, is_featured, builder_project_id, page_sections, custom_domain, domain_verified, seo_title, seo_description, social_image_url, has_video_content, type, meta, layout_template, design_config, section_order, section_config, deleted_at, is_free")
+        .select("id, user_id, slug, subdomain, title, description, tagline, hero_copy, curriculum, branding, status, published_at, created_at, updated_at, thumbnail_url, price_cents, currency, instructor_name, instructor_bio, total_students, is_featured, builder_project_id, page_sections, custom_domain, domain_verified, seo_title, seo_description, social_image_url, has_video_content, type, meta, layout_template, design_config, section_order, section_config, deleted_at, is_free, stripe_payment_url")
         .eq("builder_project_id", projectId)
         .eq("user_id", userId)
         .is("deleted_at", null)
@@ -352,6 +355,7 @@ const BuilderShell = ({
       };
 
       setCourseSpec(loaded);
+      setStripePaymentUrl((data as any).stripe_payment_url ?? null);
       setIsDirty(false);
       setSaveStatus("saved");
 
@@ -1029,6 +1033,27 @@ const BuilderShell = ({
     []
   );
 
+  const handleSavePaymentLink = useCallback(
+    async (url: string | null) => {
+      if (!courseId) {
+        toast.error("Publish or save the course first before adding a payment link.");
+        return;
+      }
+      const { error } = await (supabase as any)
+        .from("courses")
+        .update({ stripe_payment_url: url, updated_at: new Date().toISOString() })
+        .eq("id", courseId);
+      if (error) {
+        console.error("[payment-link] save failed", error);
+        toast.error(error.message || "Couldn't save payment link.");
+        return;
+      }
+      setStripePaymentUrl(url);
+      toast.success(url ? "Payment link saved." : "Payment link cleared.");
+    },
+    [courseId]
+  );
+
   const handleTitleUpdate = useCallback(
     (newTitle: string) => {
       if (courseSpec) setCourseSpec({ ...courseSpec, title: newTitle });
@@ -1085,6 +1110,8 @@ const BuilderShell = ({
         onRefine={() => {}}
         onOpenSettings={() => setShowCourseSettings(true)}
         onOpenPublishSettings={() => setShowPublishSettings(true)}
+        onOpenPaymentLink={() => setShowPaymentLinkDialog(true)}
+        hasPaymentLink={!!stripePaymentUrl}
         onDesignUpdate={(config) => {
           if (courseSpec) {
             const updated = { ...courseSpec, design_config: config };
@@ -1139,6 +1166,16 @@ const BuilderShell = ({
               onRefine={() => {}}
               onOpenSettings={() => setShowCourseSettings(true)}
               onOpenPublishSettings={() => setShowPublishSettings(true)}
+              onEnrollClick={() => {
+                // Coach-facing preview click: if a Stripe Payment Link is set,
+                // open it in a new tab so the coach can verify it. Otherwise,
+                // open the configuration dialog so they can set one up.
+                if (stripePaymentUrl) {
+                  window.open(stripePaymentUrl, "_blank", "noopener");
+                } else {
+                  setShowPaymentLinkDialog(true);
+                }
+              }}
               logoUrl={courseSpec?.design_config?.logoUrl}
               onUpdateLogo={(url) => {
                 if (!courseSpec) return;
@@ -1175,6 +1212,12 @@ const BuilderShell = ({
         courseTitle={courseSpec?.title ?? ""}
         courseSubdomain={courseSpec?.id ?? ""}
         onStatusChange={(status) => setIsPublished(status === "published")}
+      />
+      <PaymentLinkDialog
+        open={showPaymentLinkDialog}
+        onOpenChange={setShowPaymentLinkDialog}
+        currentUrl={stripePaymentUrl}
+        onSave={handleSavePaymentLink}
       />
     </div>
   );

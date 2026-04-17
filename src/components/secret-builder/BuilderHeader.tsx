@@ -19,6 +19,7 @@ import {
   Code2,
   GraduationCap,
   Palette,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +69,8 @@ interface BuilderHeaderProps {
   onRefine: () => void;
   onOpenSettings: () => void;
   onOpenPublishSettings: () => void;
+  onOpenPaymentLink: () => void;
+  hasPaymentLink: boolean;
   onDesignUpdate?: (config: DesignConfig) => void;
   currentDesignConfig?: DesignConfig;
 }
@@ -120,6 +123,8 @@ const BuilderHeader = ({
   onRefine,
   onOpenSettings,
   onOpenPublishSettings,
+  onOpenPaymentLink,
+  hasPaymentLink,
   onDesignUpdate,
   currentDesignConfig,
 }: BuilderHeaderProps) => {
@@ -241,6 +246,25 @@ const BuilderHeader = ({
             >
               <Wand2 className="mr-1.5 h-3.5 w-3.5" />
               Refine
+            </Button>
+          )}
+
+          {hasCourse && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="relative border-border text-foreground hover:bg-secondary"
+              onClick={onOpenPaymentLink}
+              title={hasPaymentLink ? "Payment Link connected" : "Add a Stripe Payment Link"}
+            >
+              <CreditCard className="mr-1.5 h-3.5 w-3.5" />
+              Payment Link
+              {hasPaymentLink && (
+                <span
+                  className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]"
+                  aria-label="Payment link connected"
+                />
+              )}
             </Button>
           )}
 

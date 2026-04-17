@@ -45,6 +45,7 @@ interface CoursePreviewTabsProps {
   onRefine?: () => void;
   onOpenSettings?: () => void;
   onOpenPublishSettings?: () => void;
+  onEnrollClick?: () => void;
   onPreviewAsStudent?: () => void;
   onDuplicate?: () => void;
   onUploadThumbnail?: () => void;
@@ -181,7 +182,7 @@ function buildThemeOverrides(colors: NonNullable<ExtendedCourse["design_config"]
 
 const CoursePreviewTabs = ({
   course, onUpdate, onPublish, onUnpublish, onRefine, onOpenSettings,
-  onOpenPublishSettings, onPreviewAsStudent, onDuplicate, onUploadThumbnail,
+  onOpenPublishSettings, onEnrollClick, onPreviewAsStudent, onDuplicate, onUploadThumbnail,
   isPublishing = false, isPublished = false, isVisualEditMode = false,
   logoUrl, onUpdateLogo, isCreatorView = true, onSignIn,
 }: CoursePreviewTabsProps) => {
@@ -887,7 +888,7 @@ const CoursePreviewTabs = ({
                 <CourseLandingPreview
                   course={{ ...course, section_order: landingSections }}
                   onUpdate={onUpdate}
-                  onEnrollClick={() => {}}
+                  onEnrollClick={onEnrollClick ?? (() => {})}
                 />
               )}
             </div>

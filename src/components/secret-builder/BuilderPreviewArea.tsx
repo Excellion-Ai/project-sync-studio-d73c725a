@@ -16,6 +16,7 @@ interface BuilderPreviewAreaProps {
   onRefine: () => void;
   onOpenSettings: () => void;
   onOpenPublishSettings: () => void;
+  onEnrollClick?: () => void;
   logoUrl?: string;
   onUpdateLogo?: (url: string | undefined) => void;
 }
@@ -31,6 +32,7 @@ const BuilderPreviewArea = ({
   onRefine,
   onOpenSettings,
   onOpenPublishSettings,
+  onEnrollClick,
   logoUrl,
   onUpdateLogo,
 }: BuilderPreviewAreaProps) => {
@@ -74,6 +76,7 @@ const BuilderPreviewArea = ({
           onRefine={onRefine}
           onOpenSettings={onOpenSettings}
           onOpenPublishSettings={onOpenPublishSettings}
+          onEnrollClick={onEnrollClick}
           isPublishing={isPublishing}
           isPublished={isPublished}
           isVisualEditMode={true}

@@ -147,7 +147,7 @@ const CoursePage = () => {
     const fetchCourse = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       const findOne = async (q: any) => { const { data: rows } = await q; return rows?.[0] ?? null; };
-      const sel = "id,user_id,slug,subdomain,title,description,tagline,hero_copy,curriculum,branding,status,published_at,created_at,updated_at,thumbnail_url,price_cents,currency,instructor_name,instructor_bio,total_students,is_featured,builder_project_id,page_sections,custom_domain,domain_verified,seo_title,seo_description,social_image_url,has_video_content,type,meta,layout_template,design_config,section_order,section_config,deleted_at,is_free";
+      const sel = "id,user_id,slug,subdomain,title,description,tagline,hero_copy,curriculum,branding,status,published_at,created_at,updated_at,thumbnail_url,price_cents,currency,instructor_name,instructor_bio,total_students,is_featured,builder_project_id,page_sections,custom_domain,domain_verified,seo_title,seo_description,social_image_url,has_video_content,type,meta,layout_template,design_config,section_order,section_config,deleted_at,is_free,stripe_payment_url";
 
       let row: any = null;
       let ownerPreview = false;
@@ -219,6 +219,13 @@ const CoursePage = () => {
 
   const handleEnroll = async () => {
     if (enrolling || !course) return;
+    // Stripe Payment Link takes precedence — coach-managed external checkout.
+    // Redirects straight to buy.stripe.com without requiring sign-in or
+    // touching the platform's enrollments/checkout tables.
+    if (course.stripe_payment_url) {
+      window.location.href = course.stripe_payment_url;
+      return;
+    }
     setEnrolling(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth", { state: { redirect: `/course/${identifier}` } }); setEnrolling(false); return; }
