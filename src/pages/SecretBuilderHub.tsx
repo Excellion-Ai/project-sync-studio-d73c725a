@@ -827,131 +827,144 @@ function HubContent() {
       return;
     }
 
-    // Kick off a background session refresh but DO NOT block the data
-    // queries on it. The Supabase client attaches the JWT from localStorage
-    // to every request, so SELECT/UPDATE work independently of getUser()
-    // (which was hanging indefinitely in prod and leaving the dashboard
-    // empty). If the refresh eventually completes or fails, we log it.
-    (async () => {
-      try {
-        // eslint-disable-next-line no-console
-        console.log("[hub-load] starting background getUser() + refresh probe");
-        const getUserWithTimeout = Promise.race([
-          supabase.auth.getUser(),
-          new Promise<{ data: { user: null }; error: Error }>((resolve) =>
-            setTimeout(() => resolve({ data: { user: null }, error: new Error("getUser timed out after 5s") }), 5000)
-          ),
-        ]);
-        const { data: { user: jwtUser }, error: jwtErr } = await getUserWithTimeout;
-        // eslint-disable-next-line no-console
-        console.log("[hub-load] getUser() →", {
-          jwtUserId: jwtUser?.id ?? null,
-          matchesAuthContext: jwtUser?.id === userId,
-          jwtError: jwtErr?.message ?? null,
-        });
-        if (jwtErr || !jwtUser || jwtUser.id !== userId) {
-          // eslint-disable-next-line no-console
-          console.warn("[hub-load] stale/missing JWT — attempting refreshSession()");
-          const { data: refreshData, error: refreshErr } = await supabase.auth.refreshSession();
-          // eslint-disable-next-line no-console
-          console.log("[hub-load] refreshSession() →", {
-            hasSession: !!refreshData?.session,
-            newUserId: refreshData?.user?.id ?? null,
-            error: refreshErr?.message ?? null,
-          });
-        }
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error("[hub-load] background probe threw:", e);
-      }
-    })();
+    const QUERY_TIMEOUT = 5000;
 
-    // Fire data queries immediately — do NOT await the JWT probe above.
-    // AuthContext's userId is trusted and already validated by its own
-    // onAuthStateChange listener. RLS will still gate these queries on
-    // auth.uid() matching, which requires a valid JWT in the request
-    // header — and the Supabase client supplies that from localStorage
-    // regardless of whether getUser() ever resolves.
+    /** Race a promise against a timeout — returns { data: null, error } on timeout. */
+    function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+      return Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`${label} timed out after ${QUERY_TIMEOUT / 1000}s`)), QUERY_TIMEOUT)
+        ),
+      ]);
+    }
+
     const load = async () => {
       // eslint-disable-next-line no-console
       console.log("[hub-load] firing data queries with userId:", userId);
 
-      const [projRes, activeRes, trashedRes] = await Promise.all([
-        supabase
-          .from("builder_projects")
-          .select("id, name, created_at, updated_at")
-          .eq("user_id", userId)
-          .order("updated_at", { ascending: false })
-          .limit(50),
-        supabase
-          .from("courses")
-          .select(
-            "id, title, description, status, thumbnail_url, curriculum, updated_at, deleted_at, builder_project_id, type, slug, subdomain, published_at, total_students, layout_template, design_config, tagline"
-          )
-          .eq("user_id", userId)
-          .is("deleted_at", null)
-          .order("updated_at", { ascending: false })
-          .limit(50),
-        supabase
-          .from("courses")
-          .select(
-            "id, title, description, status, thumbnail_url, curriculum, updated_at, deleted_at, builder_project_id, type, slug, subdomain, published_at, total_students, layout_template, design_config, tagline"
-          )
-          .eq("user_id", userId)
-          .not("deleted_at", "is", null)
-          .order("deleted_at", { ascending: false })
-          .limit(50),
-      ]);
+      let projRes: { data: any; error: any } = { data: null, error: null };
+      let activeRes: { data: any; error: any } = { data: null, error: null };
+      let trashedRes: { data: any; error: any } = { data: null, error: null };
 
-      // eslint-disable-next-line no-console
-      console.log("[hub-load] builder_projects →", {
-        count: projRes.data?.length ?? 0,
-        error: projRes.error?.message ?? null,
-      });
-      // eslint-disable-next-line no-console
-      console.log("[hub-load] courses (active) →", {
-        count: activeRes.data?.length ?? 0,
-        error: activeRes.error?.message ?? null,
-        firstFew: activeRes.data?.slice(0, 3).map((c: any) => ({ id: c.id, title: c.title })),
-      });
-      // eslint-disable-next-line no-console
-      console.log("[hub-load] courses (trashed) →", {
-        count: trashedRes.data?.length ?? 0,
-        error: trashedRes.error?.message ?? null,
-      });
+      try {
+        [projRes, activeRes, trashedRes] = await withTimeout(
+          Promise.all([
+            supabase
+              .from("builder_projects")
+              .select("id, name, created_at, updated_at")
+              .eq("user_id", userId)
+              .order("updated_at", { ascending: false })
+              .limit(50),
+            supabase
+              .from("courses")
+              .select(
+                "id, title, description, status, thumbnail_url, curriculum, updated_at, deleted_at, builder_project_id, type, slug, subdomain, published_at, total_students, layout_template, design_config, tagline"
+              )
+              .eq("user_id", userId)
+              .is("deleted_at", null)
+              .order("updated_at", { ascending: false })
+              .limit(50),
+            supabase
+              .from("courses")
+              .select(
+                "id, title, description, status, thumbnail_url, curriculum, updated_at, deleted_at, builder_project_id, type, slug, subdomain, published_at, total_students, layout_template, design_config, tagline"
+              )
+              .eq("user_id", userId)
+              .not("deleted_at", "is", null)
+              .order("deleted_at", { ascending: false })
+              .limit(50),
+          ]),
+          "data queries",
+        );
+      } catch (err: any) {
+        // eslint-disable-next-line no-console
+        console.error("[hub-load] queries failed/timed out:", err?.message);
 
-      // If the SELECT failed due to permission/RLS, attempt a refresh +
-      // retry once before giving up.
-      if (activeRes.error && /permission|jwt|denied/i.test(activeRes.error.message)) {
+        // Attempt one session refresh + retry before giving up.
         // eslint-disable-next-line no-console
-        console.warn("[hub-load] SELECT permission/JWT error — retrying after refreshSession");
-        const { error: refreshErr } = await supabase.auth.refreshSession();
-        // eslint-disable-next-line no-console
-        console.log("[hub-load] retry refreshSession() →", { error: refreshErr?.message ?? null });
-        const retry = await supabase
-          .from("courses")
-          .select(
-            "id, title, description, status, thumbnail_url, curriculum, updated_at, deleted_at, builder_project_id, type, slug, subdomain, published_at, total_students, layout_template, design_config, tagline"
-          )
-          .eq("user_id", userId)
-          .is("deleted_at", null)
-          .order("updated_at", { ascending: false })
-          .limit(50);
-        // eslint-disable-next-line no-console
-        console.log("[hub-load] retry courses (active) →", {
-          count: retry.data?.length ?? 0,
-          error: retry.error?.message ?? null,
-        });
-        if (retry.data) setCourses(retry.data as CourseItem[]);
-        else if (retry.error) toast.error(`Couldn't load courses: ${retry.error.message}`);
-      } else if (activeRes.error) {
-        toast.error(`Couldn't load courses: ${activeRes.error.message}`);
+        console.log("[hub-load] attempting refreshSession() before retry");
+        try {
+          const { data: refreshData, error: refreshErr } = await Promise.race([
+            supabase.auth.refreshSession(),
+            new Promise<{ data: null; error: Error }>((resolve) =>
+              setTimeout(() => resolve({ data: null, error: new Error("refreshSession timed out") }), 5000)
+            ),
+          ]);
+          // eslint-disable-next-line no-console
+          console.log("[hub-load] refreshSession() →", {
+            hasSession: !!refreshData?.session,
+            error: refreshErr?.message ?? null,
+          });
+          if (refreshData?.session) {
+            // eslint-disable-next-line no-console
+            console.log("[hub-load] retrying data queries after refresh");
+            [projRes, activeRes, trashedRes] = await withTimeout(
+              Promise.all([
+                supabase
+                  .from("builder_projects")
+                  .select("id, name, created_at, updated_at")
+                  .eq("user_id", userId)
+                  .order("updated_at", { ascending: false })
+                  .limit(50),
+                supabase
+                  .from("courses")
+                  .select(
+                    "id, title, description, status, thumbnail_url, curriculum, updated_at, deleted_at, builder_project_id, type, slug, subdomain, published_at, total_students, layout_template, design_config, tagline"
+                  )
+                  .eq("user_id", userId)
+                  .is("deleted_at", null)
+                  .order("updated_at", { ascending: false })
+                  .limit(50),
+                supabase
+                  .from("courses")
+                  .select(
+                    "id, title, description, status, thumbnail_url, curriculum, updated_at, deleted_at, builder_project_id, type, slug, subdomain, published_at, total_students, layout_template, design_config, tagline"
+                  )
+                  .eq("user_id", userId)
+                  .not("deleted_at", "is", null)
+                  .order("deleted_at", { ascending: false })
+                  .limit(50),
+              ]),
+              "retry data queries",
+            );
+          }
+        } catch (retryErr: any) {
+          // eslint-disable-next-line no-console
+          console.error("[hub-load] retry also failed:", retryErr?.message);
+        }
       }
+
+      // eslint-disable-next-line no-console
+      console.log("[hub-load] results →", {
+        projects: projRes.data?.length ?? 0,
+        active: activeRes.data?.length ?? 0,
+        trashed: trashedRes.data?.length ?? 0,
+        projError: projRes.error?.message ?? null,
+        activeError: activeRes.error?.message ?? null,
+      });
 
       if (projRes.data) setProjects(projRes.data);
       if (activeRes.data) setCourses(activeRes.data as CourseItem[]);
       if (trashedRes.data) setTrashedCourses(trashedRes.data as CourseItem[]);
       setIsLoading(false);
+
+      // If we still have no data after timeout + retry, the session is
+      // truly dead. Show a clear re-auth prompt instead of an empty page.
+      if (!activeRes.data && !projRes.data) {
+        // eslint-disable-next-line no-console
+        console.error("[hub-load] all queries returned null — session is dead, prompting re-auth");
+        toast.error("Session expired — please sign in again", {
+          duration: Infinity,
+          action: {
+            label: "Sign in",
+            onClick: async () => {
+              await supabase.auth.signOut().catch(() => {});
+              window.location.href = "/auth";
+            },
+          },
+        });
+      }
     };
     load();
   }, [userId]);
