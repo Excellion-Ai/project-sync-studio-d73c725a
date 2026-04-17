@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq("id", userId)
         .maybeSingle();
       if (error) {
-        console.error("[auth] profile fetch failed", error);
+        console.error("[auth-ctx] profile fetch failed", error);
         return null;
       }
       if (!data) return { id: userId, role: null };
@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       return { id: data.id as string, role };
     } catch (err) {
-      console.error("[auth] profile fetch exception", err);
+      console.error("[auth-ctx] profile fetch exception", err);
       return null;
     }
   }, []);
@@ -91,29 +91,77 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, fetchProfile]);
 
   useEffect(() => {
+    let resolved = false;
+
+    const handleSession = async (newSession: Session | null) => {
+      resolved = true;
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      setLoading(false);
+
+      if (newSession?.user) {
+        setProfileLoading(true);
+        const fresh = await fetchProfile(newSession.user.id);
+        setProfile(fresh);
+        setProfileLoading(false);
+      } else {
+        setProfile(null);
+        setProfileLoading(false);
+      }
+    };
+
+    // onAuthStateChange fires INITIAL_SESSION once the SDK has read +
+    // validated the stored session. This is the primary path.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        setLoading(false);
-
-        if (newSession?.user) {
-          setProfileLoading(true);
-          const fresh = await fetchProfile(newSession.user.id);
-          setProfile(fresh);
-          setProfileLoading(false);
-        } else {
-          setProfile(null);
-          setProfileLoading(false);
-        }
+        // eslint-disable-next-line no-console
+        console.log("[auth-ctx] onAuthStateChange", { event: _event, hasSession: !!newSession });
+        await handleSession(newSession);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      console.log("[auth] getSession on mount", { hasSession: !!s });
-    });
+    // Hard 5-second timeout: if onAuthStateChange hasn't fired (dead
+    // JWT, stalled token refresh, Supabase SDK bug), read the session
+    // from localStorage directly and force-resolve loading. Without
+    // this, the entire app shows an infinite spinner.
+    const timeout = setTimeout(async () => {
+      if (resolved) return;
+      // eslint-disable-next-line no-console
+      console.warn("[auth-ctx] onAuthStateChange stalled after 5s — falling back to getSession()");
+      try {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (!resolved) {
+          // eslint-disable-next-line no-console
+          console.log("[auth-ctx] getSession fallback →", { hasSession: !!s, userId: s?.user?.id ?? null });
+          await handleSession(s);
+        }
+      } catch {
+        // eslint-disable-next-line no-console
+        console.error("[auth-ctx] getSession fallback threw — forcing loading=false with no user");
+        if (!resolved) {
+          resolved = true;
+          setLoading(false);
+        }
+      }
+    }, 5000);
 
-    return () => subscription.unsubscribe();
+    // Absolute hard stop: if NOTHING resolved after 8 seconds,
+    // force loading=false. Guards will see user=null and redirect
+    // to /auth. The user gets a sign-in page rather than a black screen.
+    const hardStop = setTimeout(() => {
+      if (!resolved) {
+        // eslint-disable-next-line no-console
+        console.error("[auth-ctx] 8s hard stop — forcing loading=false");
+        resolved = true;
+        setLoading(false);
+      }
+    }, 8000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+      clearTimeout(hardStop);
+    };
   }, [fetchProfile]);
 
   const ready = !loading && (!user || !profileLoading);
