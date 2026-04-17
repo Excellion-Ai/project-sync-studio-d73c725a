@@ -821,8 +821,39 @@ function HubContent() {
   // ── Load data ──────────────────────────────────────────────
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      // eslint-disable-next-line no-console
+      console.log("[hub-load] skipped — no userId from useAuth() yet");
+      return;
+    }
     const load = async () => {
+      // eslint-disable-next-line no-console
+      console.log("[hub-load] starting load for userId (from useAuth):", userId);
+
+      // Cross-check: what does the Supabase JWT actually contain?
+      // If these IDs don't match, RLS will return zero rows even though the
+      // SQL query is correct.
+      try {
+        const { data: { user: jwtUser }, error: jwtErr } = await supabase.auth.getUser();
+        // eslint-disable-next-line no-console
+        console.log("[hub-load] supabase.auth.getUser() →", {
+          jwtUserId: jwtUser?.id ?? null,
+          jwtEmail: jwtUser?.email ?? null,
+          matchesAuthContext: jwtUser?.id === userId,
+          jwtError: jwtErr?.message ?? null,
+        });
+        if (jwtUser && jwtUser.id !== userId) {
+          // eslint-disable-next-line no-console
+          console.error(
+            "[hub-load] ⚠️ AUTH MISMATCH: useAuth user.id !== Supabase JWT user.id — RLS will block reads",
+            { authContextId: userId, jwtUserId: jwtUser.id }
+          );
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error("[hub-load] getUser() threw", e);
+      }
+
       const [projRes, activeRes, trashedRes] = await Promise.all([
         supabase
           .from("builder_projects")
@@ -849,6 +880,29 @@ function HubContent() {
           .order("deleted_at", { ascending: false })
           .limit(50),
       ]);
+
+      // eslint-disable-next-line no-console
+      console.log("[hub-load] builder_projects →", {
+        count: projRes.data?.length ?? 0,
+        error: projRes.error?.message ?? null,
+        firstFew: projRes.data?.slice(0, 3),
+      });
+      // eslint-disable-next-line no-console
+      console.log("[hub-load] courses (active) →", {
+        count: activeRes.data?.length ?? 0,
+        error: activeRes.error?.message ?? null,
+        errorDetails: activeRes.error,
+        firstFew: activeRes.data?.slice(0, 3).map((c: any) => ({ id: c.id, title: c.title, user_id: c.user_id })),
+      });
+      // eslint-disable-next-line no-console
+      console.log("[hub-load] courses (trashed) →", {
+        count: trashedRes.data?.length ?? 0,
+        error: trashedRes.error?.message ?? null,
+      });
+
+      if (activeRes.error) {
+        toast.error(`Couldn't load courses: ${activeRes.error.message}`);
+      }
 
       if (projRes.data) setProjects(projRes.data);
       if (activeRes.data) setCourses(activeRes.data as CourseItem[]);
