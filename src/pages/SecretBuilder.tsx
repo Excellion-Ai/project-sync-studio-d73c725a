@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { useLocation, useParams, Navigate } from "react-router-dom";
+import { toast } from "sonner";
 import BuilderShell from "@/components/secret-builder/BuilderShell";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -10,11 +12,20 @@ const SecretBuilder = () => {
   const { projectId: paramProjectId } = useParams<{ projectId: string }>();
   const { user, ready, role } = useAuth();
   const { subscribed, loading: subLoading } = useSubscription();
+  const [forceRender, setForceRender] = useState(false);
 
-  // Wait for BOTH auth + subscription to resolve before deciding where this
-  // user belongs. Without this, an unsubscribed user would briefly render
-  // the full builder before the guard kicks in.
-  if (!ready || (user && subLoading)) {
+  // Hard 10s safety net so we never get stuck on the spinner.
+  useEffect(() => {
+    if (forceRender) return;
+    const t = setTimeout(() => {
+      setForceRender(true);
+      toast.warning("Taking longer than expected — loading may be incomplete.");
+    }, 10000);
+    return () => clearTimeout(t);
+  }, [forceRender]);
+
+  const stillLoading = (!ready || (user && subLoading)) && !forceRender;
+  if (stillLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />

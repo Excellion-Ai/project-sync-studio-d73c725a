@@ -24,8 +24,9 @@ interface GuidedPromptBuilderProps {
 }
 
 const AUDIENCE_OPTIONS = [
-  "Busy moms", "Men over 40", "Beginners", "Athletes",
-  "Bodybuilders", "Powerlifters", "Women who lift", "Busy professionals",
+  "Beginners", "Busy professionals", "Women who lift",
+  "Men over 40", "Weight loss clients", "Athletes",
+  "Busy moms", "Powerlifters", "Bodybuilders",
 ];
 
 const GOAL_OPTIONS = [
@@ -78,7 +79,7 @@ function Chip({ label, selected, onClick }: { label: string; selected: boolean; 
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-[44px] px-4 py-2 rounded-full text-sm border transition-all touch-manipulation ${
+      className={`min-h-[44px] w-full px-3 py-2 rounded-lg text-sm border transition-all touch-manipulation ${
         selected
           ? "bg-primary/20 border-primary text-primary font-medium"
           : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground active:bg-muted/40"
@@ -193,9 +194,9 @@ export function GuidedPromptBuilder({ onPromptChange, onGenerate, isGenerating =
       )}
 
       {/* Step 1: Audience */}
-      <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <StepLabel number={1} text="Who are you coaching?" active={currentStep === 1} />
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {AUDIENCE_OPTIONS.map((opt) => (
             <Chip
               key={opt}
