@@ -369,6 +369,61 @@ const BuilderShell = ({
     loadExisting();
   }, [projectId, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Chat history persistence ──────────────────────────────
+  // Persist every chat message to course_chat_messages so coaches keep
+  // context across sessions. Fire-and-forget with a 3s timeout so a
+  // slow insert never blocks the UI.
+  const persistChatMessage = useCallback(
+    (cid: string | null, role: "user" | "assistant", content: string) => {
+      if (!userId || !cid) return;
+      void Promise.race([
+        (supabase as any).from("course_chat_messages").insert({
+          user_id: userId,
+          course_id: cid,
+          role,
+          content,
+        }),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
+      ]).catch((err) => {
+        console.error("[chat-persist] insert failed", err);
+      });
+    },
+    [userId]
+  );
+
+  // Load chat history when opening an existing project. We only load
+  // once per courseId (ref guard), and only when initialProjectId is
+  // set — so a fresh generation doesn't get overwritten by an empty
+  // history query before the new messages are persisted.
+  const chatLoadedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!initialProjectId || !userId || !courseId) return;
+    if (chatLoadedRef.current === courseId) return;
+    chatLoadedRef.current = courseId;
+    (async () => {
+      const { data, error } = await (supabase as any)
+        .from("course_chat_messages")
+        .select("id, role, content")
+        .eq("course_id", courseId)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true })
+        .limit(50);
+      if (error) {
+        console.error("[chat-history] load failed", error);
+        return;
+      }
+      if (data && data.length > 0) {
+        setMessages(
+          data.map((m: any) => ({
+            id: m.id as string,
+            role: m.role as "user" | "assistant",
+            content: m.content as string,
+          }))
+        );
+      }
+    })();
+  }, [initialProjectId, courseId, userId]);
+
   // ── Auto-trigger generation ───────────────────────────────
 
   const handleGenerateCourseRef = useRef<((options: CourseOptions, overrideAttachments?: AttachmentItem[]) => Promise<void>) | null>(null);
@@ -544,6 +599,8 @@ const BuilderShell = ({
         );
       };
 
+      // Buffered user prompt — persisted after saved.id is known (below).
+      const userPromptContent = ideaToUse;
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: "user", content: ideaToUse },
@@ -679,14 +736,21 @@ const BuilderShell = ({
           `Course "${course.title}" created with ${totalModules} modules and ${totalLessons} lessons.`
         );
 
+        const assistantReadyContent = `Your course "${course.title}" is ready with ${totalModules} modules and ${totalLessons} lessons.\n\nAdd your own content:\n• Write or paste lesson text\n• Embed videos (YouTube, Vimeo)\n• Upload images and resources\n• Add quiz questions\n• Customize colors, fonts, and layout`;
         setMessages((prev) => [
           ...prev,
           {
             id: crypto.randomUUID(),
             role: "assistant",
-            content: `Your course "${course.title}" is ready with ${totalModules} modules and ${totalLessons} lessons.\n\nAdd your own content:\n• Write or paste lesson text\n• Embed videos (YouTube, Vimeo)\n• Upload images and resources\n• Add quiz questions\n• Customize colors, fonts, and layout`,
+            content: assistantReadyContent,
           },
         ]);
+
+        // Persist the initial prompt + ready message now that saved.id exists.
+        if (saved?.id) {
+          persistChatMessage(saved.id, "user", userPromptContent);
+          persistChatMessage(saved.id, "assistant", assistantReadyContent);
+        }
       } catch (err: any) {
         console.error("❌ [generate] Error:", err);
         const failedStep = genSteps.find((s) => s.status === "in_progress");
@@ -938,13 +1002,16 @@ const BuilderShell = ({
             ...prev,
             { id: crypto.randomUUID(), role: "assistant", content: explanation },
           ]);
+          persistChatMessage(courseId, "assistant", explanation);
         }
       } catch (err: any) {
         toast.error(`Failed: ${err?.message}`);
+        const errorContent = `Sorry, that didn't work: ${err?.message}`;
         setMessages((prev) => [
           ...prev,
-          { id: crypto.randomUUID(), role: "assistant", content: `Sorry, that didn't work: ${err?.message}` },
+          { id: crypto.randomUUID(), role: "assistant", content: errorContent },
         ]);
+        persistChatMessage(courseId, "assistant", errorContent);
       } finally {
         setIsRefining(false);
       }
@@ -1047,7 +1114,10 @@ const BuilderShell = ({
               }
               onRefinePrompt={handleRefine}
               hasCourse={!!courseSpec}
-              onAddMessage={(msg) => setMessages((prev) => [...prev, msg])}
+              onAddMessage={(msg) => {
+                setMessages((prev) => [...prev, msg]);
+                persistChatMessage(courseId, msg.role, msg.content);
+              }}
             />
           </ResizablePanel>
 

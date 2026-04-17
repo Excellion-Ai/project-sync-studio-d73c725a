@@ -44,7 +44,10 @@ OUTPUT: Compact JSON, no markdown fences.
 - learningOutcomes: 6 items
 - modules: [{title, description, lessons: [{title, description}]}]
 - design_config: {colors: {primary, secondary, accent, background, cardBackground, text, textMuted}, fonts: {heading, body}, spacing, borderRadius, heroStyle, heroLayout}
-- target_audience, faq: [{question, answer}], section_order
+- target_audience, faq: [{question, answer}]
+- section_order MUST be exactly this array (conversion-optimized funnel):
+  ["hero", "outcomes", "who_is_for", "curriculum", "course_includes", "testimonials", "pricing", "faq", "guarantee"]
+  Rationale: hero → promise (outcomes) → problem (who_is_for) → what they get (curriculum, course_includes) → social proof (testimonials) → price → objection handling (faq) → final CTA (guarantee). FAQ MUST be near the bottom, NEVER above pricing.
 - duration_label: human-readable duration matching the program (e.g. "12 weeks of coaching", "8-week transformation", "90-day challenge"). MUST match the actual program duration from the prompt, NOT a generic "6 weeks".
 - pricing_features: 5-6 bullet points describing what's included, derived from the ACTUAL course content. Examples: "12 progressive workout modules", "Custom meal plan templates", "Weekly check-in frameworks". NEVER use generic filler like "Lifetime access", "Certificate of completion", or "Community support" — every bullet must be specific to THIS course.
 - PRICING: Do NOT set a price. The creator sets their own price. Do NOT include a pricing object or price field.
@@ -174,7 +177,7 @@ function buildFallbackCourse(
         answer: "Yes — the outline is intentionally structured so you can adapt the final lessons to beginner, intermediate, or advanced students.",
       },
     ],
-    section_order: ["hero", "outcomes", "who_is_for", "curriculum", "course_includes", "testimonials", "pricing", "guarantee", "faq"],
+    section_order: ["hero", "outcomes", "who_is_for", "curriculum", "course_includes", "testimonials", "pricing", "faq", "guarantee"],
   };
 }
 
@@ -509,7 +512,7 @@ serve(async (req) => {
     if (!course.target_audience) course.target_audience = "";
     if (!Array.isArray(course.faq)) course.faq = [];
     if (!Array.isArray(course.section_order)) {
-      course.section_order = ["hero", "outcomes", "who_is_for", "curriculum", "course_includes", "testimonials", "pricing", "guarantee", "faq"];
+      course.section_order = ["hero", "outcomes", "who_is_for", "curriculum", "course_includes", "testimonials", "pricing", "faq", "guarantee"];
     }
     if (!course.design_config) {
       course.design_config = {
