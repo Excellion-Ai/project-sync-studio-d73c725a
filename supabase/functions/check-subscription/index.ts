@@ -55,6 +55,35 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Check manual comp allowlist BEFORE hitting Stripe. Used for launch
+    // testers, partners, founders. A row in public.comp_access grants
+    // full access with status="active" and comp=true flag.
+    const { data: comp } = await supabaseClient
+      .from("comp_access")
+      .select("email, note")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (comp) {
+      logStep("Comp access granted", { email: user.email, note: comp.note });
+      return new Response(
+        JSON.stringify({
+          subscribed: true,
+          status: "active",
+          product_id: null,
+          price_id: null,
+          subscription_end: null,
+          cancel_at_period_end: false,
+          comp: true,
+          comp_note: comp.note,
+        }),
+        {
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
