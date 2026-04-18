@@ -119,6 +119,27 @@ export type Database = {
           },
         ]
       }
+      comp_access: {
+        Row: {
+          email: string
+          granted_at: string
+          granted_by: string | null
+          note: string | null
+        }
+        Insert: {
+          email: string
+          granted_at?: string
+          granted_by?: string | null
+          note?: string | null
+        }
+        Update: {
+          email?: string
+          granted_at?: string
+          granted_by?: string | null
+          note?: string | null
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           code: string
@@ -197,6 +218,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "course_chat_history_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_chat_messages: {
+        Row: {
+          content: string
+          course_id: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          course_id: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_chat_messages_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
@@ -312,6 +368,7 @@ export type Database = {
           social_image_url: string | null
           status: string | null
           stripe_account_id: string | null
+          stripe_payment_url: string | null
           stripe_price_id: string | null
           stripe_product_id: string | null
           subdomain: string | null
@@ -357,6 +414,7 @@ export type Database = {
           social_image_url?: string | null
           status?: string | null
           stripe_account_id?: string | null
+          stripe_payment_url?: string | null
           stripe_price_id?: string | null
           stripe_product_id?: string | null
           subdomain?: string | null
@@ -402,6 +460,7 @@ export type Database = {
           social_image_url?: string | null
           status?: string | null
           stripe_account_id?: string | null
+          stripe_payment_url?: string | null
           stripe_price_id?: string | null
           stripe_product_id?: string | null
           subdomain?: string | null
