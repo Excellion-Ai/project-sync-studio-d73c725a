@@ -51,7 +51,16 @@ OUTPUT: Compact JSON, no markdown fences.
 - duration_label: human-readable duration matching the program (e.g. "12 weeks of coaching", "8-week transformation", "90-day challenge"). MUST match the actual program duration from the prompt, NOT a generic "6 weeks".
 - pricing_features: 5-6 bullet points describing what's included, derived from the ACTUAL course content. Examples: "12 progressive workout modules", "Custom meal plan templates", "Weekly check-in frameworks". NEVER use generic filler like "Lifetime access", "Certificate of completion", or "Community support" — every bullet must be specific to THIS course.
 - PRICING: Do NOT set a price. The creator sets their own price. Do NOT include a pricing object or price field.
-- DESIGN: Dark bg (#0a-#15), light text, vibrant primary. Fonts from: "Playfair Display"+"DM Sans", "Space Grotesk"+"Inter", "Poppins"+"Inter", "Montserrat"+"DM Sans", "Lora"+"Inter"`;
+- DESIGN: Dark bg (#0a-#15), light text, vibrant primary. Fonts from: "Playfair Display"+"DM Sans", "Space Grotesk"+"Inter", "Poppins"+"Inter", "Montserrat"+"DM Sans", "Lora"+"Inter"
+
+WRITING STYLE RULES (strict):
+- NEVER use em dashes. Use periods, commas, or parentheses instead.
+- NEVER use "not X, but Y" or "it's not just X, it's Y" constructions.
+- AVOID overused words when used as empty hype: unlock, dive deep, journey, transform, empower, elevate, leverage, seamless, unleash, craft, curate.
+- AVOID hedging phrases: "in today's world", "in an ever-changing landscape", "more than ever".
+- AVOID lists of three adjectives (e.g., "fast, simple, and effective").
+- Write like a confident coach talking directly to a client. Short sentences. Second person. Specific over vague.
+- Sales copy should promise a specific outcome with a specific timeframe, not a general transformation.`;
 
 function parseCourseJson(text: string) {
   // Strip markdown fences
@@ -400,8 +409,8 @@ serve(async (req) => {
         body: JSON.stringify({
           model: MODEL,
           max_tokens: maxTokens,
-          temperature: 0.3,
-          system: SYSTEM_PROMPT,
+          temperature: 1.0,
+          system: SYSTEM_PROMPT + `\n\nGeneration variance key: ${crypto.randomUUID()}`,
           messages: [{ role: "user", content: messageContent }],
         }),
         signal: AbortSignal.timeout(timeoutMs),
@@ -525,7 +534,21 @@ serve(async (req) => {
       };
     }
 
-    console.log("generate-course: SUCCESS —", course.title, ",", course.modules.length, "modules");
+    // Post-processing: scrub em-dashes from all string fields.
+    // Claude sometimes uses them despite the prompt rule.
+    function scrubEmDashes(obj: any): any {
+      if (typeof obj === "string") return obj.replace(/\u2014/g, ",").replace(/\u2013/g, ",");
+      if (Array.isArray(obj)) return obj.map(scrubEmDashes);
+      if (obj && typeof obj === "object") {
+        const out: any = {};
+        for (const k of Object.keys(obj)) out[k] = scrubEmDashes(obj[k]);
+        return out;
+      }
+      return obj;
+    }
+    course = scrubEmDashes(course);
+
+    console.log("generate-course: SUCCESS", course.title, ",", course.modules.length, "modules");
 
     return new Response(JSON.stringify(course), {
       headers: { ...cors, "Content-Type": "application/json" },
