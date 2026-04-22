@@ -87,7 +87,7 @@ const Paywall = () => {
           {/* Demo video */}
           <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border bg-black mb-10">
             <iframe
-              src="https://www.youtube-nocookie.com/embed/Q4rZfRfJlqg?rel=0"
+              src="https://www.youtube.com/embed/Q4rZfRfJlqg?rel=0"
               title="See Excellion in Action"
               allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
