@@ -3,6 +3,7 @@ import HeroSection from "@/components/HeroSection";
 import SocialProofTicker from "@/components/SocialProofTicker";
 import StatsBar from "@/components/StatsBar";
 import HowItWorksSection from "@/components/HowItWorksSection";
+import DemoVideo from "@/components/DemoVideo";
 import FeaturesSection from "@/components/FeaturesSection";
 
 
@@ -21,6 +22,7 @@ const WebBuilderHome = () => {
 
       <SocialProofTicker />
       <StatsBar />
+      <DemoVideo videoId="Q4rZfRfJlqg" />
       <HowItWorksSection />
       <FeaturesSection />
 
