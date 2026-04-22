@@ -53,6 +53,16 @@ const Auth = () => {
         if (event === "SIGNED_IN" && session.user.created_at && Date.now() - new Date(session.user.created_at).getTime() < 60_000) {
           const method = session.user.app_metadata?.provider || "email";
           analytics.signedUp({ method, email: session.user.email });
+          // Fire welcome email for genuinely new signups. Non-blocking.
+          supabase.functions.invoke("send-welcome-email", {
+            body: {
+              user_id: session.user.id,
+              email: session.user.email,
+              first_name: session.user.user_metadata?.full_name?.split(" ")[0]
+                || session.user.user_metadata?.name?.split(" ")[0]
+                || null,
+            },
+          }).catch(() => {});
         }
         void routeAfterAuth(session);
       }

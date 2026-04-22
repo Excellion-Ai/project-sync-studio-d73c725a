@@ -21,6 +21,18 @@ const AuthCallback = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
+        // Fire welcome email for new signups (created < 60s ago). Non-blocking.
+        if (session.user.created_at && Date.now() - new Date(session.user.created_at).getTime() < 60_000) {
+          supabase.functions.invoke("send-welcome-email", {
+            body: {
+              user_id: session.user.id,
+              email: session.user.email,
+              first_name: session.user.user_metadata?.full_name?.split(" ")[0]
+                || session.user.user_metadata?.name?.split(" ")[0]
+                || null,
+            },
+          }).catch(() => {});
+        }
         goToDashboard(session.user.id, session.user.email);
       }
     });
