@@ -73,7 +73,7 @@ const Navigation = () => {
     // Route unsubscribed coaches through /paywall; everyone else hits
     // /dashboard, whose guard handles auth/role/subscription redirects.
     if (!user) {
-      navigate("/auth?redirect=/dashboard");
+      navigate("/auth?mode=signup&redirect=/dashboard");
       return;
     }
     if (user.email === ALLOWED_EMAIL || subscribed) {
@@ -170,7 +170,7 @@ const Navigation = () => {
               user ? (
                 <UserMenu />
               ) : (
-                <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+                <Link to="/auth?mode=signin" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                   Sign In
                 </Link>
               )
@@ -245,7 +245,7 @@ const Navigation = () => {
                           </button>
                         </>
                       ) : (
-                        <button onClick={() => mobileNavigate("/auth")} className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2 text-left touch-manipulation">
+                        <button onClick={() => mobileNavigate("/auth?mode=signin")} className="text-muted-foreground hover:text-foreground transition-colors text-sm py-2 text-left touch-manipulation">
                           Sign In
                         </button>
                       )

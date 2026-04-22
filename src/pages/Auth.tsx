@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { analytics, identifyUser } from "@/lib/analytics";
+
+type Mode = "signup" | "signin";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -14,10 +16,27 @@ const Auth = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
-  const searchParams = new URLSearchParams(window.location.search);
-  const explicitRedirect = searchParams.get("redirect");
+  // Re-parse the URL whenever the route changes so toggling between
+  // ?mode=signup and ?mode=signin updates the UI live.
+  const { mode, explicitRedirect }: { mode: Mode; explicitRedirect: string | null } = useMemo(() => {
+    const sp = new URLSearchParams(location.search);
+    const raw = sp.get("mode");
+    // Default to signup — ~99% of /auth traffic is new visitors.
+    const m: Mode = raw === "signin" ? "signin" : "signup";
+    return { mode: m, explicitRedirect: sp.get("redirect") };
+  }, [location.search]);
+
+  // Build a URL that toggles mode while preserving the redirect param.
+  const toggleHref = useMemo(() => {
+    const target: Mode = mode === "signup" ? "signin" : "signup";
+    const sp = new URLSearchParams();
+    sp.set("mode", target);
+    if (explicitRedirect) sp.set("redirect", explicitRedirect);
+    return `/auth?${sp.toString()}`;
+  }, [mode, explicitRedirect]);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,7 +44,6 @@ const Auth = () => {
     const routeAfterAuth = async (session: any) => {
       if (!session || cancelled) return;
       identifyUser(session.user.id, { email: session.user.email });
-      // Always go to dashboard (or explicit redirect). No more role selection.
       const dest = explicitRedirect || "/dashboard";
       navigate(dest, { replace: true });
     };
@@ -54,10 +72,31 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+        if (error) throw error;
+        // If email confirmations are enabled, the user needs to click the
+        // link. Otherwise onAuthStateChange fires and routes them.
+        toast({
+          title: "Account created",
+          description: "You're signed in and ready to go.",
+        });
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({
+        title: mode === "signup" ? "Couldn't create account" : "Couldn't sign in",
+        description: error.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -83,14 +122,23 @@ const Auth = () => {
     }
   };
 
+  const heading = mode === "signup" ? "Create your Excellion account" : "Welcome back";
+  const subcopy = mode === "signup"
+    ? "Build your first fitness course in 60 seconds"
+    : "Sign in to your Excellion dashboard";
+  const googleLabel = mode === "signup" ? "Sign up with Google" : "Sign in with Google";
+  const submitLabel = mode === "signup" ? "Create Account" : "Sign In";
+  const togglePrompt = mode === "signup" ? "Already have an account?" : "New to Excellion?";
+  const toggleCta = mode === "signup" ? "Sign in" : "Create account";
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
       <div className="flex-1 flex items-center justify-center px-4 pt-16">
         <div className="w-full max-w-md glass-card rounded-2xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-foreground mb-2">Welcome Back</h1>
-            <p className="text-muted-foreground text-sm">Sign in to your account to continue</p>
+            <h1 className="text-2xl font-bold text-foreground mb-2">{heading}</h1>
+            <p className="text-muted-foreground text-sm">{subcopy}</p>
           </div>
 
           <button
@@ -104,7 +152,7 @@ const Auth = () => {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google
+            {googleLabel}
           </button>
 
           <div className="relative mb-6">
@@ -125,6 +173,7 @@ const Auth = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
                 className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                autoComplete="email"
                 required
               />
             </div>
@@ -138,6 +187,8 @@ const Auth = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary pr-10"
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                  minLength={mode === "signup" ? 6 : undefined}
                   required
                 />
                 <button
@@ -160,9 +211,11 @@ const Auth = () => {
                 />
                 Remember me
               </label>
-              <button type="button" className="text-sm text-primary hover:underline">
-                Forgot password?
-              </button>
+              {mode === "signin" && (
+                <button type="button" className="text-sm text-primary hover:underline">
+                  Forgot password?
+                </button>
+              )}
             </div>
 
             <button
@@ -170,9 +223,16 @@ const Auth = () => {
               disabled={loading}
               className="w-full px-4 py-3 rounded-lg gradient-gold text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {loading ? "Loading..." : "Sign In"}
+              {loading ? "Loading..." : submitLabel}
             </button>
           </form>
+
+          <div className="mt-6 text-center text-sm">
+            <span className="text-muted-foreground">{togglePrompt}</span>{" "}
+            <Link to={toggleHref} className="text-primary font-medium hover:underline">
+              {toggleCta}
+            </Link>
+          </div>
         </div>
       </div>
       <Footer />

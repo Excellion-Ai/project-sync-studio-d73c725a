@@ -11,7 +11,7 @@ const CTASection = () => {
 
   const handleClick = () => {
     if (!user) {
-      navigate("/auth?redirect=/dashboard");
+      navigate("/auth?mode=signup&redirect=/dashboard");
       return;
     }
     if (subscribed) {

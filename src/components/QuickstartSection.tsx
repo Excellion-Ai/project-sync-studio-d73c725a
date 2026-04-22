@@ -59,7 +59,7 @@ const QuickstartSection = () => {
             </ul>
 
             <a
-              href="/auth"
+              href="/auth?mode=signup"
               className="mt-6 w-full px-6 py-3 rounded-[10px] btn-primary text-sm flex items-center justify-center gap-2 font-body"
             >
               Start Building

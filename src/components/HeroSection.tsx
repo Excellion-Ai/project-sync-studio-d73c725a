@@ -132,7 +132,7 @@ const HeroSection = () => {
       persistDraft(overridePrompt);
       // /dashboard is the canonical post-auth destination — the guard
       // there routes unsubscribed coaches to /paywall.
-      navigate("/auth?redirect=/dashboard");
+      navigate("/auth?mode=signup&redirect=/dashboard");
       return;
     }
 
@@ -155,7 +155,7 @@ const HeroSection = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error("Session expired. Please sign in again.");
-        navigate("/auth");
+        navigate("/auth?mode=signin");
         return;
       }
 

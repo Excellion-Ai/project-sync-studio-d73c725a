@@ -29,7 +29,7 @@ const PricingSection = () => {
 
   const handleSubscribe = async () => {
     if (!user) {
-      navigate("/auth?redirect=/paywall");
+      navigate("/auth?mode=signup&redirect=/paywall");
       return;
     }
     if (subscribed) {
