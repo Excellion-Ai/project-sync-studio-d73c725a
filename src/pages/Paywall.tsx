@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Play, Check, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
@@ -84,20 +84,16 @@ const Paywall = () => {
             Everything you need to go from idea to live course in 48 hours
           </p>
 
-          {/* Video thumbnail */}
-          <div
-            role="img"
-            aria-label="See Excellion in Action"
-            className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border bg-gradient-to-br from-zinc-900 via-zinc-950 to-black mb-10 cursor-pointer group"
-          >
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-              <span className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_40px_rgba(201,168,76,0.45)] group-hover:scale-110 transition-transform">
-                <Play className="w-7 h-7 sm:w-8 sm:h-8 ml-1" fill="currentColor" />
-              </span>
-              <span className="text-sm sm:text-base font-body font-medium text-foreground/80">
-                See Excellion in Action
-              </span>
-            </div>
+          {/* Demo video */}
+          <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-border bg-black mb-10">
+            <iframe
+              src="https://www.youtube-nocookie.com/embed/Q4rZfRfJlqg?rel=0"
+              title="See Excellion in Action"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+              className="absolute inset-0 w-full h-full"
+            />
           </div>
 
           {/* What's included */}
