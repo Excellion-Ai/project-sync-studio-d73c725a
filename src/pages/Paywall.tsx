@@ -116,10 +116,19 @@ const Paywall = () => {
 
           {/* Price */}
           <div className="mb-6">
-            <p className="text-xl sm:text-2xl font-heading font-bold text-foreground">
-              Launch Price: <span className="text-gradient-gold">$29/mo</span>{" "}
-              <span className="text-muted-foreground line-through text-base font-normal">$79/mo</span>
-            </p>
+            <div className="inline-flex flex-col items-center gap-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl sm:text-5xl font-heading font-black text-gradient-gold leading-none">
+                  $29
+                </span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30 text-primary text-[10px] font-semibold uppercase tracking-wider font-body">
+                  First month
+                </span>
+              </div>
+              <p className="text-base sm:text-lg font-heading font-semibold text-foreground">
+                Then $79/month
+              </p>
+            </div>
           </div>
 
           {/* CTA */}

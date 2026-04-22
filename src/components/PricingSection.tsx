@@ -92,12 +92,22 @@ const PricingSection = () => {
             {/* Animated gradient border */}
             <div className="pricing-animated-border rounded-2xl p-[1px]">
               <div className="premium-card p-8 text-center rounded-2xl pricing-glow-pulse">
-            <div className="mb-6">
+            <div className="mb-2">
               <span className="text-4xl font-heading font-black text-gradient-gold">{yearly ? "$790" : "$29"}</span>
-              <span className="text-muted-foreground text-sm ml-2 font-body">{yearly ? "/year" : "/first month"}</span>
+              {!yearly && (
+                <span className="inline-flex items-center ml-2 px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30 text-primary text-[10px] font-semibold uppercase tracking-wider font-body align-middle">
+                  First month
+                </span>
+              )}
+              {yearly && <span className="text-muted-foreground text-sm ml-2 font-body">/year</span>}
             </div>
+            {!yearly && (
+              <p className="text-foreground/90 text-base font-semibold mb-1 font-body">
+                Then $79/month
+              </p>
+            )}
             <p className="text-muted-foreground text-sm mb-8 font-body">
-              then {yearly ? "$790/year" : "$79/month"} · {yearly && "save $158 · "}Everything included. Cancel anytime.
+              {yearly ? "Save $158 a year · " : ""}Everything included. Cancel anytime.
             </p>
 
             <ul className="space-y-3 mb-8 text-left">
@@ -117,7 +127,7 @@ const PricingSection = () => {
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                `Start for ${yearly ? "$790/yr" : "$29"}`
+                yearly ? "Start for $790/yr" : "Start for $29 first month"
               )}
             </button>
 

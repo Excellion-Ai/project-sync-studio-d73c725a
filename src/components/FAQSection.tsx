@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     q: "How does pricing work?",
-    a: "Start for $19 your first month, then $79/month or $790/year. Everything is included — courses, student portal, analytics, custom domain, and more. Cancel anytime.",
+    a: "$29 your first month, then $79/month ongoing (or $790/year). Everything is included: courses, student portal, analytics, custom domain, and more. Cancel anytime.",
   },
 ];
 
