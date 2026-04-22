@@ -30,7 +30,7 @@ const Index = () => {
         <SectionDivider />
         <StatsBar />
         <SectionDivider />
-        <DemoVideo videoId="Q4rZfRfJlqg" />
+        <DemoVideo videoId="Q4rZfRfJIqg" />
         <SectionDivider />
         <HowItWorksSection />
         <SectionDivider />
