@@ -1,5 +1,5 @@
 const stats = [
-  { value: "60 sec", label: "Average course build time" },
+  { value: "60 sec", label: "To your first draft. Perfect it from there." },
   { value: "0%", label: "Revenue share. Keep every dollar." },
   { value: "$79/mo", label: "Flat pricing. Kajabi is $500." },
 ];
