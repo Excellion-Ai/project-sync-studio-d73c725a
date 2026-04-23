@@ -2,7 +2,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 
 const SPOTS_TOTAL = 10;
-const SPOTS_REMAINING = 7;
+const SPOTS_REMAINING = 10;
 const SIGNUP_URL = "https://excellioncourses.com/auth";
 
 const GOLD = "#C9A84C";
