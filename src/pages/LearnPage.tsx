@@ -88,7 +88,7 @@ const LearnPage = () => {
         learningOutcomes: [],
         modules,
         pages: (row.page_sections as any) || {},
-        section_order: Array.isArray(row.section_order) ? row.section_order : [],
+        section_order: Array.isArray(row.section_order) ? (row.section_order as string[]) : [],
         design_config: (row.design_config as any) || {},
         thumbnail: row.thumbnail_url || "",
       };
