@@ -39,6 +39,7 @@ const BuilderFAQ = lazyWithRetry(() => import("./pages/BuilderFAQ"), "BuilderFAQ
 const ThankYou = lazyWithRetry(() => import("./pages/ThankYou"), "ThankYou");
 const MaintenanceRequest = lazyWithRetry(() => import("./pages/MaintenanceRequest"), "MaintenanceRequest");
 const BuilderTest = lazyWithRetry(() => import("./pages/BuilderTest"), "BuilderTest");
+const Founding = lazyWithRetry(() => import("./pages/Founding"), "Founding");
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
 
 // Onboarding
@@ -125,6 +126,7 @@ const App = () => (
             <Route path="/builder-faq" element={<BuilderFAQ />} />
             <Route path="/legal" element={<Legal />} />
             <Route path="/thank-you" element={<ThankYou />} />
+            <Route path="/founding" element={<Founding />} />
             <Route path="/maintenance-request" element={<MaintenanceRequest />} />
             <Route path="/builder-test" element={<BuilderTest />} />
 
