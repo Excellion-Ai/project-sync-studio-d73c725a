@@ -3,7 +3,7 @@ import Footer from "@/components/Footer";
 
 const SPOTS_TOTAL = 10;
 const SPOTS_REMAINING = 10;
-const SIGNUP_URL = "https://excellioncourses.com/auth";
+const SIGNUP_URL = "https://excellioncourses.com/auth?ref=founding";
 
 const GOLD = "#C9A84C";
 const BG = "hsl(38 10% 6%)";
