@@ -1,5 +1,6 @@
 import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
+import SocialProofBlock from "@/components/SocialProofBlock";
 import SocialProofTicker from "@/components/SocialProofTicker";
 import StatsBar from "@/components/StatsBar";
 import HowItWorksSection from "@/components/HowItWorksSection";
@@ -19,7 +20,7 @@ const WebBuilderHome = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       <HeroSection />
-
+      <SocialProofBlock />
       <SocialProofTicker />
       <StatsBar />
       <DemoVideo videoId="Q4rZfRfJIqg" />
