@@ -7,9 +7,9 @@ const DemoVideo = ({ videoId }: DemoVideoProps) => (
     <p className="text-center text-amber-400 text-sm font-semibold uppercase tracking-wider mb-6">
       See it in 46 seconds
     </p>
-    <div className="w-full aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-amber-500/10">
+    <div className="w-full max-w-[900px] mx-auto aspect-video rounded-xl overflow-hidden border border-white/10 shadow-2xl shadow-amber-500/10">
       <iframe
-        src={`https://www.youtube-nocookie.com/embed/${videoId}?vq=hd1080&rel=0&modestbranding=1&autoplay=0&controls=1&playsinline=1`}
+        src={`https://www.youtube-nocookie.com/embed/${videoId}?vq=hd1080&rel=0&modestbranding=1&controls=1&playsinline=1`}
         title="Excellion demo video"
         className="w-full h-full"
         loading="lazy"
