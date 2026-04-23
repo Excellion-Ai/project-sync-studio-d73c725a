@@ -78,24 +78,42 @@ const SocialProofBlock = () => {
           >
             Powered by
           </span>
-          <img
-            src="https://supabase.com/brand-assets/logo/supabase-logo-wordmark--light.svg"
-            alt="Supabase"
-            style={{ height: "32px", opacity: 0.7, filter: "grayscale(100%)" }}
-            loading="lazy"
-          />
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg"
-            alt="Stripe"
-            style={{ height: "32px", opacity: 0.7, filter: "grayscale(100%) brightness(2.5)" }}
-            loading="lazy"
-          />
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/7/78/Anthropic_logo.svg"
-            alt="Anthropic Claude"
-            style={{ height: "32px", opacity: 0.7, filter: "grayscale(100%) brightness(2.5)" }}
-            loading="lazy"
-          />
+          {/* Supabase wordmark */}
+          <svg
+            role="img"
+            aria-label="Supabase"
+            viewBox="0 0 581 113"
+            style={{ height: "32px", width: "auto", opacity: 0.75 }}
+            fill="hsl(40 20% 80%)"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M65.6 109.7c-2.9 3.7-8.9 1.7-9-3L55.2 38h46.5c8.4 0 13.1 9.7 7.9 16.3l-44 55.4z"/>
+            <path d="M44.5 3.3c2.9-3.7 8.9-1.7 9 3L54.9 75H9c-8.4 0-13.1-9.7-7.9-16.3l43.4-55.4z" opacity="0.6"/>
+            <text x="135" y="78" fontFamily="Inter, sans-serif" fontSize="56" fontWeight="600" fill="hsl(40 20% 80%)">Supabase</text>
+          </svg>
+
+          {/* Stripe wordmark */}
+          <svg
+            role="img"
+            aria-label="Stripe"
+            viewBox="0 0 200 80"
+            style={{ height: "32px", width: "auto", opacity: 0.75 }}
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <text x="0" y="60" fontFamily="Inter, sans-serif" fontSize="60" fontWeight="700" fill="hsl(40 20% 80%)" letterSpacing="-2">stripe</text>
+          </svg>
+
+          {/* Anthropic wordmark */}
+          <svg
+            role="img"
+            aria-label="Anthropic"
+            viewBox="0 0 260 80"
+            style={{ height: "32px", width: "auto", opacity: 0.75 }}
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M40 12 L20 60 L30 60 L34 50 L52 50 L56 60 L66 60 L46 12 Z M37 42 L43 26 L49 42 Z" fill="hsl(40 20% 80%)"/>
+            <text x="78" y="56" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="500" fill="hsl(40 20% 80%)">Anthropic</text>
+          </svg>
         </div>
       </div>
     </section>
