@@ -6,6 +6,7 @@ import { Routes, Route } from "react-router-dom";
 import { Suspense } from "react";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { AuthProvider } from "@/contexts/AuthContext";
+import FoundingScarcityStrip from "@/components/FoundingScarcityStrip";
 
 // Pages
 const WebBuilderHome = lazyWithRetry(() => import("./pages/WebBuilderHome"), "WebBuilderHome");
@@ -83,6 +84,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <FoundingScarcityStrip />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Core */}
