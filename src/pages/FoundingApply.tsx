@@ -70,7 +70,7 @@ const FoundingApply = () => {
               <span className="text-gradient-gold">Founding Coach</span>
             </h1>
             <p className="text-muted-foreground font-body text-sm max-w-md mx-auto">
-              We're accepting 20 coaches into the founding cohort. Free lifetime
+              We're accepting 10 coaches into the founding cohort. Free lifetime
               access, direct input on the product, and your name on the wall.
             </p>
           </div>
