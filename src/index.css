@@ -271,3 +271,11 @@
     animation: marquee 30s linear infinite;
   }
 }
+
+/* Founding scarcity strip offsets */
+body.has-founding-strip nav.fixed {
+  top: 36px;
+}
+body.has-founding-strip {
+  padding-top: 36px;
+}

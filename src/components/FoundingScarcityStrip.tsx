@@ -21,16 +21,25 @@ const FoundingScarcityStrip = () => {
     }
   }, []);
 
-  if (!mounted || dismissed) return null;
+  const isVisible =
+    VISIBLE_PATHS.includes(location.pathname) &&
+    !location.pathname.startsWith("/auth") &&
+    !(user && location.pathname.startsWith("/dashboard")) &&
+    !(user && location.pathname.startsWith("/studio")) &&
+    !(user && location.pathname.startsWith("/secret-builder"));
 
-  const isVisible = VISIBLE_PATHS.includes(location.pathname);
-  if (!isVisible) return null;
+  const shouldRender = mounted && !dismissed && isVisible;
 
-  // Hide on auth and authenticated app routes
-  if (location.pathname.startsWith("/auth")) return null;
-  if (user && location.pathname.startsWith("/dashboard")) return null;
-  if (user && location.pathname.startsWith("/studio")) return null;
-  if (user && location.pathname.startsWith("/secret-builder")) return null;
+  useEffect(() => {
+    if (shouldRender) {
+      document.body.classList.add("has-founding-strip");
+    } else {
+      document.body.classList.remove("has-founding-strip");
+    }
+    return () => document.body.classList.remove("has-founding-strip");
+  }, [shouldRender]);
+
+  if (!shouldRender) return null;
 
   const handleDismiss = () => {
     localStorage.setItem(STORAGE_KEY, "true");
@@ -38,7 +47,7 @@ const FoundingScarcityStrip = () => {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[60] bg-[#0d0d0d] border-b border-primary/20 py-2 px-4">
+    <div className="fixed top-0 left-0 right-0 z-[60] bg-[#0d0d0d] border-b border-primary/20 py-2 px-4 h-9 flex items-center">
       <div className="max-w-7xl mx-auto flex items-center justify-center gap-3 text-sm font-body">
         <span className="relative flex h-2 w-2 shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
