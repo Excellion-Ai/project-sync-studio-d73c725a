@@ -645,6 +645,42 @@ export type Database = {
           },
         ]
       }
+      founding_coach_applications: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          instagram: string | null
+          niche: string
+          reason: string
+          status: string
+          tiktok: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          instagram?: string | null
+          niche: string
+          reason: string
+          status?: string
+          tiktok?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          instagram?: string | null
+          niche?: string
+          reason?: string
+          status?: string
+          tiktok?: string | null
+        }
+        Relationships: []
+      }
       layout_templates: {
         Row: {
           best_for: Json | null
