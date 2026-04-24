@@ -1,5 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import SocialProofFounding from "@/components/founding/SocialProofFounding";
 
 const SPOTS_TOTAL = 10;
 const SPOTS_REMAINING = 10;
@@ -101,6 +102,9 @@ const Founding = () => {
           <GoldButton>Apply for a Founding Spot</GoldButton>
         </div>
       </section>
+
+      {/* SOCIAL PROOF */}
+      <SocialProofFounding claimed={SPOTS_TOTAL - SPOTS_REMAINING} total={SPOTS_TOTAL} />
 
       {/* WHAT YOU GET */}
       <section className="w-full" style={{ paddingTop: "64px", paddingBottom: "96px" }}>
