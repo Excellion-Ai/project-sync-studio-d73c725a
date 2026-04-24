@@ -1,4 +1,5 @@
 import Navigation from "@/components/Navigation";
+import FoundingScarcityStrip from "@/components/founding/FoundingScarcityStrip";
 import HeroSection from "@/components/HeroSection";
 import SocialProofBlock from "@/components/SocialProofBlock";
 import SocialProofTicker from "@/components/SocialProofTicker";
@@ -18,6 +19,7 @@ import Footer from "@/components/Footer";
 const WebBuilderHome = () => {
   return (
     <div className="min-h-screen bg-background">
+      <FoundingScarcityStrip />
       <Navigation />
       <HeroSection />
       <SocialProofBlock />
