@@ -1,22 +1,12 @@
 import { useState } from "react";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 
-const NICHE_OPTIONS = [
-  "Fat loss / body recomp",
-  "Strength & powerlifting",
-  "Bodybuilding / physique",
-  "Yoga & mobility",
-  "HIIT / bootcamp",
-  "Sports performance",
-  "Nutrition coaching",
-  "Pre/postnatal fitness",
-  "Other",
-];
-
 const FoundingApply = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -26,7 +16,6 @@ const FoundingApply = () => {
     reason: "",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const set = (key: keyof typeof form) => (
@@ -66,33 +55,9 @@ const FoundingApply = () => {
       return;
     }
 
-    setSubmitted(true);
+    navigate("/founding/thanks");
     setSubmitting(false);
   };
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <Navigation />
-        <main className="flex-1 flex items-center justify-center px-4 pt-16">
-          <div className="max-w-md w-full text-center space-y-6">
-            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="text-2xl font-heading font-bold text-foreground">
-              Application received
-            </h1>
-            <p className="text-muted-foreground font-body text-sm leading-relaxed">
-              We review every application personally. If you're selected as a
-              Founding Coach, you'll hear from us within 48 hours at{" "}
-              <span className="text-foreground font-medium">{form.email}</span>.
-            </p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -170,21 +135,14 @@ const FoundingApply = () => {
               <label className="block text-sm font-medium text-foreground mb-1.5 font-body">
                 What do you coach? <span className="text-destructive">*</span>
               </label>
-              <select
+              <input
+                type="text"
                 required
                 value={form.niche}
                 onChange={set("niche")}
-                className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground text-sm font-body focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
-              >
-                <option value="" disabled>
-                  Select your niche
-                </option>
-                {NICHE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
+                placeholder="e.g. strength training for women over 40"
+                className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground placeholder:text-muted-foreground text-sm font-body focus:outline-none focus:ring-2 focus:ring-primary"
+              />
             </div>
 
             <div>
