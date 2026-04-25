@@ -62,7 +62,19 @@ const FoundingApply = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navigation />
-      <main className="flex-1 flex items-center justify-center px-4 py-16 sm:py-20">
+      <video
+        className="fixed inset-0 w-full h-full object-cover opacity-15 pointer-events-none z-0"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+      >
+        <source src="/founding-bg.mp4" type="video/mp4" />
+      </video>
+      <div className="fixed inset-0 bg-background/75 pointer-events-none z-0" aria-hidden="true" />
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-16 sm:py-20">
         <div className="w-full max-w-lg">
           <div className="text-center mb-10">
             <h1 className="text-3xl sm:text-4xl font-heading font-bold text-foreground mb-3">
