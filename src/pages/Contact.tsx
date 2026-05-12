@@ -1,4 +1,4 @@
-import { Mail, Twitter, MessageCircle } from "lucide-react";
+import { Mail, Twitter } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -16,12 +16,6 @@ const infoCards = [
     label: "Twitter/X",
     value: "@excellionai",
     href: "https://twitter.com/excellionai",
-  },
-  {
-    icon: MessageCircle,
-    label: "Discord",
-    value: "Join our community",
-    href: "https://discord.gg/C5WZUHZUJJ",
   },
 ];
 
