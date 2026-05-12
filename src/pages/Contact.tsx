@@ -1,4 +1,4 @@
-import { Mail, Twitter, MessageCircle } from "lucide-react";
+import { Mail, Twitter } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -17,12 +17,6 @@ const infoCards = [
     value: "@excellionai",
     href: "https://twitter.com/excellionai",
   },
-  {
-    icon: MessageCircle,
-    label: "Discord",
-    value: "Join our community",
-    href: "https://discord.gg/C5WZUHZUJJ",
-  },
 ];
 
 const Contact = () => {
@@ -39,7 +33,7 @@ const Contact = () => {
           </p>
 
           {/* Info Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
             {infoCards.map(({ icon: Icon, label, value, href }) => {
               const Wrapper = href ? "a" : "div";
               const linkProps = href
