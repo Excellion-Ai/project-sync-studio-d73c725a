@@ -33,7 +33,7 @@ const Contact = () => {
           </p>
 
           {/* Info Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
             {infoCards.map(({ icon: Icon, label, value, href }) => {
               const Wrapper = href ? "a" : "div";
               const linkProps = href
