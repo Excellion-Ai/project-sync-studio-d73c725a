@@ -21,19 +21,19 @@ const WebBuilderHome = () => {
     <div className="min-h-screen bg-background">
       <FoundingScarcityStrip />
       <Navigation />
-      <HeroSection />
-      <SocialProofBlock />
-      <SocialProofTicker />
-      <StatsBar />
-      <DemoVideo videoId="Q4rZfRfJIqg" />
-      <HowItWorksSection />
-      <FeaturesSection />
-
-
-      <PricingSection />
-      <GuaranteeSection />
-      <FAQSection />
-      <CTASection />
+      <main>
+        <HeroSection />
+        <SocialProofBlock />
+        <SocialProofTicker />
+        <StatsBar />
+        <DemoVideo videoId="Q4rZfRfJIqg" />
+        <HowItWorksSection />
+        <FeaturesSection />
+        <PricingSection />
+        <GuaranteeSection />
+        <FAQSection />
+        <CTASection />
+      </main>
       <Footer />
     </div>
   );
